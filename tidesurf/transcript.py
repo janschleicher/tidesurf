@@ -1,8 +1,14 @@
 from dataclasses import dataclass
 from typing import List, Dict, Tuple, Optional
+from bisect import bisect_left, bisect_right
 
 
 class GenomicFeature:
+    """
+    A genomic feature on a particular strand on a chromosome. Identified
+    by a gene ID, gene name, transcript ID, and transcript name.
+    """
+
     __slots__ = [
         "gene_id",
         "gene_name",
@@ -12,8 +18,6 @@ class GenomicFeature:
         "strand",
         "start",
         "end",
-        "exons",
-        "introns",
     ]
 
     def __init__(
@@ -36,6 +40,20 @@ class GenomicFeature:
         self.start = start
         self.end = end
 
+    def overlaps(self, chromosome: str, strand: str, start: int, end: int) -> bool:
+        """
+        Check if the feature overlaps with a given region.
+        :param chromosome: Chromosome of interest.
+        :param strand: Strand of interest.
+        :param start: Start position of region.
+        :param end: End position of region.
+        :return: Whether the feature overlaps with the region.
+        """
+        if self.chromosome != chromosome or self.strand != strand:
+            return False
+        assert start <= end, "Start position must be less than or equal to end position"
+        return self.start <= end and self.end >= start
+
     def __lt__(self, other) -> bool:
         assert (
             self.chromosome == other.chromosome
@@ -49,10 +67,17 @@ class GenomicFeature:
         return self.start > other.start
 
     def __repr__(self) -> str:
-        return f"<GenomicFeature {self.chromosome}:{self.start}-{self.end} on '{self.strand}' strand at {hex(id(self))}>"
+        return (
+            f"<GenomicFeature {self.chromosome}:{self.start}-"
+            f"{self.end} on '{self.strand}' strand at {hex(id(self))}>"
+        )
 
 
 class Exon(GenomicFeature):
+    """
+    An exon of a transcript. Identified by an exon ID and exon number.
+    """
+
     __slots__ = ["exon_id", "exon_number"]
 
     def __init__(
@@ -93,6 +118,10 @@ class Exon(GenomicFeature):
 
 
 class Transcript(GenomicFeature):
+    """
+    A transcript. Contains a list of exons.
+    """
+
     __slots__ = ["exons"]
 
     def __init__(
@@ -123,10 +152,19 @@ class Transcript(GenomicFeature):
             self.exons = exons
 
     def add_exon(self, exon: Exon) -> None:
+        """
+        Add an exon to the transcript.
+        :param exon: Exon to add.
+        :return:
+        """
         if exon not in self.exons:
             self.exons.append(exon)
 
     def sort_exons(self) -> None:
+        """
+        Sort exons by start position.
+        :return:
+        """
         self.exons.sort()
 
     def __eq__(self, other) -> bool:
@@ -141,6 +179,10 @@ class Transcript(GenomicFeature):
 
 @dataclass
 class GTFLine:
+    """
+    A line from a GTF file, corresponding to particular genomic feature.
+    """
+
     chromosome: str
     source: str
     feature: str
@@ -177,6 +219,11 @@ class GTFLine:
 
 
 class TranscriptIndex:
+    """
+    An index of transcripts from a GTF file. Allows for quick retrieval
+    of transcripts on a particular chromosome and strand.
+    """
+
     __slots__ = ["transcripts"]
     transcripts: Dict[Tuple[str, str], List[Transcript]]
 
@@ -185,6 +232,11 @@ class TranscriptIndex:
         self.read_gtf(gtf_file)
 
     def read_gtf(self, gtf_file: str) -> None:
+        """
+        Read a GTF file and construct an index of transcripts.
+        :param gtf_file: Path to GTF file.
+        :return:
+        """
         lines = []
 
         # Read the GTF file
@@ -291,7 +343,37 @@ class TranscriptIndex:
                 transcript.sort_exons()
 
     def get_overlapping_transcripts(
-        self, chromosome: str, start: int, end: int
+        self, chromosome: str, strand: str, start: int, end: int
     ) -> List[Transcript]:
-        # TODO: Implement binary search
-        pass
+        """
+        Get transcripts that overlap with a given region.
+        :param chromosome: Chromosome of interest.
+        :param strand: Strand of interest.
+        :param start: Start position of region.
+        :param end: End position of region.
+        :return: List of transcripts that overlap with the region.
+        """
+        if (chromosome, strand) not in self.transcripts.keys():
+            return []
+        start_idx = bisect_left(
+            self.transcripts[chromosome, strand],
+            GenomicFeature("", "", "", "", chromosome, strand, start, start),
+        )
+        end_idx = bisect_right(
+            self.transcripts[chromosome, strand],
+            GenomicFeature("", "", "", "", chromosome, strand, end, end),
+            lo=start_idx,
+        )
+        while (
+            start_idx > 0
+            and self.transcripts[chromosome, strand][start_idx - 1].end >= start
+        ):
+            start_idx -= 1
+        if start_idx != end_idx:
+            assert self.transcripts[chromosome, strand][start_idx].overlaps(
+                chromosome, strand, start, end
+            ), "First transcript does not overlap with query region."
+            assert self.transcripts[chromosome, strand][end_idx - 1].overlaps(
+                chromosome, strand, start, end
+            ), "Last transcript does not overlap with query region."
+        return self.transcripts[chromosome, strand][start_idx:end_idx]
