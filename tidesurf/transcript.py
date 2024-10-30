@@ -1,6 +1,6 @@
+from bisect import bisect
 from dataclasses import dataclass
-from typing import List, Dict, Tuple, Optional
-from bisect import bisect_left, bisect_right
+from typing import List, Set, Dict, Tuple, Optional
 
 
 class GenomicFeature:
@@ -55,21 +55,25 @@ class GenomicFeature:
         return self.start <= end and self.end >= start
 
     def __lt__(self, other) -> bool:
-        assert (
-            self.chromosome == other.chromosome
-        ), "Cannot compare features on different chromosomes"
-        return self.start < other.start
+        if self.chromosome != other.chromosome or self.strand != other.strand:
+            raise ValueError("Cannot compare features on different chromosomes/strands")
+        if self.start != other.start:
+            return self.start < other.start
+        else:
+            return self.end < other.end
 
     def __gt__(self, other) -> bool:
-        assert (
-            self.chromosome == other.chromosome
-        ), "Cannot compare features on different chromosomes"
-        return self.start > other.start
+        if self.chromosome != other.chromosome or self.strand != other.strand:
+            raise ValueError("Cannot compare features on different chromosomes/strands")
+        if self.start != other.start:
+            return self.start > other.start
+        else:
+            return self.end > other.end
 
     def __repr__(self) -> str:
         return (
-            f"<GenomicFeature {self.chromosome}:{self.start}-"
-            f"{self.end} on '{self.strand}' strand at {hex(id(self))}>"
+            f"<GenomicFeature {self.chromosome}:{self.start:,}-"
+            f"{self.end:,} on '{self.strand}' strand at {hex(id(self))}>"
         )
 
 
@@ -112,9 +116,12 @@ class Exon(GenomicFeature):
     def __repr__(self) -> str:
         return (
             f"<Exon {self.exon_id}, No. {self.exon_number} for transcript "
-            f"{self.transcript_id} {self.chromosome}:{self.start}-"
-            f"{self.end} on '{self.strand}' strand at {hex(id(self))}>"
+            f"{self.transcript_id} {self.chromosome}:{self.start:,}-"
+            f"{self.end:,} on '{self.strand}' strand at {hex(id(self))}>"
         )
+
+    def __hash__(self) -> int:
+        return hash(self.exon_id)
 
 
 class Transcript(GenomicFeature):
@@ -165,16 +172,19 @@ class Transcript(GenomicFeature):
         Sort exons by start position.
         :return:
         """
-        self.exons.sort()
+        self.exons = sorted(set(self.exons))
 
     def __eq__(self, other) -> bool:
         return self.transcript_id == other.transcript_id
 
     def __repr__(self) -> str:
         return (
-            f"<Transcript {self.transcript_id} {self.chromosome}:{self.start}-"
-            f"{self.end} on '{self.strand}' strand at {hex(id(self))}>"
+            f"<Transcript {self.transcript_id} {self.chromosome}:{self.start:,}-"
+            f"{self.end:,} on '{self.strand}' strand at {hex(id(self))}>"
         )
+
+    def __hash__(self) -> int:
+        return hash(self.transcript_id)
 
 
 @dataclass
@@ -224,11 +234,13 @@ class TranscriptIndex:
     of transcripts on a particular chromosome and strand.
     """
 
-    __slots__ = ["transcripts"]
-    transcripts: Dict[Tuple[str, str], List[Transcript]]
+    __slots__ = ["transcripts", "transcripts_by_region"]
+    transcripts: Dict[str, Transcript]
+    transcripts_by_region: Dict[Tuple[str, str], List[Tuple[int, Set[Transcript]]]]
 
     def __init__(self, gtf_file: str) -> None:
         self.transcripts = {}
+        self.transcripts_by_region = {}
         self.read_gtf(gtf_file)
 
     def read_gtf(self, gtf_file: str) -> None:
@@ -283,39 +295,57 @@ class TranscriptIndex:
                 lines.append(gtf_line)
         lines.sort()
 
+        def _add_transcripts():
+            self.transcripts.update(chrom_transcript_dict)
+            start_end_positions.sort()
+            regions = [(0, set())]
+            for pos, is_end, trans in start_end_positions:
+                if is_end == 0:
+                    # Multiple transcripts starting at the same position
+                    if regions[-1][0] == pos:
+                        regions[-1] = (pos, regions[-1][1] | {trans})
+                    else:
+                        regions.append((pos, regions[-1][1] | {trans}))
+                else:
+                    # Multiple transcripts ending at the same position
+                    if regions[-1][0] == pos:
+                        regions[-1] = (pos, regions[-1][1] - {trans})
+                    else:
+                        regions.append((pos, regions[-1][1] - {trans}))
+            self.transcripts_by_region[curr_chrom, curr_strand] = regions
+
         # Construct index from lines
         chrom_transcript_dict = {}
+        start_end_positions = []
         curr_chrom, curr_strand = None, None
         for line in lines:
             if line.chromosome != curr_chrom or line.strand != curr_strand:
                 # Going to a new chromosome-strand pair:
-                # add the previous one to transcripts
+                # add the previous one to transcripts_by_regions
                 if curr_chrom is not None and curr_strand is not None:
-                    if (curr_chrom, curr_strand) in self.transcripts.keys():
+                    if (curr_chrom, curr_strand) in self.transcripts_by_region.keys():
                         raise ValueError("GTF file was not sorted properly.")
-                    self.transcripts[curr_chrom, curr_strand] = sorted(
-                        chrom_transcript_dict.values()
-                    )
-                    for transcript in self.transcripts[curr_chrom, curr_strand]:
-                        transcript.sort_exons()
+                    _add_transcripts()
                 curr_chrom = line.chromosome
                 curr_strand = line.strand
+                start_end_positions = []
                 chrom_transcript_dict = {}
             # Add new transcript to dictionary
             if line.feature == "transcript":
                 if line.attributes["transcript_id"] not in chrom_transcript_dict.keys():
-                    chrom_transcript_dict[line.attributes["transcript_id"]] = (
-                        Transcript(
-                            gene_id=line.attributes["gene_id"],
-                            gene_name=line.attributes["gene_name"],
-                            transcript_id=line.attributes["transcript_id"],
-                            transcript_name=line.attributes["transcript_name"],
-                            chromosome=line.chromosome,
-                            strand=line.strand,
-                            start=line.start,
-                            end=line.end,
-                        )
+                    transcript = Transcript(
+                        gene_id=line.attributes["gene_id"],
+                        gene_name=line.attributes["gene_name"],
+                        transcript_id=line.attributes["transcript_id"],
+                        transcript_name=line.attributes["transcript_name"],
+                        chromosome=line.chromosome,
+                        strand=line.strand,
+                        start=line.start,
+                        end=line.end,
                     )
+                    chrom_transcript_dict[line.attributes["transcript_id"]] = transcript
+                    start_end_positions.append((transcript.start, 0, transcript))
+                    start_end_positions.append((transcript.end, 1, transcript))
             # Add new exon to corresponding transcript
             elif line.feature == "exon":
                 exon = Exon(
@@ -334,13 +364,23 @@ class TranscriptIndex:
 
         # Add last chromosome-strand pair
         if curr_chrom is not None and curr_strand is not None:
-            if (curr_chrom, curr_strand) in self.transcripts.keys():
+            if (curr_chrom, curr_strand) in self.transcripts_by_region.keys():
                 raise ValueError("GTF file was not sorted properly.")
-            self.transcripts[curr_chrom, curr_strand] = sorted(
-                chrom_transcript_dict.values()
-            )
-            for transcript in self.transcripts[curr_chrom, curr_strand]:
-                transcript.sort_exons()
+            _add_transcripts()
+
+        # Sort exons in all transcripts
+        for transcript in self.transcripts.values():
+            transcript.sort_exons()
+
+    def get_transcript(self, transcript_id: str) -> Optional[Transcript]:
+        """
+        Get a transcript by its ID.
+        :param transcript_id: Transcript ID.
+        :return: Transcript object.
+        """
+        if transcript_id in self.transcripts.keys():
+            return self.transcripts[transcript_id]
+        return None
 
     def get_overlapping_transcripts(
         self, chromosome: str, strand: str, start: int, end: int
@@ -353,27 +393,41 @@ class TranscriptIndex:
         :param end: End position of region.
         :return: List of transcripts that overlap with the region.
         """
-        if (chromosome, strand) not in self.transcripts.keys():
+        assert (
+            start <= end
+        ), "Start position must be less than or equal to end position."
+        if (chromosome, strand) not in self.transcripts_by_region.keys():
             return []
-        start_idx = bisect_left(
-            self.transcripts[chromosome, strand],
-            GenomicFeature("", "", "", "", chromosome, strand, start, start),
+        overlapping_transcripts = set()
+
+        # Find region of query start position
+        left_idx = (
+            bisect(
+                self.transcripts_by_region[chromosome, strand],
+                start,
+                key=lambda x: x[0],
+            )
+            - 1
         )
-        end_idx = bisect_right(
-            self.transcripts[chromosome, strand],
-            GenomicFeature("", "", "", "", chromosome, strand, end, end),
-            lo=start_idx,
+        # Find region of query end position
+        right_idx = (
+            bisect(
+                self.transcripts_by_region[chromosome, strand],
+                end,
+                key=lambda x: x[0],
+            )
+            - 1
         )
-        while (
-            start_idx > 0
-            and self.transcripts[chromosome, strand][start_idx - 1].end >= start
-        ):
-            start_idx -= 1
-        if start_idx != end_idx:
-            assert self.transcripts[chromosome, strand][start_idx].overlaps(
-                chromosome, strand, start, end
-            ), "First transcript does not overlap with query region."
-            assert self.transcripts[chromosome, strand][end_idx - 1].overlaps(
-                chromosome, strand, start, end
-            ), "Last transcript does not overlap with query region."
-        return self.transcripts[chromosome, strand][start_idx:end_idx]
+
+        # Get all overlapping transcripts
+        if left_idx == right_idx:
+            overlapping_transcripts.update(
+                self.transcripts_by_region[chromosome, strand][left_idx][1]
+            )
+        else:
+            for i in range(left_idx, right_idx + 1):
+                overlapping_transcripts.update(
+                    self.transcripts_by_region[chromosome, strand][i][1]
+                )
+
+        return sorted(overlapping_transcripts)
