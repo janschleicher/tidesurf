@@ -1,8 +1,27 @@
 import pytest
 
-from tidesurf.transcript import GenomicFeature, Exon, Transcript, TranscriptIndex
+from tidesurf.transcript import (
+    GenomicFeature,
+    Exon,
+    Transcript,
+    TranscriptIndex,
+    Strand,
+)
 
 TEST_GTF_FILE = "test_data/genes.gtf"
+
+
+def test_strand():
+    strand_1 = Strand("+")
+    assert str(strand_1) == "+"
+    assert strand_1.antisense() == Strand("-")
+
+    strand_2 = Strand("-")
+    assert str(strand_2) == "-"
+    assert strand_2.antisense() == Strand("+")
+
+    assert strand_1 < strand_2
+    assert strand_2 > strand_1
 
 
 def test_genomic_feature():
@@ -66,10 +85,16 @@ def test_genomic_feature():
     start, end = 8_999_900, 9_000_100
     assert gen_feat_1.overlaps(
         "chr1", "+", start, end
-    ), f"Genomic feature {gen_feat_1} should overlap region {start:,}-{end:,}."
+    ), f"Genomic feature {gen_feat_1} should overlap region chr1+ {start:,}-{end:,}."
     assert not gen_feat_2.overlaps(
         "chr1", "+", start, end
-    ), f"Genomic feature {gen_feat_2} should not overlap region {start:,}-{end:,}."
+    ), f"Genomic feature {gen_feat_2} should not overlap region chr1+ {start:,}-{end:,}."
+    assert not gen_feat_1.overlaps(
+        "chr2", "+", start, end
+    ), f"Genomic feature {gen_feat_1} should not overlap region chr2+ {start:,}-{end:,}."
+    assert not gen_feat_1.overlaps(
+        "chr1", "-", start, end
+    ), f"Genomic feature {gen_feat_1} should not overlap region chr1- {start:,}-{end:,}."
 
 
 def test_transcript():

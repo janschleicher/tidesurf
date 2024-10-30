@@ -1,6 +1,27 @@
 from bisect import bisect
 from dataclasses import dataclass
 from typing import List, Set, Dict, Tuple, Optional
+from enum import Enum
+
+
+class Strand(Enum):
+    PLUS = "+"
+    MINUS = "-"
+
+    def antisense(self):
+        if self == Strand.PLUS:
+            return Strand.MINUS
+        else:
+            return Strand.PLUS
+
+    def __lt__(self, other):
+        return self.value < other.value
+
+    def __gt__(self, other):
+        return self.value > other.value
+
+    def __str__(self):
+        return self.value
 
 
 class GenomicFeature:
@@ -36,7 +57,7 @@ class GenomicFeature:
         self.transcript_id = transcript_id
         self.transcript_name = transcript_name
         self.chromosome = chromosome
-        self.strand = strand
+        self.strand = Strand(strand)
         self.start = start
         self.end = end
 
@@ -49,7 +70,7 @@ class GenomicFeature:
         :param end: End position of region.
         :return: Whether the feature overlaps with the region.
         """
-        if self.chromosome != chromosome or self.strand != strand:
+        if self.chromosome != chromosome or self.strand != Strand(strand):
             return False
         assert start <= end, "Start position must be less than or equal to end position"
         return self.start <= end and self.end >= start
@@ -199,7 +220,7 @@ class GTFLine:
     start: int
     end: int
     score: str
-    strand: str
+    strand: Strand
     frame: str
     attributes: Dict[str, str]
 
@@ -236,7 +257,7 @@ class TranscriptIndex:
 
     __slots__ = ["transcripts", "transcripts_by_region"]
     transcripts: Dict[str, Transcript]
-    transcripts_by_region: Dict[Tuple[str, str], List[Tuple[int, Set[Transcript]]]]
+    transcripts_by_region: Dict[Tuple[str, Strand], List[Tuple[int, Set[Transcript]]]]
 
     def __init__(self, gtf_file: str) -> None:
         self.transcripts = {}
@@ -288,7 +309,7 @@ class TranscriptIndex:
                     start=start,
                     end=end,
                     score=score,
-                    strand=curr_strand,
+                    strand=Strand(curr_strand),
                     frame=frame,
                     attributes=attributes,
                 )
@@ -339,7 +360,7 @@ class TranscriptIndex:
                         transcript_id=line.attributes["transcript_id"],
                         transcript_name=line.attributes["transcript_name"],
                         chromosome=line.chromosome,
-                        strand=line.strand,
+                        strand=str(line.strand),
                         start=line.start,
                         end=line.end,
                     )
@@ -354,7 +375,7 @@ class TranscriptIndex:
                     transcript_id=line.attributes["transcript_id"],
                     transcript_name=line.attributes["transcript_name"],
                     chromosome=line.chromosome,
-                    strand=line.strand,
+                    strand=str(line.strand),
                     start=line.start,
                     end=line.end,
                     exon_id=line.attributes["exon_id"],
@@ -396,6 +417,7 @@ class TranscriptIndex:
         assert (
             start <= end
         ), "Start position must be less than or equal to end position."
+        strand = Strand(strand)
         if (chromosome, strand) not in self.transcripts_by_region.keys():
             return []
         overlapping_transcripts = set()
