@@ -96,6 +96,52 @@ def test_genomic_feature():
         "chr1", "-", start, end
     ), f"Genomic feature {gen_feat_1} should not overlap region chr1- {start:,}-{end:,}."
 
+    # Vary the min_overlap parameter
+    end = 9_000_000
+    chrom, strand = "chr1", "+"
+    assert gen_feat_1.overlaps(
+        chrom, strand, start, end
+    ), f"Genomic feature {gen_feat_1} should overlap region {chrom}{strand} {start:,}-{end:,} by >= 1 base."
+    assert not gen_feat_1.overlaps(
+        chrom, strand, start, end, min_overlap=2
+    ), f"Genomic feature {gen_feat_1} should not overlap region {chrom}{strand} {start:,}-{end:,} by >= 2 bases."
+    end = 9_000_001
+    assert gen_feat_1.overlaps(
+        chrom, strand, start, end, min_overlap=2
+    ), f"Genomic feature {gen_feat_1} should overlap region {chrom}{strand} {start:,}-{end:,} by >= 2 bases."
+    end = 9_000_008
+    assert gen_feat_1.overlaps(
+        chrom, strand, start, end, min_overlap=2
+    ), f"Genomic feature {gen_feat_1} should overlap region {chrom}{strand} {start:,}-{end:,} by >= 2 bases."
+    assert not gen_feat_1.overlaps(
+        chrom, strand, start, end, min_overlap=10
+    ), f"Genomic feature {gen_feat_1} should not overlap region {chrom}{strand} {start:,}-{end:,} by >= 10 bases."
+    assert gen_feat_1.overlaps(
+        chrom, strand, start, 9_000_009, min_overlap=10
+    ), f"Genomic feature {gen_feat_1} should overlap region {chrom}{strand} {start:,}-9,000,009 by >= 10 bases."
+
+    start, end = 9_001_000, 9_001_100
+    assert gen_feat_1.overlaps(
+        chrom, strand, start, end
+    ), f"Genomic feature {gen_feat_1} should overlap region {chrom}{strand} {start:,}-{end:,} by >= 1 base."
+    assert not gen_feat_1.overlaps(
+        chrom, strand, start, end, min_overlap=2
+    ), f"Genomic feature {gen_feat_1} should not overlap region {chrom}{strand} {start:,}-{end:,} by >= 2 bases."
+    start = 9_000_999
+    assert gen_feat_1.overlaps(
+        chrom, strand, start, end, min_overlap=2
+    ), f"Genomic feature {gen_feat_1} should overlap region {chrom}{strand} {start:,}-{end:,} by >= 2 bases."
+    start = 9_000_992
+    assert gen_feat_1.overlaps(
+        chrom, strand, start, end, min_overlap=2
+    ), f"Genomic feature {gen_feat_1} should overlap region {chrom}{strand} {start:,}-{end:,} by >= 2 bases."
+    assert not gen_feat_1.overlaps(
+        chrom, strand, start, end, min_overlap=10
+    ), f"Genomic feature {gen_feat_1} should not overlap region {chrom}{strand} {start:,}-{end:,} by >= 10 bases."
+    assert gen_feat_1.overlaps(
+        chrom, strand, 9_000_991, end, min_overlap=10
+    ), f"Genomic feature {gen_feat_1} should overlap region {chrom}{strand} 9,000,991-{end:,} by >= 10 bases."
+
 
 def test_transcript():
     exon_1 = Exon(

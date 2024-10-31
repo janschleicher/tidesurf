@@ -1,2 +1,2 @@
 # tidesurf
-Tool for Identification and DEtection of Spliced and Unspliced Read Fragments
+Tool for IDentification and Enumeration of Spliced and Unspliced Read Fragments

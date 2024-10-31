@@ -61,19 +61,26 @@ class GenomicFeature:
         self.start = start
         self.end = end
 
-    def overlaps(self, chromosome: str, strand: str, start: int, end: int) -> bool:
+    def overlaps(
+        self, chromosome: str, strand: str, start: int, end: int, min_overlap: int = 1
+    ) -> bool:
         """
         Check if the feature overlaps with a given region.
         :param chromosome: Chromosome of interest.
         :param strand: Strand of interest.
         :param start: Start position of region.
         :param end: End position of region.
+        :param min_overlap: Minimum number of overlapping bases.
         :return: Whether the feature overlaps with the region.
         """
         if self.chromosome != chromosome or self.strand != Strand(strand):
             return False
         assert start <= end, "Start position must be less than or equal to end position"
-        return self.start <= end and self.end >= start
+        return (
+            self.start <= end
+            and self.end >= start
+            and min(self.end - start + 1, end - self.start + 1) >= min_overlap
+        )
 
     def __lt__(self, other) -> bool:
         if self.chromosome != other.chromosome or self.strand != other.strand:
