@@ -87,7 +87,7 @@ class UMICounter:
             strand = strand.antisense()
         chromosome = read.reference_name
         start = read.reference_start
-        end = read.reference_end
+        end = read.reference_end - 1  # pysam reference_end is exclusive
         overlapping_transcripts = self.transcript_index.get_overlapping_transcripts(
             chromosome=chromosome,
             strand=str(strand),

@@ -219,6 +219,16 @@ class Transcript(GenomicFeature):
 class GTFLine:
     """
     A line from a GTF file, corresponding to particular genomic feature.
+    :param chromosome: Chromosome of the feature.
+    :param source: Source of the feature.
+    :param feature: Type of feature.
+    :param start: Start position of feature (0-based).
+    :param end: End position of feature (0-based).
+    :param score: Feature score.
+    :param strand: Strand of the feature.
+    :param frame: Frame of the feature.
+    :param attributes: Additional attributes of the feature.
+    :return:
     """
 
     chromosome: str
@@ -313,8 +323,8 @@ class TranscriptIndex:
                     chromosome=curr_chrom,
                     source=source,
                     feature=feature,
-                    start=start,
-                    end=end,
+                    start=start - 1,  # Convert to 0-based
+                    end=end - 1,  # Convert to 0-based
                     score=score,
                     strand=Strand(curr_strand),
                     frame=frame,
