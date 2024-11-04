@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "tidesurf"
 version = "0.1.0"
-description = "Tool for Identification and DEtection of Spliced and Unspliced Read Fragments."
+description = "Tool for IDentification and Enumeration of Spliced and Unspliced Read Fragments."
 license = { text = "GPL-3.0 license" }
 requires-python = ">=3.10"
 
@@ -34,8 +34,11 @@ dependencies = [
     "numpy",
     "numba",
     "pandas",
+    "scipy",
     "anndata",
-    "pysam"
+    "pysam",
+    "tqdm",
+    "joblib"
 ]
 
 [project.optional-dependencies]
@@ -112,3 +115,6 @@ where = ["."]  # list of folders that contain the packages (["."] by default)
 include = ["tidesurf"]  # package names should match these glob patterns (["*"] by default)
 exclude = []  # exclude packages matching these glob patterns (empty by default)
 namespaces = false  # to disable scanning PEP 420 namespaces (true by default)
+
+[project.scripts]
+tidesurf = "tidesurf.main:main"
