@@ -5,6 +5,10 @@ from enum import Enum
 
 
 class Strand(Enum):
+    """
+    Simple enum for strand information.
+    """
+
     PLUS = "+"
     MINUS = "-"
 
@@ -28,6 +32,15 @@ class GenomicFeature:
     """
     A genomic feature on a particular strand on a chromosome. Identified
     by a gene ID, gene name, transcript ID, and transcript name.
+
+    :param gene_id: ID of the corresponding gene.
+    :param gene_name: Name of the corresponding gene.
+    :param transcript_id: ID of the corresponding transcript.
+    :param transcript_name: Name of the corresponding transcript.
+    :param chromosome: Chromosome on which the feature is located.
+    :param strand: Strand on which the feature is located.
+    :param start: Genomic start position of the feature (0-based).
+    :param end: Genomic end position of the feature (0-based
     """
 
     __slots__ = [
@@ -66,6 +79,7 @@ class GenomicFeature:
     ) -> bool:
         """
         Check if the feature overlaps with a given region.
+
         :param chromosome: Chromosome of interest.
         :param strand: Strand of interest.
         :param start: Start position of region.
@@ -108,6 +122,17 @@ class GenomicFeature:
 class Exon(GenomicFeature):
     """
     An exon of a transcript. Identified by an exon ID and exon number.
+
+    :param gene_id: ID of the corresponding gene.
+    :param gene_name: Name of the corresponding gene.
+    :param transcript_id: ID of the corresponding transcript.
+    :param transcript_name: Name of the corresponding transcript.
+    :param chromosome: Chromosome on which the exon is located.
+    :param strand: Strand on which the exon is located.
+    :param start: Genomic start position of the exon (0-based).
+    :param end: Genomic end position of the exon (0-based).
+    :param exon_id: ID of the exon.
+    :param exon_number: Number of the exon in the transcript.
     """
 
     __slots__ = ["exon_id", "exon_number"]
@@ -155,6 +180,16 @@ class Exon(GenomicFeature):
 class Transcript(GenomicFeature):
     """
     A transcript. Contains a list of exons.
+
+    :param gene_id: ID of the corresponding gene.
+    :param gene_name: Name of the corresponding gene.
+    :param transcript_id: ID of the transcript.
+    :param transcript_name: Name of the transcript.
+    :param chromosome: Chromosome on which the transcript is located.
+    :param strand: Strand on which the transcript is located.
+    :param start: Genomic start position of the transcript (0-based).
+    :param end: Genomic end position of the transcript (0-based).
+    :param exons: List of exons in the transcript.
     """
 
     __slots__ = ["exons"]
@@ -189,6 +224,7 @@ class Transcript(GenomicFeature):
     def add_exon(self, exon: Exon) -> None:
         """
         Add an exon to the transcript.
+
         :param exon: Exon to add.
         :return:
         """
@@ -198,6 +234,7 @@ class Transcript(GenomicFeature):
     def sort_exons(self) -> None:
         """
         Sort exons by start position.
+
         :return:
         """
         self.exons = sorted(set(self.exons))
@@ -219,6 +256,7 @@ class Transcript(GenomicFeature):
 class GTFLine:
     """
     A line from a GTF file, corresponding to particular genomic feature.
+
     :param chromosome: Chromosome of the feature.
     :param source: Source of the feature.
     :param feature: Type of feature.
@@ -270,6 +308,8 @@ class TranscriptIndex:
     """
     An index of transcripts from a GTF file. Allows for quick retrieval
     of transcripts on a particular chromosome and strand.
+
+    :param gtf_file: Path to GTF file.
     """
 
     __slots__ = ["transcripts", "transcripts_by_region"]
@@ -284,6 +324,7 @@ class TranscriptIndex:
     def read_gtf(self, gtf_file: str) -> None:
         """
         Read a GTF file and construct an index of transcripts.
+
         :param gtf_file: Path to GTF file.
         :return:
         """
@@ -425,6 +466,7 @@ class TranscriptIndex:
     ) -> List[Transcript]:
         """
         Get transcripts that overlap with a given region.
+
         :param chromosome: Chromosome of interest.
         :param strand: Strand of interest.
         :param start: Start position of region.

@@ -9,6 +9,17 @@ from typing import Literal, Tuple, Optional
 
 
 class UMICounter:
+    """
+    Counter for unique molecular identifiers (UMIs) with reads mapping
+    to transcripts in single-cell RNA-seq data.
+
+    :param transcript_index: Transcript index.
+    :param orientation: Orientation in which reads map to transcripts.
+    Either "sense" or "antisense".
+    :param multi_mapped: Whether to count multi-mapped reads.
+    :param threads: Number of threads to use.
+    """
+
     def __init__(
         self,
         transcript_index: TranscriptIndex,
@@ -23,7 +34,8 @@ class UMICounter:
 
     def count(self, bam_file: str) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
-        Count reads mapping to transcripts.
+        Count UMIs with reads mapping to transcripts.
+
         :param bam_file: Path to BAM file.
         :return: cells (array of shape (n_cells,)), genes (array of
         shape (n_genes,)), counts (array of shape (n_cells, n_genes)).
@@ -44,39 +56,48 @@ class UMICounter:
                     unit="reads",
                 )
             )
-        # Deduplicate cell barcodes and umis.
-        results = set(results)
-        results.discard(None)
+        # Deduplicate cell barcodes and UMIs.
+        results = (
+            pd.DataFrame(results, columns=["cbc", "umi", "gene"])
+            .dropna()
+            .drop_duplicates(keep="first")
+        )
+
+        # Remove multi-mapped UMIs.
+        if not self.multi_mapped:
+            results = results.drop_duplicates(subset=["cbc", "umi"], keep=False)
 
         # Do the rest of the counting.
-        results_dict = {}
-        for cbc, _, gene in tqdm(results, desc="Counting UMIs"):
-            if cbc not in results_dict.keys():
-                results_dict[cbc] = {}
-            if gene not in results_dict[cbc].keys():
-                results_dict[cbc][gene] = 1
-            else:
-                results_dict[cbc][gene] += 1
-        df = (
-            pd.DataFrame.from_dict(results_dict, orient="index")
-            .fillna(0)
-            .astype(int)
-            .sort_index()
+        results = (
+            results.astype("category")
+            .groupby(["cbc", "gene"], observed=False)
+            .size()
+            .unstack()
         )
-        df = df[sorted(df.columns)]
 
-        return df.index.values, df.columns.values, df.values
+        return (
+            results.index.values.astype(str),
+            results.columns.values.astype(str),
+            results.values.astype(int),
+        )
 
     def _process_read(
         self, read: pysam.AlignedSegment
     ) -> Optional[Tuple[str, str, str]]:
         """
         Process a single read.
+
         :param read: The read to process.
         :return: cell barcode, UMI, and gene name.
         """
         # Get cell barcode and UMI.
-        if read.is_unmapped or not read.has_tag("CB") or not read.has_tag("UB"):
+        if (
+            read.is_unmapped
+            or read.mapping_quality != 255  # discard reads with mapping quality < 255
+            or read.get_tag("NH") != 1  # discard multimapped reads
+            or not read.has_tag("CB")
+            or not read.has_tag("UB")
+        ):
             return None
         cbc = read.get_tag("CB")
         umi = read.get_tag("UB")
