@@ -361,7 +361,7 @@ class TranscriptIndex:
                     for key, value in [attr.split(" ")]
                 }
                 gtf_line = GTFLine(
-                    chromosome=curr_chrom,
+                    chromosome="chrM" if curr_chrom == "chrMT" else curr_chrom,
                     source=source,
                     feature=feature,
                     start=start - 1,  # Convert to 0-based

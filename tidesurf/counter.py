@@ -5,7 +5,7 @@ from tqdm import tqdm
 from tqdm.contrib.logging import logging_redirect_tqdm
 from joblib import Parallel, delayed
 from tidesurf import TranscriptIndex, Strand
-from typing import Literal, Tuple, Optional
+from typing import Literal, Tuple, Union
 
 
 class UMICounter:
@@ -83,7 +83,7 @@ class UMICounter:
 
     def _process_read(
         self, read: pysam.AlignedSegment
-    ) -> Optional[Tuple[str, str, str]]:
+    ) -> Union[Tuple[str, str, str], Tuple[None, None, None]]:
         """
         Process a single read.
 
@@ -94,11 +94,10 @@ class UMICounter:
         if (
             read.is_unmapped
             or read.mapping_quality != 255  # discard reads with mapping quality < 255
-            or read.get_tag("NH") != 1  # discard multimapped reads
             or not read.has_tag("CB")
             or not read.has_tag("UB")
         ):
-            return None
+            return None, None, None
         cbc = read.get_tag("CB")
         umi = read.get_tag("UB")
 
@@ -116,7 +115,7 @@ class UMICounter:
             end=end,
         )
         if not overlapping_transcripts:
-            return None
+            return None, None, None
 
         # Only keep transcripts with minimum overlap of 50% of the read length.
         # TODO: Does this make sense?
@@ -136,7 +135,7 @@ class UMICounter:
         # Get gene names.
         gene_names = {t.gene_name for t in overlapping_transcripts}
         if not self.multi_mapped and len(gene_names) > 1:
-            return None
+            return None, None, None
         elif len(gene_names) == 1:
             return cbc, umi, gene_names.pop()
         elif self.multi_mapped:
