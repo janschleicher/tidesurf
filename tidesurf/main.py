@@ -18,7 +18,6 @@ def run(
     output: str,
     orientation: Literal["sense", "antisense"] = "sense",
     multi_mapped: bool = False,
-    threads: int = 1,
 ) -> None:
     log.info("Building transcript index.")
     t_idx = tidesurf.TranscriptIndex(gtf_file)
@@ -40,10 +39,7 @@ def run(
         ]
 
     counter = tidesurf.UMICounter(
-        transcript_index=t_idx,
-        orientation=orientation,
-        multi_mapped=multi_mapped,
-        threads=threads,
+        transcript_index=t_idx, orientation=orientation, multi_mapped=multi_mapped
     )
     log.info(
         f"Counting reads mapped to transcripts in {counter.orientation} orientation."
@@ -74,9 +70,6 @@ def main() -> None:
         "--version",
         action="version",
         version=f"%(prog)s {tidesurf.__version__}",
-    )
-    parser.add_argument(
-        "-t", "--threads", type=int, default=1, help="Number of threads"
     )
     parser.add_argument(
         "--orientation",
@@ -119,9 +112,7 @@ def main() -> None:
         ],
     )
 
-    log.info(
-        f"Running tidesurf {tidesurf.__version__} with {args.threads} thread{'s' if args.threads != 1 else ''}."
-    )
+    log.info(f"Running tidesurf {tidesurf.__version__}.")
     log.info(f"Processing sample directory: {args.sample_dir}")
     run(
         sample_dir=args.sample_dir,
@@ -129,5 +120,4 @@ def main() -> None:
         output=args.output,
         orientation=args.orientation,
         multi_mapped=args.multi_mapped,
-        threads=args.threads,
     )

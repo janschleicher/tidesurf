@@ -19,7 +19,7 @@ def test_main(
     sample_dir: str, gtf_file: str, orientation: str, multi_mapped: bool, test_out: str
 ):
     os.system(
-        f"tidesurf -o test_out --orientation {orientation} {'-m' if multi_mapped else ''} -t 4 {sample_dir} {gtf_file}"
+        f"tidesurf -o test_out --orientation {orientation} {'-m' if multi_mapped else ''} {sample_dir} {gtf_file}"
     )
     adata_cr = ad.read_h5ad(TEST_OUT_5P)
     adata_ts = ad.read_h5ad(

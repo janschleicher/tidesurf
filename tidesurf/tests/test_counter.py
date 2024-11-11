@@ -6,13 +6,16 @@ import anndata as ad
 def test_counter():
     t_idx = TranscriptIndex("test_data/genes.gtf")
     counter = UMICounter(
-        transcript_index=t_idx, orientation="antisense", multi_mapped=False, threads=4
+        transcript_index=t_idx, orientation="antisense", multi_mapped=False
     )
     cells, genes, x_ts = counter.count(
         "test_data/test_dir_count/outs/possorted_genome_bam.bam"
     )
     adata_cr = ad.read_h5ad("test_data/adata_cr_out.h5ad")
     x_cr = adata_cr[cells, genes].X.toarray()
+    print(adata_cr)
+    adata_ts = ad.AnnData(X=x_ts, obs=cells, var=genes)
+    print(adata_ts)
 
     assert np.allclose(
         x_cr, x_ts, atol=5, rtol=0.05

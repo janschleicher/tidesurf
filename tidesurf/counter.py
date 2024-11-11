@@ -3,9 +3,12 @@ import pandas as pd
 import pysam
 from tqdm import tqdm
 from tqdm.contrib.logging import logging_redirect_tqdm
-from joblib import Parallel, delayed
 from tidesurf import TranscriptIndex, Strand
+from tidesurf.read import Read
 from typing import Literal, Tuple, Union
+import logging
+
+log = logging.getLogger(__name__)
 
 
 class UMICounter:
@@ -17,7 +20,6 @@ class UMICounter:
     :param orientation: Orientation in which reads map to transcripts.
     Either "sense" or "antisense".
     :param multi_mapped: Whether to count multi-mapped reads.
-    :param threads: Number of threads to use.
     """
 
     def __init__(
@@ -25,12 +27,10 @@ class UMICounter:
         transcript_index: TranscriptIndex,
         orientation: Literal["sense", "antisense"],
         multi_mapped: bool = False,
-        threads: int = 1,
     ) -> None:
         self.transcript_index = transcript_index
         self.orientation = orientation
         self.multi_mapped = multi_mapped
-        self.threads = threads
 
     def count(self, bam_file: str) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
@@ -46,16 +46,42 @@ class UMICounter:
             total_reads += idx_stats.total
 
         with logging_redirect_tqdm():
-            results = list(
-                tqdm(
-                    Parallel(
-                        n_jobs=self.threads, return_as="generator", backend="threading"
-                    )(delayed(self._process_read)(read) for read in aln_file),
-                    total=total_reads,
+            reads = []
+            log.info("Reading reads from BAM file.")
+            for read in tqdm(
+                aln_file, total=total_reads, desc="Reading BAM file", unit="reads"
+            ):
+                if (
+                    read.is_unmapped
+                    or read.mapping_quality
+                    != 255  # discard reads with mapping quality < 255
+                    or not read.has_tag("CB")
+                    or not read.has_tag("UB")
+                ):
+                    continue
+                reads.append(
+                    Read(
+                        read.get_tag("CB"),
+                        read.get_tag("UB"),
+                        read.reference_name,
+                        Strand("+") if read.is_forward else Strand("-"),
+                        read.reference_start,
+                        read.reference_end - 1,  # pysam reference_end is exclusive
+                        read.infer_read_length(),
+                    )
+                )
+
+            log.info("Processing reads.")
+            results = [
+                self._process_read(read)
+                for read in tqdm(
+                    reads,
+                    total=len(reads),
                     desc="Processing reads",
                     unit="reads",
                 )
-            )
+            ]
+        log.info("Counting UMIs.")
         # Deduplicate cell barcodes and UMIs.
         results = (
             pd.DataFrame(results, columns=["cbc", "umi", "gene"])
@@ -82,7 +108,7 @@ class UMICounter:
         )
 
     def _process_read(
-        self, read: pysam.AlignedSegment
+        self, read: Read
     ) -> Union[Tuple[str, str, str], Tuple[None, None, None]]:
         """
         Process a single read.
@@ -90,44 +116,27 @@ class UMICounter:
         :param read: The read to process.
         :return: cell barcode, UMI, and gene name.
         """
-        # Get cell barcode and UMI.
-        if (
-            read.is_unmapped
-            or read.mapping_quality != 255  # discard reads with mapping quality < 255
-            or not read.has_tag("CB")
-            or not read.has_tag("UB")
-        ):
-            return None, None, None
-        cbc = read.get_tag("CB")
-        umi = read.get_tag("UB")
-
-        # Find overlapping transcripts in the right orientation.
-        strand = Strand("+") if read.is_forward else Strand("-")
-        if self.orientation == "antisense":
-            strand = strand.antisense()
-        chromosome = read.reference_name
-        start = read.reference_start
-        end = read.reference_end - 1  # pysam reference_end is exclusive
+        strand = read.strand if self.orientation == "sense" else read.strand.antisense()
         overlapping_transcripts = self.transcript_index.get_overlapping_transcripts(
-            chromosome=chromosome,
+            chromosome=read.chromosome,
             strand=str(strand),
-            start=start,
-            end=end,
+            start=read.start,
+            end=read.end,
         )
         if not overlapping_transcripts:
             return None, None, None
 
         # Only keep transcripts with minimum overlap of 50% of the read length.
         # TODO: Does this make sense?
-        min_overlap = read.infer_read_length() // 2
+        min_overlap = read.length // 2
         overlapping_transcripts = [
             t
             for t in overlapping_transcripts
             if t.overlaps(
-                chromosome=chromosome,
+                chromosome=read.chromosome,
                 strand=str(strand),
-                start=start,
-                end=end,
+                start=read.start,
+                end=read.end,
                 min_overlap=min_overlap,
             )
         ]
@@ -137,6 +146,6 @@ class UMICounter:
         if not self.multi_mapped and len(gene_names) > 1:
             return None, None, None
         elif len(gene_names) == 1:
-            return cbc, umi, gene_names.pop()
+            return read.cbc, read.umi, gene_names.pop()
         elif self.multi_mapped:
             raise NotImplementedError("Multi-mapped reads not yet implemented.")
