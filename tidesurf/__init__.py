@@ -1,3 +1,4 @@
+from importlib.metadata import version, PackageNotFoundError
 from tidesurf.transcript import (
     Strand,
     GenomicFeature,
@@ -7,6 +8,11 @@ from tidesurf.transcript import (
 )
 from tidesurf.counter import UMICounter
 
+try:
+    __version__ = version("tidesurf")
+except PackageNotFoundError:
+    pass
+
 __all__ = [
     "Strand",
     "GenomicFeature",
@@ -15,4 +21,3 @@ __all__ = [
     "TranscriptIndex",
     "UMICounter",
 ]
-__version__ = "0.1.0"

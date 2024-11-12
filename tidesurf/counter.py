@@ -3,7 +3,7 @@ import pandas as pd
 import pysam
 from tqdm import tqdm
 from tqdm.contrib.logging import logging_redirect_tqdm
-from tidesurf import TranscriptIndex, Strand
+from tidesurf.transcript import TranscriptIndex, Strand
 from tidesurf.read import Read
 from typing import Literal, Tuple, Union
 import logging
@@ -81,7 +81,7 @@ class UMICounter:
                     unit="reads",
                 )
             ]
-        log.info("Counting UMIs.")
+        log.info("Deduplicating cell barcodes and UMIs.")
         # Deduplicate cell barcodes and UMIs.
         results = (
             pd.DataFrame(results, columns=["cbc", "umi", "gene"])
@@ -94,6 +94,7 @@ class UMICounter:
             results = results.drop_duplicates(subset=["cbc", "umi"], keep=False)
 
         # Do the rest of the counting.
+        log.info("Counting UMIs.")
         results = (
             results.astype("category")
             .groupby(["cbc", "gene"], observed=False)

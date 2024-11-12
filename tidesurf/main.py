@@ -6,6 +6,8 @@ from pathlib import Path
 from scipy.sparse import csr_matrix
 import anndata as ad
 import tidesurf
+from tidesurf.transcript import TranscriptIndex
+from tidesurf.counter import UMICounter
 from typing import Literal
 import logging
 
@@ -20,7 +22,7 @@ def run(
     multi_mapped: bool = False,
 ) -> None:
     log.info("Building transcript index.")
-    t_idx = tidesurf.TranscriptIndex(gtf_file)
+    t_idx = TranscriptIndex(gtf_file)
     # Try cellranger count output
     bam_files = [f"{sample_dir}/outs/possorted_genome_bam.bam"]
     sample_ids = [""]
@@ -38,7 +40,7 @@ def run(
             re.search(r"outs/per_sample_outs/(.*)/count", f).group(1) for f in bam_files
         ]
 
-    counter = tidesurf.UMICounter(
+    counter = UMICounter(
         transcript_index=t_idx, orientation=orientation, multi_mapped=multi_mapped
     )
     log.info(
@@ -121,3 +123,7 @@ def main() -> None:
         orientation=args.orientation,
         multi_mapped=args.multi_mapped,
     )
+
+
+if __name__ == "__main__":
+    main()
