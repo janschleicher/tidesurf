@@ -1,11 +1,12 @@
 import numpy as np
 import pandas as pd
 import pysam
+from scipy.sparse import csr_matrix
 from tqdm import tqdm
 from tqdm.contrib.logging import logging_redirect_tqdm
 from tidesurf.transcript import TranscriptIndex, Strand
 from tidesurf.read import Read
-from typing import Literal, Tuple, Union
+from typing import Literal, Tuple, Optional
 import logging
 
 log = logging.getLogger(__name__)
@@ -32,13 +33,13 @@ class UMICounter:
         self.orientation = orientation
         self.multi_mapped = multi_mapped
 
-    def count(self, bam_file: str) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    def count(self, bam_file: str) -> Tuple[np.ndarray, np.ndarray, csr_matrix]:
         """
         Count UMIs with reads mapping to transcripts.
 
         :param bam_file: Path to BAM file.
         :return: cells (array of shape (n_cells,)), genes (array of
-        shape (n_genes,)), counts (array of shape (n_cells, n_genes)).
+        shape (n_genes,)), counts (sparse matrix of shape (n_cells, n_genes)).
         """
         aln_file = pysam.AlignmentFile(bam_file)
         total_reads = 0
@@ -46,47 +47,36 @@ class UMICounter:
             total_reads += idx_stats.total
 
         with logging_redirect_tqdm():
-            reads = []
-            log.info("Reading reads from BAM file.")
-            for read in tqdm(
+            results = []
+            log.info("Processing reads from BAM file.")
+            for bam_read in tqdm(
                 aln_file, total=total_reads, desc="Reading BAM file", unit="reads"
             ):
                 if (
-                    read.is_unmapped
-                    or read.mapping_quality
+                    bam_read.is_unmapped
+                    or bam_read.mapping_quality
                     != 255  # discard reads with mapping quality < 255
-                    or not read.has_tag("CB")
-                    or not read.has_tag("UB")
+                    or not bam_read.has_tag("CB")
+                    or not bam_read.has_tag("UB")
                 ):
                     continue
-                reads.append(
-                    Read(
-                        read.get_tag("CB"),
-                        read.get_tag("UB"),
-                        read.reference_name,
-                        Strand("+") if read.is_forward else Strand("-"),
-                        read.reference_start,
-                        read.reference_end - 1,  # pysam reference_end is exclusive
-                        read.infer_read_length(),
-                    )
+                read = Read(
+                    bam_read.get_tag("CB"),
+                    bam_read.get_tag("UB"),
+                    bam_read.reference_name,
+                    Strand("+") if bam_read.is_forward else Strand("-"),
+                    bam_read.reference_start,
+                    bam_read.reference_end - 1,  # pysam reference_end is exclusive
+                    bam_read.infer_read_length(),
                 )
+                res = self._process_read(read)
+                if res is not None:
+                    results.append(res)
 
-            log.info("Processing reads.")
-            results = [
-                self._process_read(read)
-                for read in tqdm(
-                    reads,
-                    total=len(reads),
-                    desc="Processing reads",
-                    unit="reads",
-                )
-            ]
-        log.info("Deduplicating cell barcodes and UMIs.")
         # Deduplicate cell barcodes and UMIs.
-        results = (
-            pd.DataFrame(results, columns=["cbc", "umi", "gene"])
-            .dropna()
-            .drop_duplicates(keep="first")
+        log.info("Deduplicating cell barcodes and UMIs.")
+        results = pd.DataFrame(results, columns=["cbc", "umi", "gene"]).drop_duplicates(
+            keep="first"
         )
 
         # Remove multi-mapped UMIs.
@@ -95,22 +85,25 @@ class UMICounter:
 
         # Do the rest of the counting.
         log.info("Counting UMIs.")
-        results = (
-            results.astype("category")
-            .groupby(["cbc", "gene"], observed=False)
-            .size()
-            .unstack()
+        cells = results["cbc"].astype("category").cat.categories.values.astype("<U32")
+        genes = results["gene"].astype("category").cat.categories.values.astype("<U32")
+        counts_dict = _count(
+            results.values.astype("<U32"),
+            cells,
+            genes,
+        )
+        idx = np.asarray(list(counts_dict.keys()))
+        counts = csr_matrix(
+            (np.asarray(list(counts_dict.values())), (idx[:, 0], idx[:, 1]))
         )
 
         return (
-            results.index.values.astype(str),
-            results.columns.values.astype(str),
-            results.values.astype(int),
+            cells,
+            genes,
+            counts,
         )
 
-    def _process_read(
-        self, read: Read
-    ) -> Union[Tuple[str, str, str], Tuple[None, None, None]]:
+    def _process_read(self, read: Read) -> Optional[Tuple[str, str, str]]:
         """
         Process a single read.
 
@@ -125,7 +118,7 @@ class UMICounter:
             end=read.end,
         )
         if not overlapping_transcripts:
-            return None, None, None
+            return None
 
         # Only keep transcripts with minimum overlap of 50% of the read length.
         # TODO: Does this make sense?
@@ -145,8 +138,20 @@ class UMICounter:
         # Get gene names.
         gene_names = {t.gene_name for t in overlapping_transcripts}
         if not self.multi_mapped and len(gene_names) > 1:
-            return None, None, None
+            return None
         elif len(gene_names) == 1:
             return read.cbc, read.umi, gene_names.pop()
         elif self.multi_mapped:
             raise NotImplementedError("Multi-mapped reads not yet implemented.")
+
+
+def _count(arr, cells, genes):
+    cbc_map = {cbc: idx for idx, cbc in enumerate(cells)}
+    gene_map = {gene: idx for idx, gene in enumerate(genes)}
+    counts_dict = {}
+    for line in arr:
+        cbc, gene = cbc_map[line[0]], gene_map[line[2]]
+        if (cbc, gene) not in counts_dict:
+            counts_dict[cbc, gene] = 0
+        counts_dict[cbc, gene] += 1
+    return counts_dict

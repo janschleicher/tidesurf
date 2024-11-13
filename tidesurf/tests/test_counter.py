@@ -11,11 +11,9 @@ def test_counter():
     cells, genes, x_ts = counter.count(
         "test_data/test_dir_count/outs/possorted_genome_bam.bam"
     )
+    x_ts = x_ts.toarray()
     adata_cr = ad.read_h5ad("test_data/adata_cr_out.h5ad")
     x_cr = adata_cr[cells, genes].X.toarray()
-    print(adata_cr)
-    adata_ts = ad.AnnData(X=x_ts, obs=cells, var=genes)
-    print(adata_ts)
 
     assert np.allclose(
         x_cr, x_ts, atol=5, rtol=0.05

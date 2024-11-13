@@ -3,7 +3,6 @@ import os
 import glob
 import re
 from pathlib import Path
-from scipy.sparse import csr_matrix
 import anndata as ad
 import tidesurf
 from tidesurf.transcript import TranscriptIndex
@@ -53,7 +52,7 @@ def run(
         log.info(f"Processing {bam_file}.")
         cells, genes, counts = counter.count(bam_file=bam_file)
         log.info("Writing output.")
-        adata = ad.AnnData(X=csr_matrix(counts))
+        adata = ad.AnnData(X=counts)
         adata.obs_names = cells
         adata.var_names = genes
         f_name = "tidesurf.h5ad" if not sample_id else f"tidesurf_{sample_id}.h5ad"
