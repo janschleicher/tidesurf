@@ -33,14 +33,40 @@ class UMICounter:
         self.orientation = orientation
         self.multi_mapped = multi_mapped
 
-    def count(self, bam_file: str) -> Tuple[np.ndarray, np.ndarray, csr_matrix]:
+    def count(
+        self,
+        bam_file: str,
+        filter_cells: bool = False,
+        whitelist: Optional[str] = None,
+        num_umis: Optional[int] = None,
+    ) -> Tuple[np.ndarray, np.ndarray, csr_matrix]:
         """
         Count UMIs with reads mapping to transcripts.
 
         :param bam_file: Path to BAM file.
+        :param filter_cells: Whether to filter cells.
+        :param whitelist: If `filter_cells` is True: path to cell
+        barcode whitelist file. Mutually exclusive with `num_umis`.
+        :param num_umis: If `filter_cells` is True: set to an integer to
+        only keep cells with at least that many UMIs. Mutually exclusive
+        with `whitelist`.
         :return: cells (array of shape (n_cells,)), genes (array of
         shape (n_genes,)), counts (sparse matrix of shape (n_cells, n_genes)).
         """
+        if filter_cells:
+            if not whitelist and not num_umis:
+                raise ValueError(
+                    "Either whitelist or num_umis must be provided when filter_cells==True."
+                )
+            elif whitelist and num_umis:
+                raise ValueError(
+                    "Whitelist and num_umis are mutually exclusive arguments."
+                )
+            elif whitelist:
+                whitelist = set(
+                    pd.read_csv(whitelist, header=None).iloc[:, 0].str.strip()
+                )
+
         aln_file = pysam.AlignmentFile(bam_file)
         total_reads = 0
         for idx_stats in aln_file.get_index_statistics():
@@ -60,8 +86,12 @@ class UMICounter:
                     or not bam_read.has_tag("UB")
                 ):
                     continue
+                cbc = bam_read.get_tag("CB")
+                if filter_cells and whitelist:
+                    if cbc not in whitelist:
+                        continue
                 read = Read(
-                    bam_read.get_tag("CB"),
+                    cbc,
                     bam_read.get_tag("UB"),
                     bam_read.reference_name,
                     Strand("+") if bam_read.is_forward else Strand("-"),
@@ -96,6 +126,12 @@ class UMICounter:
         counts = csr_matrix(
             (np.asarray(list(counts_dict.values())), (idx[:, 0], idx[:, 1]))
         )
+
+        if filter_cells and num_umis:
+            log.info(f"Filtering cells with at least {num_umis} UMIs.")
+            idx = counts.sum(axis=1).A1 >= num_umis
+            cells = cells[idx]
+            counts = counts[idx]
 
         return (
             cells,

@@ -7,7 +7,7 @@ import anndata as ad
 import tidesurf
 from tidesurf.transcript import TranscriptIndex
 from tidesurf.counter import UMICounter
-from typing import Literal
+from typing import Literal, Optional
 import logging
 
 log = logging.getLogger(__name__)
@@ -19,13 +19,18 @@ def run(
     output: str,
     orientation: Literal["sense", "antisense"] = "sense",
     multi_mapped: bool = False,
+    filter_cells: bool = False,
+    whitelist: Optional[str] = None,
+    num_umis: Optional[int] = None,
 ) -> None:
     log.info("Building transcript index.")
     t_idx = TranscriptIndex(gtf_file)
+    cr_pipeline = "count"
     # Try cellranger count output
     bam_files = [f"{sample_dir}/outs/possorted_genome_bam.bam"]
     sample_ids = [""]
     if not os.path.isfile(bam_files[0]):
+        cr_pipeline = "multi"
         # Try cellranger multi output
         bam_files = glob.glob(
             f"{sample_dir}/outs/per_sample_outs/*/count/sample_alignments.bam"
@@ -50,7 +55,28 @@ def run(
 
     for bam_file, sample_id in zip(bam_files, sample_ids):
         log.info(f"Processing {bam_file}.")
-        cells, genes, counts = counter.count(bam_file=bam_file)
+        if whitelist == "cellranger":
+            if cr_pipeline == "count":
+                wl = glob.glob(
+                    f"{sample_dir}/outs/filtered_feature_bc_matrix/barcodes.*"
+                )
+            else:
+                wl = glob.glob(
+                    f"{sample_dir}/outs/per_sample_outs/{sample_id}/count/sample_filtered_feature_bc_matrix/barcodes.*"
+                )
+            if not wl:
+                log.error("No whitelist found in Cell Ranger output.")
+                return
+            else:
+                wl = wl[0]
+        else:
+            wl = whitelist
+        cells, genes, counts = counter.count(
+            bam_file=bam_file,
+            filter_cells=filter_cells,
+            whitelist=wl,
+            num_umis=num_umis,
+        )
         log.info("Writing output.")
         adata = ad.AnnData(X=counts)
         adata.obs_names = cells
@@ -90,6 +116,24 @@ def main() -> None:
         help="Include multi-mapped reads (not recommended).",
     )
     parser.add_argument(
+        "--filter_cells",
+        action="store_true",
+        help="Filter cells based on a whitelist.",
+    )
+    arg_group = parser.add_mutually_exclusive_group()
+    arg_group.add_argument(
+        "--whitelist",
+        type=str,
+        help="Whitelist for cell filtering. Set to 'cellranger' to use "
+        "barcodes in the sample directory. Alternatively, provide a "
+        "path to a whitelist.",
+    )
+    arg_group.add_argument(
+        "--num_umis",
+        type=int,
+        help="Minimum number of UMIs for filtering a cell.",
+    )
+    parser.add_argument(
         "sample_dir",
         metavar="SAMPLE_DIR",
         help="Sample directory containing Cell Ranger output.",
@@ -121,6 +165,9 @@ def main() -> None:
         output=args.output,
         orientation=args.orientation,
         multi_mapped=args.multi_mapped,
+        filter_cells=args.filter_cells,
+        whitelist=args.whitelist,
+        num_umis=args.num_umis,
     )
 
 
