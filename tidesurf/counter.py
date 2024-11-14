@@ -5,7 +5,6 @@ from scipy.sparse import csr_matrix
 from tqdm import tqdm
 from tqdm.contrib.logging import logging_redirect_tqdm
 from tidesurf.transcript import TranscriptIndex, Strand
-from tidesurf.read import Read
 from typing import Literal, Tuple, Optional
 import logging
 
@@ -86,20 +85,10 @@ class UMICounter:
                     or not bam_read.has_tag("UB")
                 ):
                     continue
-                cbc = bam_read.get_tag("CB")
                 if filter_cells and whitelist:
-                    if cbc not in whitelist:
+                    if bam_read.get_tag("CB") not in whitelist:
                         continue
-                read = Read(
-                    cbc,
-                    bam_read.get_tag("UB"),
-                    bam_read.reference_name,
-                    Strand("+") if bam_read.is_forward else Strand("-"),
-                    bam_read.reference_start,
-                    bam_read.reference_end - 1,  # pysam reference_end is exclusive
-                    bam_read.infer_read_length(),
-                )
-                res = self._process_read(read)
+                res = self._process_read(bam_read)
                 if res is not None:
                     results.append(res)
 
@@ -139,34 +128,47 @@ class UMICounter:
             counts,
         )
 
-    def _process_read(self, read: Read) -> Optional[Tuple[str, str, str]]:
+    def _process_read(
+        self, read: pysam.AlignedSegment
+    ) -> Optional[Tuple[str, str, str]]:
         """
         Process a single read.
 
         :param read: The read to process.
         :return: cell barcode, UMI, and gene name.
         """
-        strand = read.strand if self.orientation == "sense" else read.strand.antisense()
+        cbc = read.get_tag("CB")
+        umi = read.get_tag("UB")
+        chromosome = (read.reference_name,)  # [0],
+        chromosome = chromosome[0]
+        strand = Strand("+") if read.is_forward else Strand("-")
+        start = read.reference_start
+        end = read.reference_end - 1  # pysam reference_end is exclusive
+        length = read.infer_read_length()
+
+        if self.orientation == "antisense":
+            strand = strand.antisense()
+
         overlapping_transcripts = self.transcript_index.get_overlapping_transcripts(
-            chromosome=read.chromosome,
+            chromosome=chromosome,
             strand=str(strand),
-            start=read.start,
-            end=read.end,
+            start=start,
+            end=end,
         )
         if not overlapping_transcripts:
             return None
 
         # Only keep transcripts with minimum overlap of 50% of the read length.
         # TODO: Does this make sense?
-        min_overlap = read.length // 2
+        min_overlap = length // 2
         overlapping_transcripts = [
             t
             for t in overlapping_transcripts
             if t.overlaps(
-                chromosome=read.chromosome,
+                chromosome=chromosome,
                 strand=str(strand),
-                start=read.start,
-                end=read.end,
+                start=start,
+                end=end,
                 min_overlap=min_overlap,
             )
         ]
@@ -176,7 +178,7 @@ class UMICounter:
         if not self.multi_mapped and len(gene_names) > 1:
             return None
         elif len(gene_names) == 1:
-            return read.cbc, read.umi, gene_names.pop()
+            return cbc, umi, gene_names.pop()
         elif self.multi_mapped:
             raise NotImplementedError("Multi-mapped reads not yet implemented.")
 
