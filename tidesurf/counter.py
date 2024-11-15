@@ -1,14 +1,28 @@
 import numpy as np
 import pandas as pd
 import pysam
-from scipy.sparse import csr_matrix
+from scipy.sparse import csr_matrix, lil_matrix
 from tqdm import tqdm
 from tqdm.contrib.logging import logging_redirect_tqdm
 from tidesurf.transcript import TranscriptIndex, Strand
-from typing import Literal, Tuple, Optional
+from enum import Enum
+from typing import Literal, Tuple, Optional, Dict
 import logging
 
 log = logging.getLogger(__name__)
+
+
+class SpliceType(Enum):
+    """
+    Enum for read/UMI splice types.
+    """
+
+    UNSPLICED = 0
+    AMBIGUOUS = 1
+    SPLICED = 2
+
+    def __lt__(self, other):
+        return self.value < other.value
 
 
 class UMICounter:
@@ -38,7 +52,7 @@ class UMICounter:
         filter_cells: bool = False,
         whitelist: Optional[str] = None,
         num_umis: Optional[int] = None,
-    ) -> Tuple[np.ndarray, np.ndarray, csr_matrix]:
+    ) -> Tuple[np.ndarray, np.ndarray, Dict[str, csr_matrix]]:
         """
         Count UMIs with reads mapping to transcripts.
 
@@ -75,7 +89,7 @@ class UMICounter:
             results = []
             log.info("Processing reads from BAM file.")
             for bam_read in tqdm(
-                aln_file, total=total_reads, desc="Reading BAM file", unit="reads"
+                aln_file, total=total_reads, desc="Processing BAM file", unit=" reads"
             ):
                 if (
                     bam_read.is_unmapped
@@ -94,8 +108,19 @@ class UMICounter:
 
         # Deduplicate cell barcodes and UMIs.
         log.info("Deduplicating cell barcodes and UMIs.")
-        results = pd.DataFrame(results, columns=["cbc", "umi", "gene"]).drop_duplicates(
-            keep="first"
+        results = (
+            pd.DataFrame(results, columns=["cbc", "umi", "gene", "splice_type"])
+            .sort_values(by="splice_type")
+            .drop_duplicates(
+                subset=[
+                    "cbc",
+                    "umi",
+                    "gene",
+                ],
+                keep="first",
+            )
+            # Will keep the first splice type, unspliced before
+            # ambiguous before spliced
         )
 
         # Remove multi-mapped UMIs.
@@ -107,30 +132,39 @@ class UMICounter:
         cells = results["cbc"].astype("category").cat.categories.values.astype("<U32")
         genes = results["gene"].astype("category").cat.categories.values.astype("<U32")
         counts_dict = _count(
-            results.values.astype("<U32"),
+            results.values,
             cells,
             genes,
         )
-        idx = np.asarray(list(counts_dict.keys()))
-        counts = csr_matrix(
-            (np.asarray(list(counts_dict.values())), (idx[:, 0], idx[:, 1]))
-        )
+        counts = {
+            key: lil_matrix((cells.shape[0], genes.shape[0]), dtype=np.int32)
+            for key in ["spliced", "unspliced", "ambiguous"]
+        }
+        for splice_type, counts_dict_splice in counts_dict.items():
+            idx = np.asarray(list(counts_dict_splice.keys()))
+            counts[splice_type.name.lower()][idx[:, 0], idx[:, 1]] = np.asarray(
+                list(counts_dict_splice.values())
+            )
 
         if filter_cells and num_umis:
             log.info(f"Filtering cells with at least {num_umis} UMIs.")
-            idx = counts.sum(axis=1).A1 >= num_umis
+            idx = (
+                counts["spliced"].sum(axis=1).A1
+                + counts["unspliced"].sum(axis=1).A1
+                + counts["unspliced"].sum(axis=1).A1
+            ) >= num_umis
             cells = cells[idx]
-            counts = counts[idx]
+            counts = {key: value[idx] for key, value in counts.items()}
 
         return (
             cells,
             genes,
-            counts,
+            {key: csr_matrix(val) for key, val in counts.items()},
         )
 
     def _process_read(
         self, read: pysam.AlignedSegment
-    ) -> Optional[Tuple[str, str, str]]:
+    ) -> Optional[Tuple[str, str, str, SpliceType]]:
         """
         Process a single read.
 
@@ -173,12 +207,30 @@ class UMICounter:
             )
         ]
 
+        splice_types = set()
+        for trans in overlapping_transcripts:
+            # Loop over exons
+            total_exon_overlap = 0
+            for exon in trans.exons:
+                total_exon_overlap += read.get_overlap(exon.start, exon.end + 1)
+
+            # Assign splice type for this transcript to spliced if at most 5 bases do not overlap with exons
+            if length - total_exon_overlap <= 5:
+                splice_types.add(SpliceType.SPLICED)
+            else:
+                splice_types.add(SpliceType.UNSPLICED)
+
         # Get gene names.
         gene_names = {t.gene_name for t in overlapping_transcripts}
         if not self.multi_mapped and len(gene_names) > 1:
             return None
         elif len(gene_names) == 1:
-            return cbc, umi, gene_names.pop()
+            return (
+                cbc,
+                umi,
+                gene_names.pop(),
+                splice_types.pop() if len(splice_types) == 1 else SpliceType.AMBIGUOUS,
+            )
         elif self.multi_mapped:
             raise NotImplementedError("Multi-mapped reads not yet implemented.")
 
@@ -186,10 +238,14 @@ class UMICounter:
 def _count(arr, cells, genes):
     cbc_map = {cbc: idx for idx, cbc in enumerate(cells)}
     gene_map = {gene: idx for idx, gene in enumerate(genes)}
-    counts_dict = {}
-    for line in arr:
-        cbc, gene = cbc_map[line[0]], gene_map[line[2]]
-        if (cbc, gene) not in counts_dict:
-            counts_dict[cbc, gene] = 0
-        counts_dict[cbc, gene] += 1
+    counts_dict = {
+        SpliceType.SPLICED: {},
+        SpliceType.UNSPLICED: {},
+        SpliceType.AMBIGUOUS: {},
+    }
+    for line in tqdm(arr, desc="Counting s/u/a UMIs", unit=" UMIs"):
+        cbc, gene, splice_type = cbc_map[line[0]], gene_map[line[2]], line[3]
+        if (cbc, gene) not in counts_dict[splice_type]:
+            counts_dict[splice_type][cbc, gene] = 0
+        counts_dict[splice_type][cbc, gene] += 1
     return counts_dict

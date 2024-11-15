@@ -22,13 +22,13 @@ def test_counter(filter_cells: bool, whitelist: str, num_umis: int) -> None:
     counter = UMICounter(
         transcript_index=t_idx, orientation="antisense", multi_mapped=False
     )
-    cells, genes, x_ts = counter.count(
+    cells, genes, counts = counter.count(
         bam_file="test_data/test_dir_count/outs/possorted_genome_bam.bam",
         filter_cells=filter_cells,
         whitelist=whitelist,
         num_umis=num_umis,
     )
-    x_ts = x_ts.toarray()
+    x_ts = (counts["spliced"] + counts["unspliced"] + counts["ambiguous"]).toarray()
     adata_cr = ad.read_h5ad("test_data/adata_cr_out.h5ad")
     x_cr = adata_cr[cells, genes].X.toarray()
 

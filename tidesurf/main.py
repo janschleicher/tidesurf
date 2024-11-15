@@ -78,7 +78,8 @@ def run(
             num_umis=num_umis,
         )
         log.info("Writing output.")
-        adata = ad.AnnData(X=counts)
+        counts_matrix = counts["spliced"] + counts["unspliced"] + counts["ambiguous"]
+        adata = ad.AnnData(X=counts_matrix, layers=counts)
         adata.obs_names = cells
         adata.var_names = genes
         f_name = "tidesurf.h5ad" if not sample_id else f"tidesurf_{sample_id}.h5ad"
