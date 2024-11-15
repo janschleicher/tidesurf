@@ -32,13 +32,11 @@ classifiers = [
 
 dependencies = [
     "numpy",
-    "numba",
     "pandas",
     "scipy",
     "anndata",
     "pysam",
     "tqdm",
-    "joblib"
 ]
 
 [project.optional-dependencies]
