@@ -1,5 +1,5 @@
 import numpy as np
-import pandas as pd
+import polars as pl
 import pysam
 from scipy.sparse import csr_matrix, lil_matrix
 from tqdm import tqdm
@@ -23,6 +23,9 @@ class SpliceType(Enum):
 
     def __lt__(self, other):
         return self.value < other.value
+
+    def __int__(self):
+        return self.value
 
 
 class UMICounter:
@@ -77,7 +80,7 @@ class UMICounter:
                 )
             elif whitelist:
                 whitelist = set(
-                    pd.read_csv(whitelist, header=None).iloc[:, 0].str.strip()
+                    pl.read_csv(whitelist, has_header=False)[:, 0].str.strip_chars()
                 )
 
         aln_file = pysam.AlignmentFile(bam_file)
@@ -109,9 +112,14 @@ class UMICounter:
         # Deduplicate cell barcodes and UMIs.
         log.info("Deduplicating cell barcodes and UMIs.")
         results = (
-            pd.DataFrame(results, columns=["cbc", "umi", "gene", "splice_type"])
-            .sort_values(by="splice_type")
-            .drop_duplicates(
+            pl.DataFrame(
+                results,
+                schema={"cbc": str, "umi": str, "gene": str, "splice_type": int},
+                strict=False,
+                orient="row",
+            )
+            .sort(by="splice_type")
+            .unique(
                 subset=[
                     "cbc",
                     "umi",
@@ -125,14 +133,14 @@ class UMICounter:
 
         # Remove multi-mapped UMIs.
         if not self.multi_mapped:
-            results = results.drop_duplicates(subset=["cbc", "umi"], keep=False)
+            results = results.unique(subset=["cbc", "umi"], keep="none")
 
         # Do the rest of the counting.
         log.info("Counting UMIs.")
-        cells = results["cbc"].astype("category").cat.categories.values.astype("<U32")
-        genes = results["gene"].astype("category").cat.categories.values.astype("<U32")
+        cells = results["cbc"].unique().sort().to_numpy()
+        genes = results["gene"].unique().sort().to_numpy()
         counts_dict = _count(
-            results.values,
+            results.to_numpy(),
             cells,
             genes,
         )
@@ -229,7 +237,9 @@ class UMICounter:
                 cbc,
                 umi,
                 gene_names.pop(),
-                splice_types.pop() if len(splice_types) == 1 else SpliceType.AMBIGUOUS,
+                int(splice_types.pop())
+                if len(splice_types) == 1
+                else int(SpliceType.AMBIGUOUS),
             )
         elif self.multi_mapped:
             raise NotImplementedError("Multi-mapped reads not yet implemented.")
@@ -244,7 +254,11 @@ def _count(arr, cells, genes):
         SpliceType.AMBIGUOUS: {},
     }
     for line in tqdm(arr, desc="Counting s/u/a UMIs", unit=" UMIs"):
-        cbc, gene, splice_type = cbc_map[line[0]], gene_map[line[2]], line[3]
+        cbc, gene, splice_type = (
+            cbc_map[line[0]],
+            gene_map[line[2]],
+            SpliceType(line[3]),
+        )
         if (cbc, gene) not in counts_dict[splice_type]:
             counts_dict[splice_type][cbc, gene] = 0
         counts_dict[splice_type][cbc, gene] += 1

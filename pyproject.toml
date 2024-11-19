@@ -32,7 +32,7 @@ classifiers = [
 
 dependencies = [
     "numpy",
-    "pandas",
+    "polars",
     "scipy",
     "anndata",
     "pysam",
