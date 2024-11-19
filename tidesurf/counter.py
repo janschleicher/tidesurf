@@ -21,9 +21,6 @@ class SpliceType(Enum):
     AMBIGUOUS = 1
     SPLICED = 2
 
-    def __lt__(self, other):
-        return self.value < other.value
-
     def __int__(self):
         return self.value
 
@@ -172,17 +169,16 @@ class UMICounter:
 
     def _process_read(
         self, read: pysam.AlignedSegment
-    ) -> Optional[Tuple[str, str, str, SpliceType]]:
+    ) -> Optional[Tuple[str, str, str, int]]:
         """
         Process a single read.
 
         :param read: The read to process.
         :return: cell barcode, UMI, and gene name.
         """
-        cbc = read.get_tag("CB")
-        umi = read.get_tag("UB")
-        chromosome = (read.reference_name,)  # [0],
-        chromosome = chromosome[0]
+        cbc = str(read.get_tag("CB"))
+        umi = str(read.get_tag("UB"))
+        chromosome = read.reference_name
         strand = Strand("+") if read.is_forward else Strand("-")
         start = read.reference_start
         end = read.reference_end - 1  # pysam reference_end is exclusive
