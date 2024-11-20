@@ -136,7 +136,7 @@ class UMICounter:
         log.info("Counting UMIs.")
         cells = results["cbc"].unique().sort().to_numpy()
         genes = results["gene"].unique().sort().to_numpy()
-        counts_dict = _count(
+        counts_dict = self.__count(
             results.to_numpy(),
             cells,
             genes,
@@ -240,22 +240,24 @@ class UMICounter:
         elif self.multi_mapped:
             raise NotImplementedError("Multi-mapped reads not yet implemented.")
 
-
-def _count(arr, cells, genes):
-    cbc_map = {cbc: idx for idx, cbc in enumerate(cells)}
-    gene_map = {gene: idx for idx, gene in enumerate(genes)}
-    counts_dict = {
-        SpliceType.SPLICED: {},
-        SpliceType.UNSPLICED: {},
-        SpliceType.AMBIGUOUS: {},
-    }
-    for line in tqdm(arr, desc="Counting s/u/a UMIs", unit=" UMIs"):
-        cbc, gene, splice_type = (
-            cbc_map[line[0]],
-            gene_map[line[2]],
-            SpliceType(line[3]),
-        )
-        if (cbc, gene) not in counts_dict[splice_type]:
-            counts_dict[splice_type][cbc, gene] = 0
-        counts_dict[splice_type][cbc, gene] += 1
-    return counts_dict
+    @staticmethod
+    def __count(
+        arr: np.ndarray, cells: np.ndarray, genes: np.ndarray
+    ) -> Dict[SpliceType, Dict[Tuple[int, int], int]]:
+        cbc_map = {cbc: idx for idx, cbc in enumerate(cells)}
+        gene_map = {gene: idx for idx, gene in enumerate(genes)}
+        counts_dict = {
+            SpliceType.SPLICED: {},
+            SpliceType.UNSPLICED: {},
+            SpliceType.AMBIGUOUS: {},
+        }
+        for row in tqdm(arr, desc="Counting s/u/a UMIs", unit=" UMIs"):
+            cbc, gene, splice_type = (
+                cbc_map[row[0]],
+                gene_map[row[2]],
+                SpliceType(row[3]),
+            )
+            if (cbc, gene) not in counts_dict[splice_type]:
+                counts_dict[splice_type][cbc, gene] = 0
+            counts_dict[splice_type][cbc, gene] += 1
+        return counts_dict
