@@ -247,17 +247,17 @@ class UMICounter:
         cbc_map = {cbc: idx for idx, cbc in enumerate(cells)}
         gene_map = {gene: idx for idx, gene in enumerate(genes)}
         counts_dict = {
-            SpliceType.SPLICED: {},
-            SpliceType.UNSPLICED: {},
-            SpliceType.AMBIGUOUS: {},
+            SpliceType.SPLICED.value: {},
+            SpliceType.UNSPLICED.value: {},
+            SpliceType.AMBIGUOUS.value: {},
         }
         for row in tqdm(arr, desc="Counting s/u/a UMIs", unit=" UMIs"):
             cbc, gene, splice_type = (
                 cbc_map[row[0]],
                 gene_map[row[2]],
-                SpliceType(row[3]),
+                row[3],
             )
             if (cbc, gene) not in counts_dict[splice_type]:
                 counts_dict[splice_type][cbc, gene] = 0
             counts_dict[splice_type][cbc, gene] += 1
-        return counts_dict
+        return {SpliceType(key): val for key, val in counts_dict.items()}
