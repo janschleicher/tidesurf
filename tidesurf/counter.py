@@ -1,5 +1,6 @@
 import numpy as np
 import polars as pl
+from bisect import bisect
 import pysam
 from scipy.sparse import csr_matrix, lil_matrix
 from tqdm import tqdm
@@ -215,7 +216,10 @@ class UMICounter:
         for trans in overlapping_transcripts:
             # Loop over exons
             total_exon_overlap = 0
-            for exon in trans.exons:
+            left_idx = max(bisect(trans.exons, start, key=lambda x: x.start) - 1, 0)
+            for exon in trans.exons[left_idx:]:
+                if exon.start > end:
+                    break
                 total_exon_overlap += read.get_overlap(exon.start, exon.end + 1)
 
             # Assign splice type for this transcript to spliced if at most 5 bases do not overlap with exons
