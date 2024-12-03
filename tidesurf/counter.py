@@ -194,8 +194,6 @@ class UMICounter:
             start=start,
             end=end,
         )
-        if not overlapping_transcripts:
-            return None
 
         # Only keep transcripts with minimum overlap of 50% of the read length.
         # TODO: Does this make sense?
@@ -212,6 +210,9 @@ class UMICounter:
             )
         ]
 
+        if not overlapping_transcripts:
+            return None
+
         splice_types = set()
         for trans in overlapping_transcripts:
             # Loop over exons
@@ -222,8 +223,20 @@ class UMICounter:
                     break
                 total_exon_overlap += read.get_overlap(exon.start, exon.end + 1)
 
-            # Assign splice type for this transcript to spliced if at most 5 bases do not overlap with exons
+            # Assign splice type for this transcript to spliced if at
+            # most 5 bases do not overlap with exons
             if length - total_exon_overlap <= 5:
+                splice_types.add(SpliceType.SPLICED)
+            # Special case: if read overlaps with only first exon and the
+            # region before or with only last exon and the region after
+            elif (
+                (left_idx == 0 and start < trans.exons[left_idx].start)
+                or (
+                    left_idx == len(trans.exons) - 1 and end > trans.exons[left_idx].end
+                )
+            ) and total_exon_overlap == read.get_overlap(
+                trans.exons[left_idx].start, trans.exons[left_idx].end + 1
+            ):
                 splice_types.add(SpliceType.SPLICED)
             else:
                 splice_types.add(SpliceType.UNSPLICED)

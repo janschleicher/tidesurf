@@ -4,6 +4,27 @@ from typing import List, Set, Dict, Tuple, Optional
 from enum import Enum
 
 
+ALLOWED_BIOTYPES = {
+    "protein_coding",
+    "lncRNA",
+    "antisense",
+    "IG_C_gene",
+    "IG_D_gene",
+    "IG_J_gene",
+    "IG_LV_gene",
+    "IG_V_gene",
+    "IG_V_pseudogene",
+    "IG_J_pseudogene",
+    "IG_C_pseudogene",
+    "TR_C_gene",
+    "TR_D_gene",
+    "TR_J_gene",
+    "TR_V_gene",
+    "TR_V_pseudogene",
+    "TR_J_pseudogene",
+}
+
+
 class Strand(Enum):
     """
     Simple enum for strand information.
@@ -360,6 +381,10 @@ class TranscriptIndex:
                     for attr in attributes_str.split("; ")
                     for key, value in [attr.split(" ")]
                 }
+                # Don't include transcripts with non-allowed biotypes
+                # such as nonsense_mediated_decay
+                if attributes["transcript_type"] not in ALLOWED_BIOTYPES:
+                    continue
                 gtf_line = GTFLine(
                     chromosome="chrM" if curr_chrom == "chrMT" else curr_chrom,
                     source=source,

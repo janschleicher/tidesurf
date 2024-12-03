@@ -2,6 +2,7 @@ import argparse
 import os
 import glob
 import re
+from datetime import datetime
 from pathlib import Path
 import anndata as ad
 import tidesurf
@@ -87,6 +88,7 @@ def run(
 
 
 def main() -> None:
+    start_time = datetime.now()
     parser = argparse.ArgumentParser(
         description="Program: tidesurf (Tool for IDentification and "
         "Enumeration of Spliced and Unspliced Read Fragments)\n"
@@ -170,6 +172,8 @@ def main() -> None:
         whitelist=args.whitelist,
         num_umis=args.num_umis,
     )
+    end_time = datetime.now()
+    log.info(f"Finished in {end_time - start_time}.")
 
 
 if __name__ == "__main__":
