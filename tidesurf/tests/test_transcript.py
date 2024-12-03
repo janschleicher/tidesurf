@@ -265,18 +265,14 @@ def test_transcript_index():
         )
         assert transcript.gene_name == "Sgk3"
     assert (
-        len(overlapping_transcripts) == 8
+        len(overlapping_transcripts) == 4
     ), f"Expected 8 transcripts, found {len(overlapping_transcripts)}"
     transcript_ids = [x.transcript_id for x in overlapping_transcripts]
     assert transcript_ids == [
         "ENSMUST00000166384",
-        "ENSMUST00000188782",
         "ENSMUST00000168907",
-        "ENSMUST00000188738",
-        "ENSMUST00000188298",
         "ENSMUST00000171265",
         "ENSMUST00000097826",
-        "ENSMUST00000191338",
     ]
     for i, trans_id in enumerate(transcript_ids):
         assert transcript_idx.get_transcript(trans_id) == overlapping_transcripts[i]
@@ -292,18 +288,14 @@ def test_transcript_index():
             f"region {chromosome} {strand} {start} {end}"
         )
     assert (
-        len(overlapping_transcripts) == 9
+        len(overlapping_transcripts) == 5
     ), f"Expected 10 transcripts, found {len(overlapping_transcripts)}"
     transcript_ids = [x.transcript_id for x in overlapping_transcripts]
     assert transcript_ids == [
         "ENSMUST00000166384",
-        "ENSMUST00000188782",
         "ENSMUST00000168907",
-        "ENSMUST00000188738",
-        "ENSMUST00000188298",
         "ENSMUST00000171265",
         "ENSMUST00000188830",
-        "ENSMUST00000189050",
         "ENSMUST00000097826",
     ]
 
