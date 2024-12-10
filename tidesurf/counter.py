@@ -26,6 +26,29 @@ class SpliceType(Enum):
         return self.value
 
 
+class ReadType(Enum):
+    """
+    Enum for read alignment types.
+    """
+
+    INTRON = 0
+    EXON_INTRON = 1
+    EXON_EXON = 2
+    AMBIGUOUS = 3
+    EXON = 4
+
+    def __int__(self):
+        return self.value
+
+    def get_splice_type(self):
+        if self == ReadType.INTRON or self == ReadType.EXON_INTRON:
+            return SpliceType.UNSPLICED
+        elif self == ReadType.EXON_EXON or self == ReadType.EXON:
+            return SpliceType.SPLICED
+        else:
+            return SpliceType.AMBIGUOUS
+
+
 class UMICounter:
     """
     Counter for unique molecular identifiers (UMIs) with reads mapping
@@ -89,6 +112,7 @@ class UMICounter:
         with logging_redirect_tqdm():
             results = []
             log.info("Processing reads from BAM file.")
+            skipped_reads = 0
             for bam_read in tqdm(
                 aln_file, total=total_reads, desc="Processing BAM file", unit=" reads"
             ):
@@ -99,6 +123,7 @@ class UMICounter:
                     or not bam_read.has_tag("CB")
                     or not bam_read.has_tag("UB")
                 ):
+                    skipped_reads += 1
                     continue
                 if filter_cells and whitelist:
                     if bam_read.get_tag("CB") not in whitelist:
@@ -106,17 +131,20 @@ class UMICounter:
                 res = self._process_read(bam_read)
                 if res is not None:
                     results.append(res)
+                else:
+                    skipped_reads += 1
+        log.info(f"Skipped {skipped_reads:,} reads.")
 
         # Deduplicate cell barcodes and UMIs.
         log.info("Deduplicating cell barcodes and UMIs.")
         results = (
             pl.DataFrame(
                 results,
-                schema={"cbc": str, "umi": str, "gene": str, "splice_type": int},
+                schema={"cbc": str, "umi": str, "gene": str, "read_type": int},
                 strict=False,
                 orient="row",
             )
-            .sort(by="splice_type")
+            .sort(by="read_type")
             .unique(
                 subset=[
                     "cbc",
@@ -125,6 +153,14 @@ class UMICounter:
                 ],
                 keep="first",
             )
+            .with_columns(
+                pl.col("read_type")
+                .map_elements(
+                    lambda x: int(ReadType(x).get_splice_type()), return_dtype=pl.Int8
+                )
+                .alias("splice_type")
+            )
+            .drop("read_type")
             # Will keep the first splice type, unspliced before
             # ambiguous before spliced
         )
@@ -175,7 +211,7 @@ class UMICounter:
         Process a single read.
 
         :param read: The read to process.
-        :return: cell barcode, UMI, and gene name.
+        :return: cell barcode, UMI, gene name, and read type.
         """
         cbc = str(read.get_tag("CB"))
         umi = str(read.get_tag("UB"))
@@ -213,20 +249,34 @@ class UMICounter:
         if not overlapping_transcripts:
             return None
 
-        splice_types = set()
+        read_types = set()
         for trans in overlapping_transcripts:
             # Loop over exons
             total_exon_overlap = 0
+            n_exons = 0
             left_idx = max(bisect(trans.exons, start, key=lambda x: x.start) - 1, 0)
             for exon in trans.exons[left_idx:]:
                 if exon.start > end:
                     break
-                total_exon_overlap += read.get_overlap(exon.start, exon.end + 1)
+                exon_overlap = read.get_overlap(exon.start, exon.end + 1)
+                total_exon_overlap += exon_overlap
+                if exon_overlap > 0:
+                    n_exons += 1
 
-            # Assign splice type for this transcript to spliced if at
-            # most 5 bases do not overlap with exons
+            # Assign read alignment region for this transcript to exonic
+            # if at most 5 bases do not overlap with exons
             if length - total_exon_overlap <= 5:
-                splice_types.add(SpliceType.SPLICED)
+                # More than one exon: exon-exon junction
+                # TODO: Should I check for Ns in cigar string?
+                if n_exons > 1:
+                    read_types.add(ReadType.EXON_EXON)
+                elif n_exons == 1:
+                    read_types.add(ReadType.EXON)
+                else:
+                    raise ValueError("Exon overlap without exons.")
+            # Overlap with exon-intron junction
+            elif total_exon_overlap > 0:
+                read_types.add(ReadType.EXON_INTRON)
             # Special case: if read overlaps with only first exon and the
             # region before or with only last exon and the region after
             elif (
@@ -237,22 +287,27 @@ class UMICounter:
             ) and total_exon_overlap == read.get_overlap(
                 trans.exons[left_idx].start, trans.exons[left_idx].end + 1
             ):
-                splice_types.add(SpliceType.SPLICED)
+                read_types.add(ReadType.EXON)
             else:
-                splice_types.add(SpliceType.UNSPLICED)
+                read_types.add(ReadType.INTRON)
 
         # Get gene names.
         gene_names = {t.gene_name for t in overlapping_transcripts}
         if not self.multi_mapped and len(gene_names) > 1:
             return None
         elif len(gene_names) == 1:
+            if ReadType.EXON_EXON in read_types:
+                read_type = ReadType.EXON_EXON
+            elif len(read_types) == 1:
+                read_type = read_types.pop()
+            else:
+                read_type = ReadType.AMBIGUOUS
+
             return (
                 cbc,
                 umi,
                 gene_names.pop(),
-                int(splice_types.pop())
-                if len(splice_types) == 1
-                else int(SpliceType.AMBIGUOUS),
+                int(read_type),
             )
         elif self.multi_mapped:
             raise NotImplementedError("Multi-mapped reads not yet implemented.")

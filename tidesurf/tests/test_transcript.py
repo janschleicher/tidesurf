@@ -266,7 +266,7 @@ def test_transcript_index():
         assert transcript.gene_name == "Sgk3"
     assert (
         len(overlapping_transcripts) == 4
-    ), f"Expected 8 transcripts, found {len(overlapping_transcripts)}"
+    ), f"Expected 4 transcripts, found {len(overlapping_transcripts)}"
     transcript_ids = [x.transcript_id for x in overlapping_transcripts]
     assert transcript_ids == [
         "ENSMUST00000166384",
@@ -289,7 +289,7 @@ def test_transcript_index():
         )
     assert (
         len(overlapping_transcripts) == 5
-    ), f"Expected 10 transcripts, found {len(overlapping_transcripts)}"
+    ), f"Expected 5 transcripts, found {len(overlapping_transcripts)}"
     transcript_ids = [x.transcript_id for x in overlapping_transcripts]
     assert transcript_ids == [
         "ENSMUST00000166384",
