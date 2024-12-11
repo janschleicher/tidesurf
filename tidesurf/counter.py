@@ -7,7 +7,7 @@ from tqdm import tqdm
 from tqdm.contrib.logging import logging_redirect_tqdm
 from tidesurf.transcript import TranscriptIndex, Strand
 from enum import Enum
-from typing import Literal, Tuple, Optional, Dict
+from typing import Literal, Tuple, Optional, Dict, List
 import logging
 
 log = logging.getLogger(__name__)
@@ -32,16 +32,15 @@ class ReadType(Enum):
     """
 
     INTRON = 0
-    EXON_INTRON = 1
-    EXON_EXON = 2
-    AMBIGUOUS = 3
-    EXON = 4
+    EXON_EXON = 1
+    AMBIGUOUS = 2
+    EXON = 3
 
     def __int__(self):
         return self.value
 
     def get_splice_type(self):
-        if self == ReadType.INTRON or self == ReadType.EXON_INTRON:
+        if self == ReadType.INTRON:
             return SpliceType.UNSPLICED
         elif self == ReadType.EXON_EXON or self == ReadType.EXON:
             return SpliceType.SPLICED
@@ -144,30 +143,64 @@ class UMICounter:
                 strict=False,
                 orient="row",
             )
-            .sort(by="read_type")
-            .unique(
-                subset=[
-                    "cbc",
-                    "umi",
-                    "gene",
-                ],
-                keep="first",
+            .group_by("cbc", "umi", "gene", "read_type")
+            .len(name="count")  # Count ReadTypes per cbc/umi/gene combination
+            .select(
+                pl.all(), (pl.sum("count").over("cbc", "umi", "gene")).alias("total")
             )
+            .select(pl.all(), (pl.col("count") / pl.col("total")).alias("percentage"))
+            .filter(  # Remove INTRON reads with low counts or percentage
+                ~(
+                    (pl.col("read_type") == int(ReadType.INTRON))
+                    & (
+                        ((pl.col("count") < 2) & (pl.col("percentage") < 0.1))
+                        | (pl.col("percentage") < 0.1)
+                    )
+                )
+            )
+            .group_by("cbc", "umi", "gene")
+            # Keep the first ReadType, order: INTRON, EXON_EXON, AMBIGUOUS, EXON
+            .agg(pl.min("read_type"), pl.max("total"))
             .with_columns(
                 pl.col("read_type")
-                .map_elements(
+                .map_elements(  # Map ReadType to splice type
                     lambda x: int(ReadType(x).get_splice_type()), return_dtype=pl.Int8
                 )
                 .alias("splice_type")
             )
             .drop("read_type")
-            # Will keep the first splice type, unspliced before
-            # ambiguous before spliced
         )
 
-        # Remove multi-mapped UMIs.
+        # Resolve multi-mapped UMIs.
+        def _argmax(lst: List[int]) -> Optional[int]:
+            _, indices, value_counts = np.unique(
+                lst, return_index=True, return_counts=True
+            )
+            if value_counts[-1] > 1:
+                return None
+            else:
+                return indices[-1]
+
         if not self.multi_mapped:
-            results = results.unique(subset=["cbc", "umi"], keep="none")
+            # Keep the gene with the highest read support
+            results = (
+                results.group_by("cbc", "umi")
+                .agg(pl.len(), pl.col("gene"), pl.col("total"), pl.min("splice_type"))
+                .with_columns(
+                    pl.col("total")
+                    .map_elements(_argmax, return_dtype=pl.Int64)
+                    .alias("idx")
+                )
+                # Ties for maximal read support (represented by None)
+                # are discarded
+                .drop_nulls(subset="idx")
+                .with_columns(
+                    pl.col("gene").list.get(pl.col("idx")),
+                )
+                .drop("len", "total", "idx")
+            )
+        else:
+            results = results.drop("total")
 
         # Do the rest of the counting.
         log.info("Counting UMIs.")
@@ -274,9 +307,6 @@ class UMICounter:
                     read_types.add(ReadType.EXON)
                 else:
                     raise ValueError("Exon overlap without exons.")
-            # Overlap with exon-intron junction
-            elif total_exon_overlap > 0:
-                read_types.add(ReadType.EXON_INTRON)
             # Special case: if read overlaps with only first exon and the
             # region before or with only last exon and the region after
             elif (

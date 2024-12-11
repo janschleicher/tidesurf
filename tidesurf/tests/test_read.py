@@ -95,7 +95,7 @@ READS = [
         [(pysam.CMATCH, 100)],
         False,
         "Sgk3",
-        ReadType.EXON_INTRON,
+        ReadType.INTRON,
     ),
     (
         "ACTG",
@@ -155,7 +155,27 @@ READS = [
         [(pysam.CMATCH, 100)],
         True,
         "Mybl1",
-        ReadType.EXON_INTRON,
+        ReadType.INTRON,
+    ),
+    (
+        "ACTG",
+        "TATA",
+        "chr1",
+        9_656_123,
+        [(pysam.CMATCH, 100)],
+        False,
+        "",
+        None,
+    ),
+    (
+        "ACTG",
+        "TATA",
+        "chr1",
+        9_672_600,
+        [(pysam.CMATCH, 100)],
+        False,
+        "",
+        None,
     ),
 ]
 
