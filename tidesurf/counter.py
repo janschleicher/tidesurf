@@ -56,18 +56,15 @@ class UMICounter:
     :param transcript_index: Transcript index.
     :param orientation: Orientation in which reads map to transcripts.
     Either "sense" or "antisense".
-    :param multi_mapped: Whether to count multi-mapped reads.
     """
 
     def __init__(
         self,
         transcript_index: TranscriptIndex,
         orientation: Literal["sense", "antisense"],
-        multi_mapped: bool = False,
     ) -> None:
         self.transcript_index = transcript_index
         self.orientation = orientation
-        self.multi_mapped = multi_mapped
 
     def count(
         self,
@@ -129,7 +126,7 @@ class UMICounter:
                         continue
                 res = self._process_read(bam_read)
                 if res is not None:
-                    results.append(res)
+                    results.extend(res)
                 else:
                     skipped_reads += 1
         log.info(f"Skipped {skipped_reads:,} reads.")
@@ -139,25 +136,33 @@ class UMICounter:
         results = (
             pl.DataFrame(
                 results,
-                schema={"cbc": str, "umi": str, "gene": str, "read_type": pl.UInt8},
+                schema={
+                    "cbc": str,
+                    "umi": str,
+                    "gene": str,
+                    "read_type": pl.UInt8,
+                    "weight": pl.Float32,
+                },
                 strict=False,
                 orient="row",
             )
             .group_by("cbc", "umi", "gene", "read_type")
-            .len(name="count")  # Count ReadTypes per cbc/umi/gene combination
+            .agg(pl.col("weight").sum())  # Count ReadTypes per cbc/umi/gene combination
             .select(
-                pl.all(), (pl.sum("count").over("cbc", "umi", "gene")).alias("total")
+                pl.all(), (pl.sum("weight").over("cbc", "umi", "gene")).alias("total")
             )
-            .select(pl.all(), (pl.col("count") / pl.col("total")).alias("percentage"))
-            .filter(  # Remove read types with low counts or percentage
+            .select(pl.all(), (pl.col("weight") / pl.col("total")).alias("percentage"))
+            .filter(  # Remove read types with low counts and percentage
                 ~(
-                    ((pl.col("count") < 2) & (pl.col("percentage") < 0.1))
+                    ((pl.col("weight") < 2) & (pl.col("percentage") < 0.1))
                     | (pl.col("percentage") < 0.1)
                 )
             )
             .group_by("cbc", "umi", "gene")
             # Keep the first ReadType, order: INTRON, EXON_EXON, AMBIGUOUS, EXON
             .agg(pl.min("read_type"), pl.max("total"))
+            # Remove UMIs that are only supported by multimapped reads
+            .filter(pl.col("total") >= 1)
             .with_columns(
                 pl.col("read_type")
                 .map_elements(  # Map ReadType to SpliceType
@@ -180,32 +185,27 @@ class UMICounter:
 
         _argmax_vec = np.vectorize(_argmax)
 
-        if not self.multi_mapped:
-            # Keep the gene with the highest read support
-            results = (
-                results.group_by("cbc", "umi")
-                .agg(pl.col("gene"), pl.col("total"), pl.min("splice_type"))
-                .with_columns(
-                    (
-                        pl.when(pl.col("total").list.len() > 1)
-                        .then(
-                            pl.col("total").map_batches(
-                                _argmax_vec, return_dtype=pl.Int8
-                            )
-                        )
-                        .otherwise(pl.lit(0, dtype=pl.Int8))
-                    ).alias("idx")
-                )
-                # Ties for maximal read support (represented by -1)
-                # are discarded
-                .filter(pl.col("idx") >= 0)
-                .with_columns(
-                    pl.col("gene").list.get(pl.col("idx")),
-                )
-                .drop("total", "idx")
+        # Keep the gene with the highest read support
+        results = (
+            results.group_by("cbc", "umi")
+            .agg(pl.col("gene"), pl.col("total"), pl.min("splice_type"))
+            .with_columns(
+                (
+                    pl.when(pl.col("total").list.len() > 1)
+                    .then(
+                        pl.col("total").map_batches(_argmax_vec, return_dtype=pl.Int8)
+                    )
+                    .otherwise(pl.lit(0, dtype=pl.Int8))
+                ).alias("idx")
             )
-        else:
-            results = results.drop("total")
+            # Ties for maximal read support (represented by -1)
+            # are discarded
+            .filter(pl.col("idx") >= 0)
+            .with_columns(
+                pl.col("gene").list.get(pl.col("idx")),
+            )
+            .drop("total", "idx")
+        )
 
         # Do the rest of the counting.
         log.info("Counting UMIs.")
@@ -244,7 +244,7 @@ class UMICounter:
 
     def _process_read(
         self, read: pysam.AlignedSegment
-    ) -> Optional[Tuple[str, str, str, int]]:
+    ) -> Optional[List[Tuple[str, str, str, int, float]]]:
         """
         Process a single read.
 
@@ -287,7 +287,10 @@ class UMICounter:
         if not overlapping_transcripts:
             return None
 
-        read_types = set()
+        # For each gene, determine the type of read alignment
+        read_types_per_gene = {
+            trans.gene_name: set() for trans in overlapping_transcripts
+        }
         for trans in overlapping_transcripts:
             # Loop over exons
             total_exon_overlap = 0
@@ -307,9 +310,9 @@ class UMICounter:
                 # More than one exon: exon-exon junction
                 # TODO: Should I check for Ns in cigar string?
                 if n_exons > 1:
-                    read_types.add(ReadType.EXON_EXON)
+                    read_types_per_gene[trans.gene_name].add(ReadType.EXON_EXON)
                 elif n_exons == 1:
-                    read_types.add(ReadType.EXON)
+                    read_types_per_gene[trans.gene_name].add(ReadType.EXON)
                 else:
                     raise ValueError("Exon overlap without exons.")
             # Special case: if read overlaps with only first exon and the
@@ -322,15 +325,15 @@ class UMICounter:
             ) and total_exon_overlap == read.get_overlap(
                 trans.exons[left_idx].start, trans.exons[left_idx].end + 1
             ):
-                read_types.add(ReadType.EXON)
+                read_types_per_gene[trans.gene_name].add(ReadType.EXON)
             else:
-                read_types.add(ReadType.INTRON)
+                read_types_per_gene[trans.gene_name].add(ReadType.INTRON)
 
-        # Get gene names.
-        gene_names = {t.gene_name for t in overlapping_transcripts}
-        if not self.multi_mapped and len(gene_names) > 1:
-            return None
-        elif len(gene_names) == 1:
+        # Determine ReadType for each mapped gene
+        processed_reads = []
+        n_genes = len(read_types_per_gene)
+        for gene_name, read_types in read_types_per_gene.items():
+            # Return all genes with their ReadTypes and corresponding weight
             if ReadType.EXON_EXON in read_types:
                 read_type = ReadType.EXON_EXON
             elif len(read_types) == 1:
@@ -338,14 +341,8 @@ class UMICounter:
             else:
                 read_type = ReadType.AMBIGUOUS
 
-            return (
-                cbc,
-                umi,
-                gene_names.pop(),
-                int(read_type),
-            )
-        elif self.multi_mapped:
-            raise NotImplementedError("Multi-mapped reads not yet implemented.")
+            processed_reads.append((cbc, umi, gene_name, int(read_type), 1.0 / n_genes))
+        return processed_reads
 
     @staticmethod
     def __count(

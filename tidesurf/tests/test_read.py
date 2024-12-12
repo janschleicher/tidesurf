@@ -58,8 +58,7 @@ READS = [
         9_865_240,
         [(pysam.CMATCH, 100)],
         False,
-        "Sgk3",
-        ReadType.EXON,
+        [("Sgk3", ReadType.EXON)],
     ),
     (
         "ACTG",
@@ -74,8 +73,7 @@ READS = [
             (pysam.CMATCH, 8),
         ],
         False,
-        "Sgk3",
-        ReadType.EXON_EXON,
+        [("Sgk3", ReadType.EXON_EXON)],
     ),
     (
         "ACTG",
@@ -84,8 +82,7 @@ READS = [
         9_865_335,
         [(pysam.CMATCH, 13), (pysam.CREF_SKIP, 3034), (pysam.CMATCH, 87)],
         False,
-        "Sgk3",
-        ReadType.EXON_EXON,
+        [("Sgk3", ReadType.EXON_EXON)],
     ),
     (
         "ACTG",
@@ -94,8 +91,7 @@ READS = [
         9_865_335,
         [(pysam.CMATCH, 100)],
         False,
-        "Sgk3",
-        ReadType.INTRON,
+        [("Sgk3", ReadType.INTRON)],
     ),
     (
         "ACTG",
@@ -104,8 +100,7 @@ READS = [
         9_866_123,
         [(pysam.CMATCH, 100)],
         False,
-        "Sgk3",
-        ReadType.INTRON,
+        [("Sgk3", ReadType.INTRON)],
     ),
     (
         "ACTG",
@@ -114,8 +109,7 @@ READS = [
         9_671_600,
         [(pysam.CMATCH, 100)],
         True,
-        "Mybl1",
-        ReadType.AMBIGUOUS,
+        [("Mybl1", ReadType.AMBIGUOUS)],
     ),
     (
         "ACTG",
@@ -124,8 +118,7 @@ READS = [
         9_672_550,
         [(pysam.CMATCH, 100)],
         True,
-        "Mybl1",
-        ReadType.EXON,
+        [("Mybl1", ReadType.EXON)],
     ),
     (
         "ACTG",
@@ -134,8 +127,7 @@ READS = [
         9_672_600,
         [(pysam.CMATCH, 56), (pysam.CREF_SKIP, 444), (pysam.CMATCH, 44)],
         True,
-        "Mybl1",
-        ReadType.EXON_EXON,
+        [("Mybl1", ReadType.EXON_EXON)],
     ),
     (
         "ACTG",
@@ -144,8 +136,7 @@ READS = [
         9_672_550,
         [(pysam.CMATCH, 100)],
         True,
-        "Mybl1",
-        ReadType.EXON,
+        [("Mybl1", ReadType.EXON)],
     ),
     (
         "ACTG",
@@ -154,8 +145,7 @@ READS = [
         9_672_600,
         [(pysam.CMATCH, 100)],
         True,
-        "Mybl1",
-        ReadType.INTRON,
+        [("Mybl1", ReadType.INTRON)],
     ),
     (
         "ACTG",
@@ -164,8 +154,7 @@ READS = [
         9_656_123,
         [(pysam.CMATCH, 100)],
         False,
-        "",
-        None,
+        [("", None)],
     ),
     (
         "ACTG",
@@ -174,31 +163,42 @@ READS = [
         9_672_600,
         [(pysam.CMATCH, 100)],
         False,
-        "",
-        None,
+        [("", None)],
+    ),
+    (
+        "ACTG",
+        "TACT",
+        "chrM",
+        7_895,
+        [(pysam.CMATCH, 100)],
+        False,
+        [("mt-Atp8", ReadType.EXON), ("mt-Atp6", ReadType.EXON)],
     ),
 ]
 
 
 def test_read_processing() -> None:
     counter = UMICounter(TRANSCRIPT_INDEX, orientation="sense")
-    for (
-        cbc,
-        umi,
-        ref_name,
-        ref_start,
-        cigar,
-        is_reversed,
-        gene_name,
-        read_type,
-    ) in READS:
+    for cbc, umi, ref_name, ref_start, cigar, is_reversed, expected_result in READS:
         read = mock_read(cbc, umi, ref_name, ref_start, cigar, is_reverse=is_reversed)
-        res = counter._process_read(read)
-        if res is None:
-            assert read_type is None, "Read should be filtered out."
+        res_list = counter._process_read(read)
+        if res_list is None:
+            assert expected_result == [("", None)], "Read should be filtered out."
         else:
-            cbc_pred, umi_pred, gene_name_pred, read_type_pred = res
-            assert cbc_pred == cbc, "Cell barcode mismatch."
-            assert umi_pred == umi, "Unique molecular identifier mismatch."
-            assert gene_name_pred == gene_name, "Gene name mismatch."
-            assert ReadType(read_type_pred) == read_type, "Read type mismatch."
+            assert len(res_list) == len(
+                expected_result
+            ), f"Expected {len(expected_result)} gene(s), got {len(res_list)}."
+            for (
+                cbc_pred,
+                umi_pred,
+                gene_name_pred,
+                read_type_pred,
+                weight_pred,
+            ) in res_list:
+                assert cbc_pred == cbc, "Cell barcode mismatch."
+                assert umi_pred == umi, "Unique molecular identifier mismatch."
+                assert (
+                    gene_name_pred,
+                    ReadType(read_type_pred),
+                ) in expected_result, "Gene name or read type mismatch."
+                assert weight_pred == 1.0 / len(expected_result), "Weight mismatch."

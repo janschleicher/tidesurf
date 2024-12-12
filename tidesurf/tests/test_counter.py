@@ -19,9 +19,7 @@ import pytest
 )
 def test_counter(filter_cells: bool, whitelist: str, num_umis: int) -> None:
     t_idx = TranscriptIndex("test_data/genes.gtf")
-    counter = UMICounter(
-        transcript_index=t_idx, orientation="antisense", multi_mapped=False
-    )
+    counter = UMICounter(transcript_index=t_idx, orientation="antisense")
     cells, genes, counts = counter.count(
         bam_file="test_data/test_dir_count/outs/possorted_genome_bam.bam",
         filter_cells=filter_cells,
@@ -44,9 +42,7 @@ def test_counter(filter_cells: bool, whitelist: str, num_umis: int) -> None:
 
 def test_counter_exceptions():
     t_idx = TranscriptIndex("test_data/genes.gtf")
-    counter = UMICounter(
-        transcript_index=t_idx, orientation="antisense", multi_mapped=False
-    )
+    counter = UMICounter(transcript_index=t_idx, orientation="antisense")
     with pytest.raises(
         ValueError, match="Whitelist and num_umis are mutually exclusive arguments."
     ):

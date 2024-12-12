@@ -27,7 +27,7 @@ Change into the directory and install with pip
 ## Usage
 
 ```
-usage: tidesurf [-h] [-v] [--orientation {sense,antisense}] [-o OUTPUT] [-m]
+usage: tidesurf [-h] [-v] [--orientation {sense,antisense}] [-o OUTPUT]
                 [--filter_cells] [--whitelist WHITELIST | --num_umis NUM_UMIS]
                 SAMPLE_DIR GTF_FILE
 
@@ -47,7 +47,6 @@ options:
                         'antisense' for five prime.
   -o OUTPUT, --output OUTPUT
                         Output directory.
-  -m, --multi_mapped    Include multi-mapped reads (not recommended).
   --filter_cells        Filter cells based on a whitelist.
   --whitelist WHITELIST
                         Whitelist for cell filtering. Set to 'cellranger' to

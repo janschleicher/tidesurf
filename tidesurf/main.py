@@ -19,7 +19,6 @@ def run(
     gtf_file: str,
     output: str,
     orientation: Literal["sense", "antisense"] = "sense",
-    multi_mapped: bool = False,
     filter_cells: bool = False,
     whitelist: Optional[str] = None,
     num_umis: Optional[int] = None,
@@ -45,9 +44,7 @@ def run(
             re.search(r"outs/per_sample_outs/(.*)/count", f).group(1) for f in bam_files
         ]
 
-    counter = UMICounter(
-        transcript_index=t_idx, orientation=orientation, multi_mapped=multi_mapped
-    )
+    counter = UMICounter(transcript_index=t_idx, orientation=orientation)
     log.info(
         f"Counting reads mapped to transcripts in {counter.orientation} orientation."
     )
@@ -113,12 +110,6 @@ def main() -> None:
         "-o", "--output", type=str, default="tidesurf_out", help="Output directory."
     )
     parser.add_argument(
-        "-m",
-        "--multi_mapped",
-        action="store_true",
-        help="Include multi-mapped reads (not recommended).",
-    )
-    parser.add_argument(
         "--filter_cells",
         action="store_true",
         help="Filter cells based on a whitelist.",
@@ -167,7 +158,6 @@ def main() -> None:
         gtf_file=args.gtf_file,
         output=args.output,
         orientation=args.orientation,
-        multi_mapped=args.multi_mapped,
         filter_cells=args.filter_cells,
         whitelist=args.whitelist,
         num_umis=args.num_umis,
