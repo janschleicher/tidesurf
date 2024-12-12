@@ -139,7 +139,7 @@ class UMICounter:
         results = (
             pl.DataFrame(
                 results,
-                schema={"cbc": str, "umi": str, "gene": str, "read_type": int},
+                schema={"cbc": str, "umi": str, "gene": str, "read_type": pl.UInt8},
                 strict=False,
                 orient="row",
             )
@@ -149,13 +149,10 @@ class UMICounter:
                 pl.all(), (pl.sum("count").over("cbc", "umi", "gene")).alias("total")
             )
             .select(pl.all(), (pl.col("count") / pl.col("total")).alias("percentage"))
-            .filter(  # Remove INTRON reads with low counts or percentage
+            .filter(  # Remove read types with low counts or percentage
                 ~(
-                    (pl.col("read_type") == int(ReadType.INTRON))
-                    & (
-                        ((pl.col("count") < 2) & (pl.col("percentage") < 0.1))
-                        | (pl.col("percentage") < 0.1)
-                    )
+                    ((pl.col("count") < 2) & (pl.col("percentage") < 0.1))
+                    | (pl.col("percentage") < 0.1)
                 )
             )
             .group_by("cbc", "umi", "gene")
@@ -163,8 +160,8 @@ class UMICounter:
             .agg(pl.min("read_type"), pl.max("total"))
             .with_columns(
                 pl.col("read_type")
-                .map_elements(  # Map ReadType to splice type
-                    lambda x: int(ReadType(x).get_splice_type()), return_dtype=pl.Int8
+                .map_elements(  # Map ReadType to SpliceType
+                    lambda x: int(ReadType(x).get_splice_type()), return_dtype=pl.UInt8
                 )
                 .alias("splice_type")
             )
@@ -172,32 +169,40 @@ class UMICounter:
         )
 
         # Resolve multi-mapped UMIs.
-        def _argmax(lst: List[int]) -> Optional[int]:
+        def _argmax(lst: List[int]) -> int:
             _, indices, value_counts = np.unique(
                 lst, return_index=True, return_counts=True
             )
             if value_counts[-1] > 1:
-                return None
+                return -1
             else:
                 return indices[-1]
+
+        _argmax_vec = np.vectorize(_argmax)
 
         if not self.multi_mapped:
             # Keep the gene with the highest read support
             results = (
                 results.group_by("cbc", "umi")
-                .agg(pl.len(), pl.col("gene"), pl.col("total"), pl.min("splice_type"))
+                .agg(pl.col("gene"), pl.col("total"), pl.min("splice_type"))
                 .with_columns(
-                    pl.col("total")
-                    .map_elements(_argmax, return_dtype=pl.Int64)
-                    .alias("idx")
+                    (
+                        pl.when(pl.col("total").list.len() > 1)
+                        .then(
+                            pl.col("total").map_batches(
+                                _argmax_vec, return_dtype=pl.Int8
+                            )
+                        )
+                        .otherwise(pl.lit(0, dtype=pl.Int8))
+                    ).alias("idx")
                 )
-                # Ties for maximal read support (represented by None)
+                # Ties for maximal read support (represented by -1)
                 # are discarded
-                .drop_nulls(subset="idx")
+                .filter(pl.col("idx") >= 0)
                 .with_columns(
                     pl.col("gene").list.get(pl.col("idx")),
                 )
-                .drop("len", "total", "idx")
+                .drop("total", "idx")
             )
         else:
             results = results.drop("total")
