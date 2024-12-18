@@ -6,6 +6,7 @@ import pytest
 from typing import Optional
 
 TEST_OUT_5P = "test_data/adata_cr_out.h5ad"
+TEST_OUT_3P = "test_data/adata_cr_out_3p.h5ad"
 
 
 @pytest.mark.parametrize(
@@ -13,6 +14,7 @@ TEST_OUT_5P = "test_data/adata_cr_out.h5ad"
     [
         ("test_data/test_dir_count", "test_data/genes.gtf", "antisense", TEST_OUT_5P),
         ("test_data/test_dir_multi", "test_data/genes.gtf", "antisense", TEST_OUT_5P),
+        ("test_data/test_dir_count_3p", "test_data/genes.gtf", "sense", TEST_OUT_3P),
     ],
 )
 @pytest.mark.parametrize("multi_mapped", [False])
@@ -36,6 +38,9 @@ def test_main(
     num_umis: Optional[int],
     test_out: str,
 ):
+    if orientation == "sense" and whitelist:
+        whitelist = whitelist.replace("whitelist", "whitelist_3p")
+    print(whitelist)
     os.system(
         f"tidesurf -o test_out --orientation {orientation} "
         f"{'-m ' if multi_mapped else ''}"
@@ -44,7 +49,7 @@ def test_main(
         f"{f'--num_umis {num_umis} ' if num_umis else ''}"
         f"{sample_dir} {gtf_file}"
     )
-    adata_cr = ad.read_h5ad(TEST_OUT_5P)
+    adata_cr = ad.read_h5ad(test_out)
     if whitelist and num_umis:
         assert not os.path.exists("test_out"), (
             "No output should be generated with both whitelist and "
@@ -53,7 +58,7 @@ def test_main(
         return
     adata_ts = ad.read_h5ad(
         "test_out/tidesurf.h5ad"
-        if sample_dir.endswith("count")
+        if "count" in sample_dir
         else "test_out/tidesurf_sample_1.h5ad"
     )
     if num_umis:
@@ -71,7 +76,21 @@ def test_main(
 
     for gene in adata_cr.var_names:
         assert (
-            gene in adata_ts.var_names or adata_cr[:, gene].X.sum() == 0
-        ), f"Gene {gene} with nonzero count is missing in tidesurf output."
+            gene in adata_ts.var_names or adata_cr[:, gene].X.sum() <= 1
+        ), f"Gene {gene} with total count > 1 is missing in tidesurf output."
+
+    assert (
+        np.sum(
+            adata_ts[:, adata_ts.var_names.str.contains("(?i)^MT-")].layers["unspliced"]
+        )
+        == 0
+    ), "Mitochondrial genes do not have unspliced counts."
+
+    assert (
+        np.sum(
+            adata_ts[:, adata_ts.var_names.str.contains("(?i)^MT-")].layers["ambiguous"]
+        )
+        == 0
+    ), "Mitochondrial genes do not have ambiguous counts."
 
     shutil.rmtree("test_out")

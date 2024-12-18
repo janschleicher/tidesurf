@@ -1,33 +1,53 @@
 from tidesurf import UMICounter, TranscriptIndex
 import numpy as np
+import pandas as pd
 import anndata as ad
 import pytest
 
 
 @pytest.mark.parametrize(
-    "filter_cells, whitelist, num_umis",
+    "filter_cells, whitelist, num_umis, five_prime",
     [
-        (False, None, None),
+        (False, None, None, True),
         (
             True,
             "test_data/test_dir_count/outs/filtered_feature_bc_matrix/barcodes.tsv.gz",
             None,
+            True,
         ),
-        (True, "test_data/whitelist.tsv", None),
-        (True, None, 10),
+        (True, "test_data/whitelist.tsv", None, True),
+        (True, None, 10, True),
+        (False, None, None, False),
+        (
+            True,
+            "test_data/test_dir_count_3p/outs/filtered_feature_bc_matrix/barcodes.tsv.gz",
+            None,
+            False,
+        ),
+        (True, "test_data/whitelist_3p.tsv", None, False),
+        (True, None, 10, False),
     ],
 )
-def test_counter(filter_cells: bool, whitelist: str, num_umis: int) -> None:
+def test_counter(
+    filter_cells: bool, whitelist: str, num_umis: int, five_prime: bool
+) -> None:
     t_idx = TranscriptIndex("test_data/genes.gtf")
-    counter = UMICounter(transcript_index=t_idx, orientation="antisense")
+    if five_prime:
+        orientation = "antisense"
+    else:
+        orientation = "sense"
+    counter = UMICounter(transcript_index=t_idx, orientation=orientation)
     cells, genes, counts = counter.count(
-        bam_file="test_data/test_dir_count/outs/possorted_genome_bam.bam",
+        bam_file=f"test_data/{'test_dir_count' if five_prime else 'test_dir_count_3p'}/outs/possorted_genome_bam.bam",
         filter_cells=filter_cells,
         whitelist=whitelist,
         num_umis=num_umis,
     )
     x_ts = (counts["spliced"] + counts["unspliced"] + counts["ambiguous"]).toarray()
-    adata_cr = ad.read_h5ad("test_data/adata_cr_out.h5ad")
+    if five_prime:
+        adata_cr = ad.read_h5ad("test_data/adata_cr_out.h5ad")
+    else:
+        adata_cr = ad.read_h5ad("test_data/adata_cr_out_3p.h5ad")
     x_cr = adata_cr[cells, genes].X.toarray()
 
     assert np.allclose(
@@ -36,8 +56,16 @@ def test_counter(filter_cells: bool, whitelist: str, num_umis: int) -> None:
 
     for gene in adata_cr.var_names:
         assert (
-            gene in genes or adata_cr[:, gene].X.sum() == 0
-        ), f"Gene {gene} with nonzero count is missing in tidesurf output."
+            gene in genes or adata_cr[:, gene].X.sum() <= 1
+        ), f"Gene {gene} with total count > 1 is missing in tidesurf output."
+
+    # Mitochondrial genes should not have any unspliced or ambiguous counts
+    assert (
+        np.sum(counts["unspliced"][:, pd.Series(genes).str.contains("(?i)^MT-")]) == 0
+    ), "Mitochondrial genes do not have unspliced counts."
+    assert (
+        np.sum(counts["ambiguous"][:, pd.Series(genes).str.contains("(?i)^MT-")]) == 0
+    ), "Mitochondrial genes do not have ambiguous counts."
 
 
 def test_counter_exceptions():

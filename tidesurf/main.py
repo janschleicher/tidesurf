@@ -22,7 +22,24 @@ def run(
     filter_cells: bool = False,
     whitelist: Optional[str] = None,
     num_umis: Optional[int] = None,
+    min_intron_overlap: int = 5,
 ) -> None:
+    """
+    Run tidesurf on a 10x sample directory.
+    :param sample_dir: 10x Cell Ranger count/multi output directory.
+    :param gtf_file: Path to GTF file with transcript annotations.
+    :param output: Path to output directory.
+    :param orientation: Orientation in which reads map to transcripts.
+    :param filter_cells: Whether to filter cells.
+    :param whitelist: If `filter_cells` is True: path to cell
+        barcode whitelist file. Set to 'cellranger' to use barcodes in
+        the sample directory. Mutually exclusive with `num_umis`.
+    :param num_umis: If `filter_cells` is True: set to an integer to
+        only keep cells with at least that many UMIs. Mutually exclusive
+        with `whitelist`.
+    :param min_intron_overlap:
+    :return:
+    """
     log.info("Building transcript index.")
     t_idx = TranscriptIndex(gtf_file)
     cr_pipeline = "count"
@@ -44,7 +61,11 @@ def run(
             re.search(r"outs/per_sample_outs/(.*)/count", f).group(1) for f in bam_files
         ]
 
-    counter = UMICounter(transcript_index=t_idx, orientation=orientation)
+    counter = UMICounter(
+        transcript_index=t_idx,
+        orientation=orientation,
+        min_intron_overlap=min_intron_overlap,
+    )
     log.info(
         f"Counting reads mapped to transcripts in {counter.orientation} orientation."
     )
@@ -128,6 +149,12 @@ def main() -> None:
         help="Minimum number of UMIs for filtering a cell.",
     )
     parser.add_argument(
+        "--min_intron_overlap",
+        type=int,
+        default=5,
+        help="Minimum number of bases that a read must overlap with an intron to be considered intronic.",
+    )
+    parser.add_argument(
         "sample_dir",
         metavar="SAMPLE_DIR",
         help="Sample directory containing Cell Ranger output.",
@@ -161,6 +188,7 @@ def main() -> None:
         filter_cells=args.filter_cells,
         whitelist=args.whitelist,
         num_umis=args.num_umis,
+        min_intron_overlap=args.min_intron_overlap,
     )
     end_time = datetime.now()
     log.info(f"Finished in {end_time - start_time}.")

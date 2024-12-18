@@ -55,16 +55,20 @@ class UMICounter:
 
     :param transcript_index: Transcript index.
     :param orientation: Orientation in which reads map to transcripts.
-    Either "sense" or "antisense".
+        Either "sense" or "antisense".
+    :param min_intron_overlap: Minimum overlap of reads with introns
+        required to consider them intronic.
     """
 
     def __init__(
         self,
         transcript_index: TranscriptIndex,
         orientation: Literal["sense", "antisense"],
+        min_intron_overlap: int = 5,
     ) -> None:
         self.transcript_index = transcript_index
         self.orientation = orientation
+        self.MIN_INTRON_OVERLAP = min_intron_overlap
 
     def count(
         self,
@@ -79,12 +83,13 @@ class UMICounter:
         :param bam_file: Path to BAM file.
         :param filter_cells: Whether to filter cells.
         :param whitelist: If `filter_cells` is True: path to cell
-        barcode whitelist file. Mutually exclusive with `num_umis`.
+            barcode whitelist file. Mutually exclusive with `num_umis`.
         :param num_umis: If `filter_cells` is True: set to an integer to
-        only keep cells with at least that many UMIs. Mutually exclusive
-        with `whitelist`.
+            only keep cells with at least that many UMIs. Mutually
+            exclusive with `whitelist`.
         :return: cells (array of shape (n_cells,)), genes (array of
-        shape (n_genes,)), counts (sparse matrix of shape (n_cells, n_genes)).
+            shape (n_genes,)), counts (sparse matrix of shape
+            (n_cells, n_genes)).
         """
         if filter_cells:
             if not whitelist and not num_umis:
@@ -287,6 +292,16 @@ class UMICounter:
         if not overlapping_transcripts:
             return None
 
+        # Determine length of read without soft-clipped bases and count
+        # inserted bases (present in read, but not in reference)
+        clipped_length = length
+        insertion_length = 0
+        for cigar_op, n_bases in read.cigartuples:
+            if cigar_op == pysam.CSOFT_CLIP:
+                clipped_length -= n_bases
+            elif cigar_op == pysam.CINS:
+                insertion_length += n_bases
+
         # For each gene, determine the type of read alignment
         read_types_per_gene = {
             trans.gene_name: set() for trans in overlapping_transcripts
@@ -306,9 +321,11 @@ class UMICounter:
 
             # Assign read alignment region for this transcript to exonic
             # if at most 5 bases do not overlap with exons
-            if length - total_exon_overlap <= 5:
+            if (
+                clipped_length - total_exon_overlap - insertion_length
+                < self.MIN_INTRON_OVERLAP
+            ):
                 # More than one exon: exon-exon junction
-                # TODO: Should I check for Ns in cigar string?
                 if n_exons > 1:
                     read_types_per_gene[trans.gene_name].add(ReadType.EXON_EXON)
                 elif n_exons == 1:
@@ -318,12 +335,13 @@ class UMICounter:
             # Special case: if read overlaps with only first exon and the
             # region before or with only last exon and the region after
             elif (
-                (left_idx == 0 and start < trans.exons[left_idx].start)
-                or (
-                    left_idx == len(trans.exons) - 1 and end > trans.exons[left_idx].end
-                )
-            ) and total_exon_overlap == read.get_overlap(
-                trans.exons[left_idx].start, trans.exons[left_idx].end + 1
+                left_idx == 0
+                and start < trans.exons[left_idx].start
+                and end <= trans.exons[left_idx].end
+            ) or (
+                left_idx == len(trans.exons) - 1
+                and end > trans.exons[left_idx].end
+                and start >= trans.exons[left_idx].start
             ):
                 read_types_per_gene[trans.gene_name].add(ReadType.EXON)
             else:

@@ -11,15 +11,16 @@ This repository provides a Tool for IDentification and Enumeration of Spliced an
 
 ## Installation
 
-Set up a virtual environment using Conda with Python version >=3.10
+Set up a virtual environment using Conda with Python version >=3.10 and activate it:
 
     conda create -n <envName> python=3.10
+    conda activate <envName>
 
-Clone the repository
+Clone the repository:
 
     git clone git@github.com:janschleicher/tidesurf.git
 
-Change into the directory and install with pip
+Change into the directory and install with pip:
     
     cd tidesurf
     pip install -e .
@@ -29,6 +30,7 @@ Change into the directory and install with pip
 ```
 usage: tidesurf [-h] [-v] [--orientation {sense,antisense}] [-o OUTPUT]
                 [--filter_cells] [--whitelist WHITELIST | --num_umis NUM_UMIS]
+                [--min_intron_overlap MIN_INTRON_OVERLAP]
                 SAMPLE_DIR GTF_FILE
 
 Program: tidesurf (Tool for IDentification and Enumeration of Spliced and Unspliced Read Fragments)
@@ -53,6 +55,9 @@ options:
                         use barcodes in the sample directory. Alternatively,
                         provide a path to a whitelist.
   --num_umis NUM_UMIS   Minimum number of UMIs for filtering a cell.
+  --min_intron_overlap MIN_INTRON_OVERLAP
+                        Minimum number of bases that a read must overlap with
+                        an intron to be considered intronic.
 ```
 
 ## Contributing
