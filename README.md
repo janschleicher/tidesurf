@@ -31,6 +31,7 @@ Change into the directory and install with pip:
 usage: tidesurf [-h] [-v] [--orientation {sense,antisense}] [-o OUTPUT]
                 [--filter_cells] [--whitelist WHITELIST | --num_umis NUM_UMIS]
                 [--min_intron_overlap MIN_INTRON_OVERLAP]
+                [--multi_mapped_reads]
                 SAMPLE_DIR GTF_FILE
 
 Program: tidesurf (Tool for IDentification and Enumeration of Spliced and Unspliced Read Fragments)
@@ -58,6 +59,9 @@ options:
   --min_intron_overlap MIN_INTRON_OVERLAP
                         Minimum number of bases that a read must overlap with
                         an intron to be considered intronic.
+  --multi_mapped_reads  Take reads mapping to multiple genes into account
+                        (default: reads mapping to more than one gene are
+                        discarded).
 ```
 
 ## Contributing

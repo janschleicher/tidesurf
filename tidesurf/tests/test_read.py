@@ -1,3 +1,4 @@
+import pytest
 import pysam
 from tidesurf import TranscriptIndex, UMICounter
 from tidesurf.counter import ReadType
@@ -177,13 +178,18 @@ READS = [
 ]
 
 
-def test_read_processing() -> None:
-    counter = UMICounter(TRANSCRIPT_INDEX, orientation="sense")
+@pytest.mark.parametrize("multi_mapped_reads", [False, True])
+def test_read_processing(multi_mapped_reads: bool) -> None:
+    counter = UMICounter(
+        TRANSCRIPT_INDEX, orientation="sense", multi_mapped_reads=multi_mapped_reads
+    )
     for cbc, umi, ref_name, ref_start, cigar, is_reversed, expected_result in READS:
         read = mock_read(cbc, umi, ref_name, ref_start, cigar, is_reverse=is_reversed)
         res_list = counter._process_read(read)
         if res_list is None:
-            assert expected_result == [("", None)], "Read should be filtered out."
+            assert (expected_result == [("", None)]) or (
+                not multi_mapped_reads and len(expected_result) > 1
+            ), "Read was filtered out when it should not be."
         else:
             assert len(res_list) == len(
                 expected_result

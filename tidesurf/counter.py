@@ -58,6 +58,7 @@ class UMICounter:
         Either "sense" or "antisense".
     :param min_intron_overlap: Minimum overlap of reads with introns
         required to consider them intronic.
+    :param multi_mapped_reads: Whether to count multi-mapped reads.
     """
 
     def __init__(
@@ -65,10 +66,12 @@ class UMICounter:
         transcript_index: TranscriptIndex,
         orientation: Literal["sense", "antisense"],
         min_intron_overlap: int = 5,
+        multi_mapped_reads: bool = False,
     ) -> None:
         self.transcript_index = transcript_index
         self.orientation = orientation
         self.MIN_INTRON_OVERLAP = min_intron_overlap
+        self.multi_mapped_reads = multi_mapped_reads
 
     def count(
         self,
@@ -193,14 +196,14 @@ class UMICounter:
         # Keep the gene with the highest read support
         results = (
             results.group_by("cbc", "umi")
-            .agg(pl.col("gene"), pl.col("total"), pl.min("splice_type"))
+            .agg(pl.col("gene"), pl.col("total"), pl.col("splice_type"))
             .with_columns(
                 (
                     pl.when(pl.col("total").list.len() > 1)
                     .then(
-                        pl.col("total").map_batches(_argmax_vec, return_dtype=pl.Int8)
+                        pl.col("total").map_batches(_argmax_vec, return_dtype=pl.Int16)
                     )
-                    .otherwise(pl.lit(0, dtype=pl.Int8))
+                    .otherwise(pl.lit(0, dtype=pl.Int16))
                 ).alias("idx")
             )
             # Ties for maximal read support (represented by -1)
@@ -208,6 +211,7 @@ class UMICounter:
             .filter(pl.col("idx") >= 0)
             .with_columns(
                 pl.col("gene").list.get(pl.col("idx")),
+                pl.col("splice_type").list.get(pl.col("idx")),
             )
             .drop("total", "idx")
         )
@@ -350,6 +354,8 @@ class UMICounter:
         # Determine ReadType for each mapped gene
         processed_reads = []
         n_genes = len(read_types_per_gene)
+        if n_genes > 1 and not self.multi_mapped_reads:
+            return None
         for gene_name, read_types in read_types_per_gene.items():
             # Return all genes with their ReadTypes and corresponding weight
             if ReadType.EXON_EXON in read_types:

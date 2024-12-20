@@ -17,7 +17,7 @@ TEST_OUT_3P = "test_data/adata_cr_out_3p.h5ad"
         ("test_data/test_dir_count_3p", "test_data/genes.gtf", "sense", TEST_OUT_3P),
     ],
 )
-@pytest.mark.parametrize("multi_mapped", [False])
+@pytest.mark.parametrize("multi_mapped_reads", [False, True])
 @pytest.mark.parametrize(
     "filter_cells, whitelist, num_umis",
     [
@@ -32,7 +32,7 @@ def test_main(
     sample_dir: str,
     gtf_file: str,
     orientation: str,
-    multi_mapped: bool,
+    multi_mapped_reads: bool,
     filter_cells: bool,
     whitelist: Optional[str],
     num_umis: Optional[int],
@@ -40,13 +40,12 @@ def test_main(
 ):
     if orientation == "sense" and whitelist:
         whitelist = whitelist.replace("whitelist", "whitelist_3p")
-    print(whitelist)
     os.system(
         f"tidesurf -o test_out --orientation {orientation} "
-        f"{'-m ' if multi_mapped else ''}"
         f"{'--filter_cells ' if filter_cells else ''}"
         f"{f'--whitelist {whitelist} ' if whitelist else ''}"
         f"{f'--num_umis {num_umis} ' if num_umis else ''}"
+        f"{'--multi_mapped_reads ' if multi_mapped_reads else ''}"
         f"{sample_dir} {gtf_file}"
     )
     adata_cr = ad.read_h5ad(test_out)

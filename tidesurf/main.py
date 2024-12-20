@@ -23,6 +23,7 @@ def run(
     whitelist: Optional[str] = None,
     num_umis: Optional[int] = None,
     min_intron_overlap: int = 5,
+    multi_mapped_reads: bool = False,
 ) -> None:
     """
     Run tidesurf on a 10x sample directory.
@@ -37,20 +38,24 @@ def run(
     :param num_umis: If `filter_cells` is True: set to an integer to
         only keep cells with at least that many UMIs. Mutually exclusive
         with `whitelist`.
-    :param min_intron_overlap:
+    :param min_intron_overlap: Minimum overlap of reads with introns
+        required to consider them intronic.
+    :param multi_mapped_reads: Whether to count multi-mapped reads
     :return:
     """
     log.info("Building transcript index.")
     t_idx = TranscriptIndex(gtf_file)
     cr_pipeline = "count"
     # Try cellranger count output
-    bam_files = [f"{sample_dir}/outs/possorted_genome_bam.bam"]
+    bam_files = [os.path.join(sample_dir, "outs/possorted_genome_bam.bam")]
     sample_ids = [""]
     if not os.path.isfile(bam_files[0]):
         cr_pipeline = "multi"
         # Try cellranger multi output
         bam_files = glob.glob(
-            f"{sample_dir}/outs/per_sample_outs/*/count/sample_alignments.bam"
+            os.path.join(
+                sample_dir, "outs/per_sample_outs/*/count/sample_alignments.bam"
+            )
         )
         if not bam_files:
             log.error(f"No Cell Ranger BAM files found in directory {sample_dir}.")
@@ -65,6 +70,7 @@ def run(
         transcript_index=t_idx,
         orientation=orientation,
         min_intron_overlap=min_intron_overlap,
+        multi_mapped_reads=multi_mapped_reads,
     )
     log.info(
         f"Counting reads mapped to transcripts in {counter.orientation} orientation."
@@ -125,7 +131,8 @@ def main() -> None:
         default="sense",
         choices=["sense", "antisense"],
         help="Orientation of reads with respect to transcripts. For 10x"
-        " Genomics, use 'sense' for three prime and 'antisense' for five prime.",
+        " Genomics, use 'sense' for three prime and 'antisense' for "
+        "five prime.",
     )
     parser.add_argument(
         "-o", "--output", type=str, default="tidesurf_out", help="Output directory."
@@ -152,7 +159,14 @@ def main() -> None:
         "--min_intron_overlap",
         type=int,
         default=5,
-        help="Minimum number of bases that a read must overlap with an intron to be considered intronic.",
+        help="Minimum number of bases that a read must overlap with an "
+        "intron to be considered intronic.",
+    )
+    parser.add_argument(
+        "--multi_mapped_reads",
+        action="store_true",
+        help="Take reads mapping to multiple genes into account "
+        "(default: reads mapping to more than one gene are discarded).",
     )
     parser.add_argument(
         "sample_dir",
@@ -189,6 +203,7 @@ def main() -> None:
         whitelist=args.whitelist,
         num_umis=args.num_umis,
         min_intron_overlap=args.min_intron_overlap,
+        multi_mapped_reads=args.multi_mapped_reads,
     )
     end_time = datetime.now()
     log.info(f"Finished in {end_time - start_time}.")
