@@ -329,5 +329,29 @@ def test_transcript_index():
         "ENSMUST00000097826",
     ]
 
+    # Test case where one transcript overlaps by only its last base
+    start, end = 9_899_852, 9_899_951
+    overlapping_transcripts = transcript_idx.get_overlapping_transcripts(
+        chromosome=chromosome, strand=strand, start=start, end=end
+    )
+    transcript_ids = [x.transcript_id for x in overlapping_transcripts]
+    assert transcript_ids == [
+        "ENSMUST00000166384",
+        "ENSMUST00000168907",
+        "ENSMUST00000171265",
+        "ENSMUST00000097826",  # This transcript overlaps by only its last base
+    ]
+    # Shift by one base to the right: the last transcript should not be included
+    start, end = 9_899_853, 9_899_952
+    overlapping_transcripts = transcript_idx.get_overlapping_transcripts(
+        chromosome=chromosome, strand=strand, start=start, end=end
+    )
+    transcript_ids = [x.transcript_id for x in overlapping_transcripts]
+    assert transcript_ids == [
+        "ENSMUST00000166384",
+        "ENSMUST00000168907",
+        "ENSMUST00000171265",
+    ]
+
     # Try to get a transcript that does not exist
     assert transcript_idx.get_transcript("ENSMUST00000000000") is None

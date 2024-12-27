@@ -493,10 +493,10 @@ class TranscriptIndex:
                         regions.append((pos, regions[-1][1] | {trans}))
                 else:
                     # Multiple transcripts ending at the same position
-                    if regions[-1][0] == pos:
-                        regions[-1] = (pos, regions[-1][1] - {trans})
+                    if regions[-1][0] == pos + 1:
+                        regions[-1] = (pos + 1, regions[-1][1] - {trans})
                     else:
-                        regions.append((pos, regions[-1][1] - {trans}))
+                        regions.append((pos + 1, regions[-1][1] - {trans}))
             self.transcripts_by_region[curr_chrom, curr_strand] = regions
 
         # Construct index from lines
