@@ -3,6 +3,7 @@ import pytest
 from tidesurf.transcript import (
     GenomicFeature,
     Exon,
+    Intron,
     Transcript,
     TranscriptIndex,
     Strand,
@@ -172,6 +173,16 @@ def test_transcript():
         "ENSMUSE00001146417",
         2,
     )
+    intron_1 = Intron(
+        "ENSMUSG00000025911",
+        "Adhfe1",
+        "ENSMUST00000144177",
+        "Adhfe1-203",
+        "chr1",
+        "+",
+        9_548_152,
+        9_549_906,
+    )
 
     transcript_1 = Transcript(
         "ENSMUSG00000025911",
@@ -187,17 +198,31 @@ def test_transcript():
     assert str(transcript_1).startswith(
         "<Transcript ENSMUST00000144177 chr1:9,547,948-9,577,970 on '+' strand at 0x"
     )
-    assert transcript_1.exons == [], "Exons should be empty list."
+    assert transcript_1.regions == [], "Exons should be empty list."
     # Test adding exons
     transcript_1.add_exon(exon_1)
     transcript_1.add_exon(exon_2)
-    assert transcript_1.exons == [exon_1, exon_2], "Exons were not added correctly."
+    assert transcript_1.regions == [exon_1, exon_2], "Exons were not added correctly."
     # Exon that is already present should not be added again
     transcript_1.add_exon(exon_1)
-    assert transcript_1.exons == [
+    assert transcript_1.regions == [
         exon_1,
         exon_2,
     ], "Exon that was already present was not handled correctly."
+    transcript_1.sort_regions()
+    assert transcript_1.regions == [
+        exon_1,
+        intron_1,
+        exon_2,
+    ], "Exon sorting and intron insertion failed."
+
+    # Check that introns are not inserted again
+    transcript_1.sort_regions()
+    assert transcript_1.regions == [
+        exon_1,
+        intron_1,
+        exon_2,
+    ], "Second sorting failed and/or inserted further introns."
 
     transcript_2 = Transcript(
         "ENSMUSG00000025911",
@@ -210,7 +235,12 @@ def test_transcript():
         9_577_970,
         [exon_1, exon_2],
     )
-    assert transcript_1 == transcript_2, "Transcripts should be identical."
+    assert (
+        transcript_1 != transcript_2
+    ), "Transcripts should differ in their exons/introns."
+
+    transcript_2.sort_regions()
+    assert transcript_1 == transcript_2, "Transcripts should be equal after sorting."
 
 
 def test_transcript_index():

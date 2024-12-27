@@ -1,8 +1,10 @@
 from bisect import bisect
 from dataclasses import dataclass
-from typing import List, Set, Dict, Tuple, Optional
+from typing import List, Set, Dict, Tuple, Optional, Union
 from enum import Enum
+import logging
 
+log = logging.getLogger(__name__)
 
 ALLOWED_BIOTYPES = {
     "protein_coding",
@@ -133,6 +135,28 @@ class GenomicFeature:
         else:
             return self.end > other.end
 
+    def __eq__(self, other) -> bool:
+        return (
+            self.gene_id == other.gene_id
+            and self.transcript_id == other.transcript_id
+            and self.chromosome == other.chromosome
+            and self.strand == other.strand
+            and self.start == other.start
+            and self.end == other.end
+        )
+
+    def __hash__(self) -> int:
+        return hash(
+            (
+                self.gene_id,
+                self.transcript_id,
+                self.chromosome,
+                self.strand,
+                self.start,
+                self.end,
+            )
+        )
+
     def __repr__(self) -> str:
         return (
             f"<GenomicFeature {self.chromosome}:{self.start:,}-"
@@ -184,9 +208,6 @@ class Exon(GenomicFeature):
         self.exon_id = exon_id
         self.exon_number = exon_number
 
-    def __eq__(self, other) -> bool:
-        return self.exon_id == other.exon_id
-
     def __repr__(self) -> str:
         return (
             f"<Exon {self.exon_id}, No. {self.exon_number} for transcript "
@@ -194,26 +215,20 @@ class Exon(GenomicFeature):
             f"{self.end:,} on '{self.strand}' strand at {hex(id(self))}>"
         )
 
-    def __hash__(self) -> int:
-        return hash(self.exon_id)
 
-
-class Transcript(GenomicFeature):
+class Intron(GenomicFeature):
     """
-    A transcript. Contains a list of exons.
+    An intron of a transcript.
 
     :param gene_id: ID of the corresponding gene.
     :param gene_name: Name of the corresponding gene.
-    :param transcript_id: ID of the transcript.
-    :param transcript_name: Name of the transcript.
-    :param chromosome: Chromosome on which the transcript is located.
-    :param strand: Strand on which the transcript is located.
-    :param start: Genomic start position of the transcript (0-based).
-    :param end: Genomic end position of the transcript (0-based).
-    :param exons: List of exons in the transcript.
+    :param transcript_id: ID of the corresponding transcript.
+    :param transcript_name: Name of the corresponding transcript.
+    :param chromosome: Chromosome on which the exon is located.
+    :param strand: Strand on which the exon is located.
+    :param start: Genomic start position of the exon (0-based).
+    :param end: Genomic end position of the exon (0-based).
     """
-
-    __slots__ = ["exons"]
 
     def __init__(
         self,
@@ -225,7 +240,51 @@ class Transcript(GenomicFeature):
         strand: str,
         start: int,
         end: int,
-        exons: Optional[List[Exon]] = None,
+    ) -> None:
+        super(Intron, self).__init__(
+            gene_id=gene_id,
+            gene_name=gene_name,
+            transcript_id=transcript_id,
+            transcript_name=transcript_name,
+            chromosome=chromosome,
+            strand=strand,
+            start=start,
+            end=end,
+        )
+
+
+class Transcript(GenomicFeature):
+    """
+    A transcript. Contains a list of exons and introns.
+
+    :param gene_id: ID of the corresponding gene.
+    :param gene_name: Name of the corresponding gene.
+    :param transcript_id: ID of the transcript.
+    :param transcript_name: Name of the transcript.
+    :param chromosome: Chromosome on which the transcript is located.
+    :param strand: Strand on which the transcript is located.
+    :param start: Genomic start position of the transcript (0-based).
+    :param end: Genomic end position of the transcript (0-based).
+    :param regions: List of exons and introns in the transcript. A
+        Transcript object can be initialized without regions (default),
+        in which case they should be added later. If only exons are
+        added, introns can be inserted with
+        :meth:`~tidesurf.transcript.Transcript.sort_regions`.
+    """
+
+    __slots__ = ["regions"]
+
+    def __init__(
+        self,
+        gene_id: str,
+        gene_name: str,
+        transcript_id: str,
+        transcript_name: str,
+        chromosome: str,
+        strand: str,
+        start: int,
+        end: int,
+        regions: Optional[List[Union[Exon, Intron]]] = None,
     ) -> None:
         super(Transcript, self).__init__(
             gene_id=gene_id,
@@ -237,10 +296,10 @@ class Transcript(GenomicFeature):
             start=start,
             end=end,
         )
-        if exons is None:
-            self.exons = []
+        if regions is None:
+            self.regions = []
         else:
-            self.exons = exons
+            self.regions = regions
 
     def add_exon(self, exon: Exon) -> None:
         """
@@ -249,24 +308,46 @@ class Transcript(GenomicFeature):
         :param exon: Exon to add.
         :return:
         """
-        if exon not in self.exons:
-            self.exons.append(exon)
+        if exon not in self.regions:
+            self.regions.append(exon)
 
-    def sort_exons(self) -> None:
+    def sort_regions(self) -> None:
         """
-        Sort exons by start position.
+        Sort regions by start position and insert introns.
 
         :return:
         """
-        self.exons = sorted(set(self.exons))
+        self.regions = sorted(set(self.regions))
+        all_regions = []
+        for i, exon in enumerate(self.regions[:-1]):
+            # Don't have to check the first region as it is always an exon
+            if isinstance(self.regions[i + 1], Intron):
+                log.warning("Intron found in regions. Skipping intron insertion.")
+                return
+            all_regions.append(exon)
+            all_regions.append(
+                Intron(
+                    self.gene_id,
+                    self.gene_name,
+                    self.transcript_id,
+                    self.transcript_name,
+                    self.chromosome,
+                    str(self.strand),
+                    exon.end + 1,
+                    self.regions[i + 1].start - 1,
+                )
+            )
+        all_regions.append(self.regions[-1])
+        self.regions = all_regions
 
     def __eq__(self, other) -> bool:
-        return self.transcript_id == other.transcript_id
+        return super.__eq__(self, other) and self.regions == other.regions
 
     def __repr__(self) -> str:
         return (
             f"<Transcript {self.transcript_id} {self.chromosome}:{self.start:,}-"
-            f"{self.end:,} on '{self.strand}' strand at {hex(id(self))}>"
+            f"{self.end:,} on '{self.strand}' strand at {hex(id(self)) } "
+            f"containing {len(self.regions)} exons/introns>"
         )
 
     def __hash__(self) -> int:
@@ -474,7 +555,7 @@ class TranscriptIndex:
 
         # Sort exons in all transcripts
         for transcript in self.transcripts.values():
-            transcript.sort_exons()
+            transcript.sort_regions()
 
     def get_transcript(self, transcript_id: str) -> Optional[Transcript]:
         """

@@ -5,7 +5,7 @@ import pysam
 from scipy.sparse import csr_matrix, lil_matrix
 from tqdm import tqdm
 from tqdm.contrib.logging import logging_redirect_tqdm
-from tidesurf.transcript import TranscriptIndex, Strand
+from tidesurf.transcript import Exon, Intron, TranscriptIndex, Strand
 from enum import Enum
 from typing import Literal, Tuple, Optional, Dict, List
 import logging
@@ -60,6 +60,13 @@ class UMICounter:
         required to consider them intronic.
     :param multi_mapped_reads: Whether to count multi-mapped reads.
     """
+
+    __slots__ = [
+        "transcript_index",
+        "orientation",
+        "MIN_INTRON_OVERLAP",
+        "multi_mapped_reads",
+    ]
 
     def __init__(
         self,
@@ -311,17 +318,25 @@ class UMICounter:
             trans.gene_name: set() for trans in overlapping_transcripts
         }
         for trans in overlapping_transcripts:
-            # Loop over exons
+            # Loop over exons and introns
             total_exon_overlap = 0
+            total_intron_overlap = 0
             n_exons = 0
-            left_idx = max(bisect(trans.exons, start, key=lambda x: x.start) - 1, 0)
-            for exon in trans.exons[left_idx:]:
-                if exon.start > end:
+            left_idx = max(bisect(trans.regions, start, key=lambda x: x.start) - 1, 0)
+            for region in trans.regions[left_idx:]:
+                if region.start > end:
                     break
-                exon_overlap = read.get_overlap(exon.start, exon.end + 1)
-                total_exon_overlap += exon_overlap
-                if exon_overlap > 0:
-                    n_exons += 1
+                if isinstance(region, Exon):
+                    exon_overlap = read.get_overlap(region.start, region.end + 1)
+                    total_exon_overlap += exon_overlap
+                    if exon_overlap > 0:
+                        n_exons += 1
+                elif isinstance(region, Intron):
+                    total_intron_overlap += read.get_overlap(
+                        region.start, region.end + 1
+                    )
+                else:
+                    raise ValueError("Unknown region type.")
 
             # Assign read alignment region for this transcript to exonic
             # if at most 5 bases do not overlap with exons
@@ -340,15 +355,15 @@ class UMICounter:
             # region before or with only last exon and the region after
             elif (
                 left_idx == 0
-                and start < trans.exons[left_idx].start
-                and end <= trans.exons[left_idx].end
+                and start < trans.regions[left_idx].start
+                and end <= trans.regions[left_idx].end
             ) or (
-                left_idx == len(trans.exons) - 1
-                and end > trans.exons[left_idx].end
-                and start >= trans.exons[left_idx].start
+                left_idx == len(trans.regions) - 1
+                and end > trans.regions[left_idx].end
+                and start >= trans.regions[left_idx].start
             ):
                 read_types_per_gene[trans.gene_name].add(ReadType.EXON)
-            else:
+            elif total_intron_overlap >= self.MIN_INTRON_OVERLAP:
                 read_types_per_gene[trans.gene_name].add(ReadType.INTRON)
 
         # Determine ReadType for each mapped gene
@@ -357,6 +372,8 @@ class UMICounter:
         if n_genes > 1 and not self.multi_mapped_reads:
             return None
         for gene_name, read_types in read_types_per_gene.items():
+            if not read_types:
+                continue
             # Return all genes with their ReadTypes and corresponding weight
             if ReadType.EXON_EXON in read_types:
                 read_type = ReadType.EXON_EXON
@@ -366,6 +383,8 @@ class UMICounter:
                 read_type = ReadType.AMBIGUOUS
 
             processed_reads.append((cbc, umi, gene_name, int(read_type), 1.0 / n_genes))
+        if not processed_reads:
+            return None
         return processed_reads
 
     @staticmethod
