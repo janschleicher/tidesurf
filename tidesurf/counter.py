@@ -115,7 +115,7 @@ class UMICounter:
                     pl.read_csv(whitelist, has_header=False)[:, 0].str.strip_chars()
                 )
 
-        aln_file = pysam.AlignmentFile(bam_file)
+        aln_file = pysam.AlignmentFile(bam_file, mode="r")
         total_reads = 0
         for idx_stats in aln_file.get_index_statistics():
             total_reads += idx_stats.total
@@ -163,11 +163,18 @@ class UMICounter:
             )
             .group_by("cbc", "umi", "gene", "read_type")
             .agg(pl.col("weight").sum())  # Count ReadTypes per cbc/umi/gene combination
+            .with_columns(
+                pl.col("read_type")
+                .replace(old=int(ReadType.EXON_EXON), new=int(ReadType.EXON))
+                .alias("read_type_")
+            )
             .select(
-                pl.all(), (pl.sum("weight").over("cbc", "umi", "gene")).alias("total")
+                pl.exclude("weight"),
+                (pl.sum("weight").over("cbc", "umi", "gene")).alias("total"),
+                (pl.sum("weight").over("cbc", "umi", "gene", "read_type_")),
             )
             .select(pl.all(), (pl.col("weight") / pl.col("total")).alias("percentage"))
-            .filter(  # Remove read types with low counts and percentage
+            .filter(  # Remove read types with low counts and percentage (exonic types together)
                 ~(
                     ((pl.col("weight") < 2) & (pl.col("percentage") < 0.1))
                     | (pl.col("percentage") < 0.1)
@@ -338,8 +345,8 @@ class UMICounter:
                 else:
                     raise ValueError("Unknown region type.")
 
-            # Assign read alignment region for this transcript to exonic
-            # if at most 5 bases do not overlap with exons
+            # Assign read alignment region for this transcript to exonic if
+            # at most MIN_INTRON_OVERLAP - 1 bases do not overlap with exons
             if (
                 clipped_length - total_exon_overlap - insertion_length
                 < self.MIN_INTRON_OVERLAP
