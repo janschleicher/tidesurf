@@ -111,6 +111,7 @@ class UMICounter:
                     "Whitelist and num_umis are mutually exclusive arguments."
                 )
             elif whitelist:
+                log.info(f"Reading whitelist from {whitelist}.")
                 whitelist = set(
                     pl.read_csv(whitelist, has_header=False)[:, 0].str.strip_chars()
                 )
@@ -123,7 +124,9 @@ class UMICounter:
         with logging_redirect_tqdm():
             results = []
             log.info("Processing reads from BAM file.")
-            skipped_reads = 0
+            skipped_reads = {"unmapped": 0, "no transcripts": 0}
+            if filter_cells and whitelist:
+                skipped_reads["whitelist"] = 0
             for bam_read in tqdm(
                 aln_file, total=total_reads, desc="Processing BAM file", unit=" reads"
             ):
@@ -134,20 +137,23 @@ class UMICounter:
                     or not bam_read.has_tag("CB")
                     or not bam_read.has_tag("UB")
                 ):
-                    skipped_reads += 1
+                    skipped_reads["unmapped"] += 1
                     continue
                 if filter_cells and whitelist:
                     if bam_read.get_tag("CB") not in whitelist:
+                        skipped_reads["whitelist"] += 1
                         continue
                 res = self._process_read(bam_read)
                 if res is not None:
                     results.extend(res)
                 else:
-                    skipped_reads += 1
-        log.info(f"Skipped {skipped_reads:,} reads.")
+                    skipped_reads["no transcripts"] += 1
+        log.info(
+            f"Skipped {', '.join([f'{n_reads:,} reads ({reason})' for reason, n_reads in skipped_reads.items()])}."
+        )
 
         # Deduplicate cell barcodes and UMIs.
-        log.info("Deduplicating cell barcodes and UMIs.")
+        log.info("Determining splice types.")
         results = (
             pl.DataFrame(
                 results,
@@ -194,6 +200,8 @@ class UMICounter:
             )
             .drop("read_type")
         )
+
+        log.info("Resolving multi-mapped UMIs.")
 
         # Resolve multi-mapped UMIs.
         def _argmax(lst: List[int]) -> int:
