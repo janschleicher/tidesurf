@@ -153,7 +153,7 @@ class UMICounter:
         )
 
         # Deduplicate cell barcodes and UMIs.
-        log.info("Determining splice types.")
+        log.info("Determining splice types and deduplicating UMIs.")
         results = (
             pl.DataFrame(
                 results,
@@ -301,7 +301,6 @@ class UMICounter:
         )
 
         # Only keep transcripts with minimum overlap of 50% of the read length.
-        # TODO: Does this make sense?
         min_overlap = length // 2
         overlapping_transcripts = [
             t
