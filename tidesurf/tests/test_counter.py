@@ -61,10 +61,16 @@ def test_counter(
 
     # Mitochondrial genes should not have any unspliced or ambiguous counts
     assert (
-        np.sum(counts["unspliced"][:, pd.Series(genes).str.contains("(?i)^MT-")]) == 0
+        np.sum(
+            counts["unspliced"].toarray()[:, pd.Series(genes).str.contains("(?i)^MT-")]
+        )
+        == 0
     ), "Mitochondrial genes do not have unspliced counts."
     assert (
-        np.sum(counts["ambiguous"][:, pd.Series(genes).str.contains("(?i)^MT-")]) == 0
+        np.sum(
+            counts["ambiguous"].toarray()[:, pd.Series(genes).str.contains("(?i)^MT-")]
+        )
+        == 0
     ), "Mitochondrial genes do not have ambiguous counts."
 
 
