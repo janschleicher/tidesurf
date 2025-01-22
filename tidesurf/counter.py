@@ -122,9 +122,9 @@ class UMICounter:
             total_reads += idx_stats.total
 
         with logging_redirect_tqdm():
-            results = []
+            results = {}
             log.info("Processing reads from BAM file.")
-            skipped_reads = {"unmapped": 0, "no/multimapped transcripts": 0}
+            skipped_reads = {"unmapped": 0, "no or multimapped transcripts": 0}
             if filter_cells and whitelist:
                 skipped_reads["whitelist"] = 0
             for bam_read in tqdm(
@@ -133,7 +133,7 @@ class UMICounter:
                 if (
                     bam_read.is_unmapped
                     or bam_read.mapping_quality
-                    != 255  # discard reads with mapping quality < 255
+                    != 255  # discard reads with mapping quality != 255
                     or not bam_read.has_tag("CB")
                     or not bam_read.has_tag("UB")
                 ):
@@ -145,42 +145,55 @@ class UMICounter:
                         continue
                 res = self._process_read(bam_read)
                 if res is not None:
-                    results.extend(res)
+                    cbc, results_list = res
+                    if cbc in results:
+                        results[cbc].extend(results_list)
+                    else:
+                        results[cbc] = results_list
                 else:
-                    skipped_reads["no/multimapped transcripts"] += 1
+                    skipped_reads["no or multimapped transcripts"] += 1
         log.info(
             f"Skipped {', '.join([f'{n_reads:,} reads ({reason})' for reason, n_reads in skipped_reads.items()])}."
         )
 
-        # Sort processed reads by cell barcodes
-        res_dfs = []
+        # Resolve multi-mapped UMIs.
+        def _argmax(lst: List[int]) -> int:
+            _, indices, value_counts = np.unique(
+                lst, return_index=True, return_counts=True
+            )
+            if value_counts[-1] > 1:
+                return -1
+            else:
+                return indices[-1]
+
+        _argmax_vec = np.vectorize(_argmax)
 
         # Deduplicate cell barcodes and UMIs.
+        df_list = []
         log.info("Determining splice types and deduplicating UMIs.")
-        results = pl.DataFrame(
-            results,
-            schema={
-                "cbc": str,
-                "umi": str,
-                "gene": str,
-                "read_type": pl.UInt8,
-                "weight": pl.Float32,
-            },
-            strict=False,
-            orient="row",
-        )
         with logging_redirect_tqdm():
-            for _, df in tqdm(
-                results.group_by("cbc"),
-                total=results["cbc"].n_unique(),
-                desc="Deduplicating CBCs and UMIs",
+            for cbc, results_list in tqdm(
+                results.items(),
+                total=len(results),
+                desc="Deduplicating UMIs",
                 unit=" CBCs",
             ):
-                res_dfs.append(
-                    df.group_by("cbc", "umi", "gene", "read_type")
+                df = (
+                    pl.DataFrame(
+                        results_list,
+                        schema={
+                            "umi": str,
+                            "gene": str,
+                            "read_type": pl.UInt8,
+                            "weight": pl.Float32,
+                        },
+                        strict=False,
+                        orient="row",
+                    )
+                    .group_by("umi", "gene", "read_type")
                     .agg(
                         pl.col("weight").sum()
-                    )  # Count ReadTypes per cbc/umi/gene combination
+                    )  # Count ReadTypes per umi/gene combination
                     .with_columns(
                         pl.col("read_type")
                         .replace(old=int(ReadType.EXON_EXON), new=int(ReadType.EXON))
@@ -188,8 +201,8 @@ class UMICounter:
                     )
                     .select(
                         pl.exclude("weight"),
-                        (pl.sum("weight").over("cbc", "umi", "gene")).alias("total"),
-                        (pl.sum("weight").over("cbc", "umi", "gene", "read_type_")),
+                        (pl.sum("weight").over("umi", "gene")).alias("total"),
+                        (pl.sum("weight").over("umi", "gene", "read_type_")),
                     )
                     .select(
                         pl.all(),
@@ -201,7 +214,7 @@ class UMICounter:
                             | (pl.col("percentage") < 0.1)
                         )
                     )
-                    .group_by("cbc", "umi", "gene")
+                    .group_by("umi", "gene")
                     # Keep the first ReadType, order: INTRON, EXON_EXON, AMBIGUOUS, EXON
                     .agg(pl.min("read_type"), pl.max("total"))
                     # Remove UMIs that are only supported by multimapped reads
@@ -216,51 +229,42 @@ class UMICounter:
                     )
                     .drop("read_type")
                 )
-        results = pl.concat(res_dfs)
 
-        log.info("Resolving multi-mapped UMIs.")
-
-        # Resolve multi-mapped UMIs.
-        def _argmax(lst: List[int]) -> int:
-            _, indices, value_counts = np.unique(
-                lst, return_index=True, return_counts=True
-            )
-            if value_counts[-1] > 1:
-                return -1
-            else:
-                return indices[-1]
-
-        _argmax_vec = np.vectorize(_argmax)
-
-        # Keep the gene with the highest read support
-        results = (
-            results.group_by("cbc", "umi")
-            .agg(pl.col("gene"), pl.col("total"), pl.col("splice_type"))
-            .with_columns(
-                (
-                    pl.when(pl.col("total").list.len() > 1)
-                    .then(
-                        pl.col("total").map_batches(_argmax_vec, return_dtype=pl.Int16)
+                # Keep the gene with the highest read support
+                df = (
+                    df.group_by("umi")
+                    .agg(pl.col("gene"), pl.col("total"), pl.col("splice_type"))
+                    .with_columns(
+                        (
+                            pl.when(pl.col("total").list.len() > 1)
+                            .then(
+                                pl.col("total").map_batches(
+                                    _argmax_vec, return_dtype=pl.Int16
+                                )
+                            )
+                            .otherwise(pl.lit(0, dtype=pl.Int16))
+                        ).alias("idx")
                     )
-                    .otherwise(pl.lit(0, dtype=pl.Int16))
-                ).alias("idx")
-            )
-            # Ties for maximal read support (represented by -1)
-            # are discarded
-            .filter(pl.col("idx") >= 0)
-            .with_columns(
-                pl.col("gene").list.get(pl.col("idx")),
-                pl.col("splice_type").list.get(pl.col("idx")),
-            )
-            .drop("total", "idx")
-        )
+                    # Ties for maximal read support (represented by -1)
+                    # are discarded
+                    .filter(pl.col("idx") >= 0)
+                    .with_columns(
+                        pl.lit(cbc).alias("cbc"),
+                        pl.col("gene").list.get(pl.col("idx")),
+                        pl.col("splice_type").list.get(pl.col("idx")),
+                    )
+                    .select("cbc", "umi", "gene", "splice_type")
+                )
+                df_list.append(df)
+
+        results_df = pl.concat(df_list)
 
         # Do the rest of the counting.
         log.info("Counting UMIs.")
-        cells = results["cbc"].unique().sort().to_numpy()
-        genes = results["gene"].unique().sort().to_numpy()
+        cells = results_df["cbc"].unique().sort().to_numpy()
+        genes = results_df["gene"].unique().sort().to_numpy()
         counts_dict = self.__count(
-            results.to_numpy(),
+            results_df.to_numpy(),
             cells,
             genes,
         )
@@ -292,12 +296,12 @@ class UMICounter:
 
     def _process_read(
         self, read: pysam.AlignedSegment
-    ) -> Optional[List[Tuple[str, str, str, int, float]]]:
+    ) -> Optional[Tuple[str, List[Tuple[str, str, int, float]]]]:
         """
         Process a single read.
 
         :param read: The read to process.
-        :return: cell barcode, UMI, gene name, and read type.
+        :return: cell barcode, list of UMI, gene name, and read type.
         """
         cbc = str(read.get_tag("CB"))
         umi = str(read.get_tag("UB"))
@@ -413,10 +417,10 @@ class UMICounter:
             else:
                 read_type = ReadType.AMBIGUOUS
 
-            processed_reads.append((cbc, umi, gene_name, int(read_type), 1.0 / n_genes))
+            processed_reads.append((umi, gene_name, int(read_type), 1.0 / n_genes))
         if not processed_reads:
             return None
-        return processed_reads
+        return cbc, processed_reads
 
     @staticmethod
     def __count(
