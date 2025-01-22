@@ -124,7 +124,7 @@ class UMICounter:
         with logging_redirect_tqdm():
             results = []
             log.info("Processing reads from BAM file.")
-            skipped_reads = {"unmapped": 0, "no transcripts": 0}
+            skipped_reads = {"unmapped": 0, "no or multimapped transcripts": 0}
             if filter_cells and whitelist:
                 skipped_reads["whitelist"] = 0
             for bam_read in tqdm(
@@ -147,7 +147,7 @@ class UMICounter:
                 if res is not None:
                     results.extend(res)
                 else:
-                    skipped_reads["no transcripts"] += 1
+                    skipped_reads["no or multimapped transcripts"] += 1
         log.info(
             f"Skipped {', '.join([f'{n_reads:,} reads ({reason})' for reason, n_reads in skipped_reads.items()])}."
         )
