@@ -124,7 +124,7 @@ class UMICounter:
         with logging_redirect_tqdm():
             results = []
             log.info("Processing reads from BAM file.")
-            skipped_reads = {"unmapped": 0, "no transcripts": 0}
+            skipped_reads = {"unmapped": 0, "no/multimapped transcripts": 0}
             if filter_cells and whitelist:
                 skipped_reads["whitelist"] = 0
             for bam_read in tqdm(
@@ -147,59 +147,76 @@ class UMICounter:
                 if res is not None:
                     results.extend(res)
                 else:
-                    skipped_reads["no transcripts"] += 1
+                    skipped_reads["no/multimapped transcripts"] += 1
         log.info(
             f"Skipped {', '.join([f'{n_reads:,} reads ({reason})' for reason, n_reads in skipped_reads.items()])}."
         )
 
+        # Sort processed reads by cell barcodes
+        res_dfs = []
+
         # Deduplicate cell barcodes and UMIs.
         log.info("Determining splice types and deduplicating UMIs.")
-        results = (
-            pl.DataFrame(
-                results,
-                schema={
-                    "cbc": str,
-                    "umi": str,
-                    "gene": str,
-                    "read_type": pl.UInt8,
-                    "weight": pl.Float32,
-                },
-                strict=False,
-                orient="row",
-            )
-            .group_by("cbc", "umi", "gene", "read_type")
-            .agg(pl.col("weight").sum())  # Count ReadTypes per cbc/umi/gene combination
-            .with_columns(
-                pl.col("read_type")
-                .replace(old=int(ReadType.EXON_EXON), new=int(ReadType.EXON))
-                .alias("read_type_")
-            )
-            .select(
-                pl.exclude("weight"),
-                (pl.sum("weight").over("cbc", "umi", "gene")).alias("total"),
-                (pl.sum("weight").over("cbc", "umi", "gene", "read_type_")),
-            )
-            .select(pl.all(), (pl.col("weight") / pl.col("total")).alias("percentage"))
-            .filter(  # Remove read types with low counts and percentage (exonic types together)
-                ~(
-                    ((pl.col("weight") < 2) & (pl.col("percentage") < 0.1))
-                    | (pl.col("percentage") < 0.1)
-                )
-            )
-            .group_by("cbc", "umi", "gene")
-            # Keep the first ReadType, order: INTRON, EXON_EXON, AMBIGUOUS, EXON
-            .agg(pl.min("read_type"), pl.max("total"))
-            # Remove UMIs that are only supported by multimapped reads
-            .filter(pl.col("total") >= 1)
-            .with_columns(
-                pl.col("read_type")
-                .map_elements(  # Map ReadType to SpliceType
-                    lambda x: int(ReadType(x).get_splice_type()), return_dtype=pl.UInt8
-                )
-                .alias("splice_type")
-            )
-            .drop("read_type")
+        results = pl.DataFrame(
+            results,
+            schema={
+                "cbc": str,
+                "umi": str,
+                "gene": str,
+                "read_type": pl.UInt8,
+                "weight": pl.Float32,
+            },
+            strict=False,
+            orient="row",
         )
+        with logging_redirect_tqdm():
+            for _, df in tqdm(
+                results.group_by("cbc"),
+                total=results["cbc"].n_unique(),
+                desc="Deduplicating CBCs and UMIs",
+                unit=" CBCs",
+            ):
+                res_dfs.append(
+                    df.group_by("cbc", "umi", "gene", "read_type")
+                    .agg(
+                        pl.col("weight").sum()
+                    )  # Count ReadTypes per cbc/umi/gene combination
+                    .with_columns(
+                        pl.col("read_type")
+                        .replace(old=int(ReadType.EXON_EXON), new=int(ReadType.EXON))
+                        .alias("read_type_")
+                    )
+                    .select(
+                        pl.exclude("weight"),
+                        (pl.sum("weight").over("cbc", "umi", "gene")).alias("total"),
+                        (pl.sum("weight").over("cbc", "umi", "gene", "read_type_")),
+                    )
+                    .select(
+                        pl.all(),
+                        (pl.col("weight") / pl.col("total")).alias("percentage"),
+                    )
+                    .filter(  # Remove read types with low counts and percentage (exonic types together)
+                        ~(
+                            ((pl.col("weight") < 2) & (pl.col("percentage") < 0.1))
+                            | (pl.col("percentage") < 0.1)
+                        )
+                    )
+                    .group_by("cbc", "umi", "gene")
+                    # Keep the first ReadType, order: INTRON, EXON_EXON, AMBIGUOUS, EXON
+                    .agg(pl.min("read_type"), pl.max("total"))
+                    # Remove UMIs that are only supported by multimapped reads
+                    .filter(pl.col("total") >= 1)
+                    .with_columns(
+                        pl.col("read_type")
+                        .map_elements(  # Map ReadType to SpliceType
+                            lambda x: int(ReadType(x).get_splice_type()),
+                            return_dtype=pl.UInt8,
+                        )
+                        .alias("splice_type")
+                    )
+                    .drop("read_type")
+                )
+        results = pl.concat(res_dfs)
 
         log.info("Resolving multi-mapped UMIs.")
 
