@@ -169,9 +169,9 @@ class UMICounter:
         _argmax_vec = np.vectorize(_argmax)
 
         # Deduplicate cell barcodes and UMIs.
-        df_list = []
+        counts_dict = {}
         log.info("Determining splice types and deduplicating UMIs.")
-        with logging_redirect_tqdm():
+        with logging_redirect_tqdm(), pl.StringCache():
             for cbc, results_list in tqdm(
                 results.items(),
                 total=len(results),
@@ -182,7 +182,7 @@ class UMICounter:
                     pl.DataFrame(
                         results_list,
                         schema={
-                            "umi": str,
+                            "umi": pl.Categorical,
                             "gene": str,
                             "read_type": pl.UInt8,
                             "weight": pl.Float32,
@@ -249,34 +249,51 @@ class UMICounter:
                     # are discarded
                     .filter(pl.col("idx") >= 0)
                     .with_columns(
-                        pl.lit(cbc).alias("cbc"),
                         pl.col("gene").list.get(pl.col("idx")),
                         pl.col("splice_type").list.get(pl.col("idx")),
                     )
-                    .select("cbc", "umi", "gene", "splice_type")
+                    .group_by("gene", "splice_type")
+                    .len()
                 )
-                df_list.append(df)
+                counts_dict[cbc] = df
 
-        results_df = pl.concat(df_list)
-
-        # Do the rest of the counting.
-        log.info("Counting UMIs.")
-        cells = results_df["cbc"].unique().sort().to_numpy()
-        genes = results_df["gene"].unique().sort().to_numpy()
-        counts_dict = self.__count(
-            results_df.to_numpy(),
-            cells,
-            genes,
+        log.info("Aggregating counts from individual cells.")
+        # Concatenate the cell-wise count DataFrames
+        results_df = pl.concat(
+            [
+                df.with_columns(cbc=pl.lit(key, dtype=str))
+                for key, df in counts_dict.items()
+            ]
         )
+
+        cells = np.asarray(sorted(results_df["cbc"].unique()))
+        genes = np.asarray(sorted(results_df["gene"].unique()))
+        n_cells = cells.shape[0]
+        n_genes = genes.shape[0]
+
+        # Map cells and genes to integer indicex
+        cbc_map = {cbc: i for i, cbc in enumerate(cells)}
+        gene_map = {gene: i for i, gene in enumerate(genes)}
+
+        results_df = results_df.with_columns(
+            pl.col("cbc").replace_strict(cbc_map).name.suffix("_idx"),
+            pl.col("gene").replace_strict(gene_map).name.suffix("_idx"),
+        )
+
+        assert n_cells == results_df["cbc_idx"].max() + 1
+        assert n_genes == results_df["gene_idx"].max() + 1
+
+        # Construct sparse matrices
         counts = {
-            key: lil_matrix((cells.shape[0], genes.shape[0]), dtype=np.int32)
-            for key in ["spliced", "unspliced", "ambiguous"]
+            key: lil_matrix((n_cells, n_genes), dtype=np.int32)
+            for key in [SpliceType.SPLICED, SpliceType.UNSPLICED, SpliceType.AMBIGUOUS]
         }
-        for splice_type, counts_dict_splice in counts_dict.items():
-            idx = np.asarray(list(counts_dict_splice.keys()))
-            counts[splice_type.name.lower()][idx[:, 0], idx[:, 1]] = np.asarray(
-                list(counts_dict_splice.values())
-            )
+        for splice_type, mat in counts.items():
+            df_ = results_df.filter(pl.col("splice_type") == int(splice_type))
+            idx = df_.select("cbc_idx", "gene_idx").to_numpy()
+            mat[idx[:, 0], idx[:, 1]] = np.asarray(df_["len"])
+
+        counts = {splice_type.name.lower(): mat for splice_type, mat in counts.items()}
 
         if filter_cells and num_umis:
             log.info(f"Filtering cells with at least {num_umis} UMIs.")
@@ -421,25 +438,3 @@ class UMICounter:
         if not processed_reads:
             return None
         return cbc, processed_reads
-
-    @staticmethod
-    def __count(
-        arr: np.ndarray, cells: np.ndarray, genes: np.ndarray
-    ) -> Dict[SpliceType, Dict[Tuple[int, int], int]]:
-        cbc_map = {cbc: idx for idx, cbc in enumerate(cells)}
-        gene_map = {gene: idx for idx, gene in enumerate(genes)}
-        counts_dict = {
-            SpliceType.SPLICED.value: {},
-            SpliceType.UNSPLICED.value: {},
-            SpliceType.AMBIGUOUS.value: {},
-        }
-        for row in tqdm(arr, desc="Counting s/u/a UMIs", unit=" UMIs"):
-            cbc, gene, splice_type = (
-                cbc_map[row[0]],
-                gene_map[row[2]],
-                row[3],
-            )
-            if (cbc, gene) not in counts_dict[splice_type]:
-                counts_dict[splice_type][cbc, gene] = 0
-            counts_dict[splice_type][cbc, gene] += 1
-        return {SpliceType(key): val for key, val in counts_dict.items()}

@@ -28,13 +28,14 @@ Change into the directory and install with pip:
 ## Usage
 
 ```
-usage: tidesurf [-h] [--orientation {sense,antisense}] [-o OUTPUT]
+usage: tidesurf [-h] [-v] [--orientation {sense,antisense}] [-o OUTPUT]
                 [--filter_cells] [--whitelist WHITELIST | --num_umis NUM_UMIS]
                 [--min_intron_overlap MIN_INTRON_OVERLAP]
                 [--multi_mapped_reads]
                 SAMPLE_DIR GTF_FILE
 
 Program: tidesurf (Tool for IDentification and Enumeration of Spliced and Unspliced Read Fragments)
+Version: 0.1.dev31+g30b513e.d20241211
 
 positional arguments:
   SAMPLE_DIR            Sample directory containing Cell Ranger output.
@@ -42,6 +43,7 @@ positional arguments:
 
 options:
   -h, --help            show this help message and exit
+  -v, --version         show program's version number and exit
   --orientation {sense,antisense}
                         Orientation of reads with respect to transcripts. For
                         10x Genomics, use 'sense' for three prime and
