@@ -4,6 +4,7 @@
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-red)](https://github.com/astral-sh/ruff)
 [![codecov](https://codecov.io/gh/janschleicher/tidesurf/branch/main/graph/badge.svg?token=dMenu3eZkX)](https://codecov.io/gh/janschleicher/tidesurf)
 [![Python package](https://github.com/janschleicher/tidesurf/actions/workflows/python-package.yml/badge.svg?branch=main)](https://github.com/janschleicher/tidesurf/actions/workflows/python-package.yml)
+![PyPI - Version](https://img.shields.io/pypi/v/tidesurf)
 
 # tidesurf
 
@@ -11,10 +12,18 @@ This repository provides a Tool for IDentification and Enumeration of Spliced an
 
 ## Installation
 
+### From PyPI
+
 Set up a virtual environment using Conda with Python version >=3.10 and activate it:
 
     conda create -n <envName> python=3.10
     conda activate <envName>
+
+Install the package from PyPI:
+    
+        pip install tidesurf
+
+### Latest version from GitHub
 
 Clone the repository:
 
