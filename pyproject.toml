@@ -6,6 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "tidesurf"
 dynamic = ["version"]
 description = "Tool for IDentification and Enumeration of Spliced and Unspliced Read Fragments."
+readme = "README.md"
 license = { text = "GPL-3.0 license" }
 requires-python = ">=3.10"
 
@@ -22,12 +23,14 @@ keywords = [
 ]
 
 classifiers = [
-        "Development Status :: 1 - Planning",
+        "Development Status :: 3 - Alpha",
         "Intended Audience :: Science/Research",
-        "License :: OSI Approved :: GNU General Public License v3",
+        "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
-        "Topic :: Scientific/Engineering :: Bio-Informatics"
+        "Topic :: Scientific/Engineering :: Bio-Informatics",
+        "Operating System :: MacOS",
+        "Operating System :: Unix"
 ]
 
 dependencies = [
@@ -38,6 +41,9 @@ dependencies = [
     "pysam",
     "tqdm",
 ]
+
+[project.urls]
+Repository = "https://github.com/janschleicher/tidesurf"
 
 [project.optional-dependencies]
 dev = [
