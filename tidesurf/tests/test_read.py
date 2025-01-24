@@ -185,23 +185,23 @@ def test_read_processing(multi_mapped_reads: bool) -> None:
     )
     for cbc, umi, ref_name, ref_start, cigar, is_reversed, expected_result in READS:
         read = mock_read(cbc, umi, ref_name, ref_start, cigar, is_reverse=is_reversed)
-        res_list = counter._process_read(read)
-        if res_list is None:
+        res = counter._process_read(read)
+        if res is None:
             assert (expected_result == [("", None)]) or (
                 not multi_mapped_reads and len(expected_result) > 1
             ), "Read was filtered out when it should not be."
         else:
+            cbc_pred, res_list = res
             assert len(res_list) == len(
                 expected_result
             ), f"Expected {len(expected_result)} gene(s), got {len(res_list)}."
+            assert cbc_pred == cbc, "Cell barcode mismatch."
             for (
-                cbc_pred,
                 umi_pred,
                 gene_name_pred,
                 read_type_pred,
                 weight_pred,
             ) in res_list:
-                assert cbc_pred == cbc, "Cell barcode mismatch."
                 assert umi_pred == umi, "Unique molecular identifier mismatch."
                 assert (
                     gene_name_pred,
