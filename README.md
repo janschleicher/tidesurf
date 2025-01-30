@@ -38,13 +38,14 @@ Change into the directory and install with pip:
 
 ```
 usage: tidesurf [-h] [-v] [--orientation {sense,antisense}] [-o OUTPUT]
-                [--filter_cells] [--whitelist WHITELIST | --num_umis NUM_UMIS]
+                [--no_filter_cells]
+                [--whitelist WHITELIST | --num_umis NUM_UMIS]
                 [--min_intron_overlap MIN_INTRON_OVERLAP]
                 [--multi_mapped_reads]
                 SAMPLE_DIR GTF_FILE
 
 Program: tidesurf (Tool for IDentification and Enumeration of Spliced and Unspliced Read Fragments)
-Version: 0.1.dev31+g30b513e.d20241211
+Version: 0.1.1.dev2+g6f0391a
 
 positional arguments:
   SAMPLE_DIR            Sample directory containing Cell Ranger output.
@@ -59,7 +60,7 @@ options:
                         'antisense' for five prime.
   -o OUTPUT, --output OUTPUT
                         Output directory.
-  --filter_cells        Filter cells based on a whitelist.
+  --no_filter_cells     Do not filter cells.
   --whitelist WHITELIST
                         Whitelist for cell filtering. Set to 'cellranger' to
                         use barcodes in the sample directory. Alternatively,

@@ -19,13 +19,14 @@ TEST_OUT_3P = "test_data/adata_cr_out_3p.h5ad"
 )
 @pytest.mark.parametrize("multi_mapped_reads", [False, True])
 @pytest.mark.parametrize(
-    "filter_cells, whitelist, num_umis",
+    "no_filter_cells, whitelist, num_umis",
     [
+        (True, None, None),
         (False, None, None),
-        (True, "cellranger", None),
-        (True, "test_data/whitelist.tsv", None),
-        (True, None, 10),
-        (True, "cellranger", 10),
+        (False, "cellranger", None),
+        (False, "test_data/whitelist.tsv", None),
+        (False, None, 10),
+        (False, "cellranger", 10),
     ],
 )
 def test_main(
@@ -33,7 +34,7 @@ def test_main(
     gtf_file: str,
     orientation: str,
     multi_mapped_reads: bool,
-    filter_cells: bool,
+    no_filter_cells: bool,
     whitelist: Optional[str],
     num_umis: Optional[int],
     test_out: str,
@@ -42,7 +43,7 @@ def test_main(
         whitelist = whitelist.replace("whitelist", "whitelist_3p")
     os.system(
         f"tidesurf -o test_out --orientation {orientation} "
-        f"{'--filter_cells ' if filter_cells else ''}"
+        f"{'--no_filter_cells ' if no_filter_cells else ''}"
         f"{f'--whitelist {whitelist} ' if whitelist else ''}"
         f"{f'--num_umis {num_umis} ' if num_umis else ''}"
         f"{'--multi_mapped_reads ' if multi_mapped_reads else ''}"
@@ -62,7 +63,7 @@ def test_main(
     )
     if num_umis:
         assert np.all(adata_ts.X.sum(axis=1) >= num_umis), "Cells with too few UMIs."
-    if filter_cells:
+    if not no_filter_cells:
         assert (
             set(adata_ts.obs_names) - set(adata_cr.obs_names) == set()
         ), "Cells found with tidesurf that are not in Cell Ranger output."

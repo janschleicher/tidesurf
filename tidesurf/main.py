@@ -138,9 +138,9 @@ def main() -> None:
         "-o", "--output", type=str, default="tidesurf_out", help="Output directory."
     )
     parser.add_argument(
-        "--filter_cells",
+        "--no_filter_cells",
         action="store_true",
-        help="Filter cells based on a whitelist.",
+        help="Do not filter cells.",
     )
     arg_group = parser.add_mutually_exclusive_group()
     arg_group.add_argument(
@@ -192,6 +192,10 @@ def main() -> None:
         ],
     )
 
+    # Default behavior for filtering: use cellranger whitelist
+    if not args.no_filter_cells and not args.whitelist and not args.num_umis:
+        args.whitelist = "cellranger"
+
     log.info(f"Running tidesurf {tidesurf.__version__}.")
     log.info(f"Processing sample directory: {args.sample_dir}")
     run(
@@ -199,7 +203,7 @@ def main() -> None:
         gtf_file=args.gtf_file,
         output=args.output,
         orientation=args.orientation,
-        filter_cells=args.filter_cells,
+        filter_cells=not args.no_filter_cells,
         whitelist=args.whitelist,
         num_umis=args.num_umis,
         min_intron_overlap=args.min_intron_overlap,
