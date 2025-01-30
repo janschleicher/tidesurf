@@ -1,3 +1,5 @@
+"""Module for counting UMIs with reads mapping to transcripts."""
+
 import numpy as np
 import polars as pl
 from bisect import bisect
@@ -19,8 +21,11 @@ class SpliceType(Enum):
     """
 
     UNSPLICED = 0
+    """Unspliced type."""
     AMBIGUOUS = 1
+    """Ambiguous type."""
     SPLICED = 2
+    """Spliced type."""
 
     def __int__(self):
         return self.value
@@ -32,14 +37,19 @@ class ReadType(Enum):
     """
 
     INTRON = 0
+    """Intronic read."""
     EXON_EXON = 1
+    """Exon-exon junction read."""
     AMBIGUOUS = 2
+    """Ambiguous read."""
     EXON = 3
+    """Exonic read."""
 
     def __int__(self):
         return self.value
 
-    def get_splice_type(self):
+    def get_splice_type(self) -> SpliceType:
+        """Return the corresponding SpliceType."""
         if self == ReadType.INTRON:
             return SpliceType.UNSPLICED
         elif self == ReadType.EXON_EXON or self == ReadType.EXON:
@@ -67,6 +77,14 @@ class UMICounter:
         "MIN_INTRON_OVERLAP",
         "multi_mapped_reads",
     ]
+    transcript_index: TranscriptIndex
+    """Transcript index for extraction of overlapping transcripts."""
+    orientation: Literal["sense", "antisense"]
+    """Orientation in which reads map to transcripts."""
+    MIN_INTRON_OVERLAP: int
+    """Minimum overlap of reads with introns required to consider them intronic."""
+    multi_mapped_reads: bool
+    """Whether to count multi-mapped reads."""
 
     def __init__(
         self,
