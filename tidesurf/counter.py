@@ -3,6 +3,7 @@
 import numpy as np
 import polars as pl
 from bisect import bisect
+from itertools import zip_longest
 import pysam
 from scipy.sparse import csr_matrix, lil_matrix
 from tqdm import tqdm
@@ -68,6 +69,9 @@ class UMICounter:
         Either "sense" or "antisense".
     :param min_intron_overlap: Minimum overlap of reads with introns
         required to consider them intronic.
+    :param cbc_chunk_size: Number of cells per chunk for demultiplexing
+        UMIs. Increasing the chunk size will result in higher memory
+        requirements.
     :param multi_mapped_reads: Whether to count multi-mapped reads.
     """
 
@@ -75,6 +79,7 @@ class UMICounter:
         "transcript_index",
         "orientation",
         "MIN_INTRON_OVERLAP",
+        "CBC_CHUNK_SIZE",
         "multi_mapped_reads",
     ]
     transcript_index: TranscriptIndex
@@ -83,6 +88,8 @@ class UMICounter:
     """Orientation in which reads map to transcripts."""
     MIN_INTRON_OVERLAP: int
     """Minimum overlap of reads with introns required to consider them intronic."""
+    CBC_CHUNK_SIZE: int
+    """Number of cells per chunk for demultiplexing UMIs."""
     multi_mapped_reads: bool
     """Whether to count multi-mapped reads."""
 
@@ -91,11 +98,13 @@ class UMICounter:
         transcript_index: TranscriptIndex,
         orientation: Literal["sense", "antisense"],
         min_intron_overlap: int = 5,
+        cbc_chunk_size: int = 100,
         multi_mapped_reads: bool = False,
     ) -> None:
         self.transcript_index = transcript_index
         self.orientation = orientation
         self.MIN_INTRON_OVERLAP = min_intron_overlap
+        self.CBC_CHUNK_SIZE = cbc_chunk_size
         self.multi_mapped_reads = multi_mapped_reads
 
     def count(
@@ -187,28 +196,36 @@ class UMICounter:
         _argmax_vec = np.vectorize(_argmax)
 
         # Deduplicate cell barcodes and UMIs.
-        counts_dict = {}
+        counts_dfs = []
         log.info("Determining splice types and deduplicating UMIs.")
         with logging_redirect_tqdm(), pl.StringCache():
-            for cbc, results_list in tqdm(
-                results.items(),
-                total=len(results),
+            for chunk in tqdm(
+                zip_longest(*[iter(results.items())] * self.CBC_CHUNK_SIZE),
+                total=len(results) / self.CBC_CHUNK_SIZE,
                 desc="Deduplicating UMIs",
                 unit=" CBCs",
+                unit_scale=self.CBC_CHUNK_SIZE,
             ):
                 df = (
-                    pl.DataFrame(
-                        results_list,
-                        schema={
-                            "umi": pl.Categorical,
-                            "gene": str,
-                            "read_type": pl.UInt8,
-                            "weight": pl.Float32,
-                        },
-                        strict=False,
-                        orient="row",
+                    pl.concat(
+                        [
+                            pl.DataFrame(
+                                res_lst,
+                                schema={
+                                    "umi": pl.Categorical,
+                                    "gene": pl.String,
+                                    "read_type": pl.UInt8,
+                                    "weight": pl.Float32,
+                                },
+                                strict=False,
+                                orient="row",
+                            ).with_columns(pl.lit(cbc, dtype=pl.String).alias("cbc"))
+                            for cbc, res_lst in [
+                                item for item in chunk if item is not None
+                            ]
+                        ]
                     )
-                    .group_by("umi", "gene", "read_type")
+                    .group_by("cbc", "umi", "gene", "read_type")
                     .agg(
                         pl.col("weight").sum()
                     )  # Count ReadTypes per umi/gene combination
@@ -219,8 +236,8 @@ class UMICounter:
                     )
                     .select(
                         pl.exclude("weight"),
-                        (pl.sum("weight").over("umi", "gene")).alias("total"),
-                        (pl.sum("weight").over("umi", "gene", "read_type_")),
+                        (pl.sum("weight").over("cbc", "umi", "gene")).alias("total"),
+                        (pl.sum("weight").over("cbc", "umi", "gene", "read_type_")),
                     )
                     .select(
                         pl.all(),
@@ -232,7 +249,7 @@ class UMICounter:
                             | (pl.col("percentage") < 0.1)
                         )
                     )
-                    .group_by("umi", "gene")
+                    .group_by("cbc", "umi", "gene")
                     # Keep the first ReadType, order: INTRON, EXON_EXON, AMBIGUOUS, EXON
                     .agg(pl.min("read_type"), pl.max("total"))
                     # Remove UMIs that are only supported by multimapped reads
@@ -250,7 +267,7 @@ class UMICounter:
 
                 # Keep the gene with the highest read support
                 df = (
-                    df.group_by("umi")
+                    df.group_by("cbc", "umi")
                     .agg(pl.col("gene"), pl.col("total"), pl.col("splice_type"))
                     .with_columns(
                         (
@@ -270,19 +287,14 @@ class UMICounter:
                         pl.col("gene").list.get(pl.col("idx")),
                         pl.col("splice_type").list.get(pl.col("idx")),
                     )
-                    .group_by("gene", "splice_type")
+                    .group_by("cbc", "gene", "splice_type")
                     .len()
                 )
-                counts_dict[cbc] = df
+                counts_dfs.append(df)
 
-        log.info("Aggregating counts from individual cells.")
+        log.info("Aggregating counts from cell chunks.")
         # Concatenate the cell-wise count DataFrames
-        results_df = pl.concat(
-            [
-                df.with_columns(cbc=pl.lit(key, dtype=str))
-                for key, df in counts_dict.items()
-            ]
-        )
+        results_df = pl.concat(counts_dfs)
 
         cells = np.asarray(sorted(results_df["cbc"].unique()))
         genes = np.asarray(sorted(results_df["gene"].unique()))
