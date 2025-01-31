@@ -1,3 +1,5 @@
+"""Module for working with genomic features and GTF files."""
+
 from bisect import bisect
 from dataclasses import dataclass
 from typing import List, Set, Dict, Tuple, Optional, Union
@@ -33,9 +35,12 @@ class Strand(Enum):
     """
 
     PLUS = "+"
+    """Plus strand."""
     MINUS = "-"
+    """Minus strand."""
 
-    def antisense(self):
+    def antisense(self) -> "Strand":
+        """Return the antisense strand."""
         if self == Strand.PLUS:
             return Strand.MINUS
         else:
@@ -76,6 +81,23 @@ class GenomicFeature:
         "start",
         "end",
     ]
+
+    gene_id: str
+    """ID of the corresponding gene."""
+    gene_name: str
+    """Name of the corresponding gene."""
+    transcript_id: str
+    """ID of the corresponding transcript."""
+    transcript_name: str
+    """Name of the corresponding transcript."""
+    chromosome: str
+    """Chromosome on which the feature is located."""
+    strand: Strand
+    """Strand on which the feature is located."""
+    start: int
+    """Genomic start position of the feature (0-based)."""
+    end: int
+    """Genomic end position of the feature (0-based)."""
 
     def __init__(
         self,
@@ -181,6 +203,10 @@ class Exon(GenomicFeature):
     """
 
     __slots__ = ["exon_id", "exon_number"]
+    exon_id: str
+    """ID of the exon."""
+    exon_number: int
+    """Number of the exon in the transcript."""
 
     def __init__(
         self,
@@ -273,6 +299,8 @@ class Transcript(GenomicFeature):
     """
 
     __slots__ = ["regions"]
+    regions: List[Union[Exon, Intron]]
+    """List of exons and introns in the transcript."""
 
     def __init__(
         self,
@@ -306,7 +334,6 @@ class Transcript(GenomicFeature):
         Add an exon to the transcript.
 
         :param exon: Exon to add.
-        :return:
         """
         if exon not in self.regions:
             self.regions.append(exon)
@@ -314,8 +341,6 @@ class Transcript(GenomicFeature):
     def sort_regions(self) -> None:
         """
         Sort regions by start position and insert introns.
-
-        :return:
         """
         self.regions = sorted(set(self.regions))
         all_regions = []
@@ -368,18 +393,26 @@ class GTFLine:
     :param strand: Strand of the feature.
     :param frame: Frame of the feature.
     :param attributes: Additional attributes of the feature.
-    :return:
     """
 
     chromosome: str
+    """Chromosome of the feature."""
     source: str
+    """Source of the feature."""
     feature: str
+    """Type of feature."""
     start: int
+    """Start position of feature (0-based)."""
     end: int
+    """End position of feature (0-based)."""
     score: str
+    """Feature score."""
     strand: Strand
+    """Strand of the feature."""
     frame: str
+    """Frame of the feature."""
     attributes: Dict[str, str]
+    """Additional attributes of the feature."""
 
     def __lt__(self, other) -> bool:
         if self.chromosome != other.chromosome:
@@ -416,7 +449,9 @@ class TranscriptIndex:
 
     __slots__ = ["transcripts", "transcripts_by_region"]
     transcripts: Dict[str, Transcript]
+    """Dictionary of transcripts by ID."""
     transcripts_by_region: Dict[Tuple[str, Strand], List[Tuple[int, Set[Transcript]]]]
+    """Dictionary of transcript intervals by chromosome and strand."""
 
     def __init__(self, gtf_file: str) -> None:
         self.transcripts = {}
@@ -428,7 +463,6 @@ class TranscriptIndex:
         Read a GTF file and construct an index of transcripts.
 
         :param gtf_file: Path to GTF file.
-        :return:
         """
         lines = []
 
@@ -560,6 +594,7 @@ class TranscriptIndex:
     def get_transcript(self, transcript_id: str) -> Optional[Transcript]:
         """
         Get a transcript by its ID.
+
         :param transcript_id: Transcript ID.
         :return: Transcript object.
         """
