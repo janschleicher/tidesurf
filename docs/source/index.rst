@@ -1,4 +1,4 @@
-|Python 3.10| |Python 3.11| |License GPL v3| |ruff| |codecov| |Python package| |PyPI|
+|Python 3.10| |Python 3.11| |License GPL v3| |ruff| |codecov| |Python package| |PyPI| |Docs|
 
 tidesurf documentation
 ======================
@@ -56,5 +56,9 @@ Fragments, implemented in Python. It enables the quantification of spliced and u
 .. |PyPI| image:: https://img.shields.io/pypi/v/tidesurf
    :target: https://pypi.org/project/tidesurf/
    :alt: PyPI - Version
+
+.. |Docs| image:: https://readthedocs.org/projects/tidesurf/badge/?version=latest
+    :target: https://tidesurf.readthedocs.io/latest/?badge=latest
+    :alt: Documentation Status
 
 .. end-badges

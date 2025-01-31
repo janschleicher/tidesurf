@@ -5,6 +5,7 @@
 [![codecov](https://codecov.io/gh/janschleicher/tidesurf/branch/main/graph/badge.svg?token=dMenu3eZkX)](https://codecov.io/gh/janschleicher/tidesurf)
 [![Python package](https://github.com/janschleicher/tidesurf/actions/workflows/python-package.yml/badge.svg?branch=main)](https://github.com/janschleicher/tidesurf/actions/workflows/python-package.yml)
 ![PyPI - Version](https://img.shields.io/pypi/v/tidesurf)
+[![Documentation Status](https://readthedocs.org/projects/tidesurf/badge/?version=latest)](https://tidesurf.readthedocs.io/latest/?badge=latest)
 
 # tidesurf
 
