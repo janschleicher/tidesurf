@@ -3,6 +3,10 @@
 tidesurf documentation
 ======================
 
+.. image:: _static/img/tidesurf.svg
+    :alt: tidesurf
+    :align: center
+
 This is the documentation for **tidesurf**, a Tool for IDentification and Enumeration of Spliced and Unspliced Read
 Fragments, implemented in Python. It enables the quantification of spliced and unspliced reads from 10x Genomics
 5' and 3' scRNA-seq data, using the 10x Genomics Cell Ranger output.
