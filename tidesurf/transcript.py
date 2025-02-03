@@ -1,10 +1,10 @@
 """Module for working with genomic features and GTF files."""
 
+import logging
 from bisect import bisect
 from dataclasses import dataclass
-from typing import List, Set, Dict, Tuple, Optional, Union
 from enum import Enum
-import logging
+from typing import Dict, List, Optional, Set, Tuple, Union
 
 log = logging.getLogger(__name__)
 

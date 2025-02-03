@@ -1,15 +1,17 @@
 import argparse
-import os
 import glob
+import logging
+import os
 import re
 from datetime import datetime
 from pathlib import Path
-import anndata as ad
-import tidesurf
-from tidesurf.transcript import TranscriptIndex
-from tidesurf.counter import UMICounter
 from typing import Literal, Optional
-import logging
+
+import anndata as ad
+
+import tidesurf
+from tidesurf.counter import UMICounter
+from tidesurf.transcript import TranscriptIndex
 
 log = logging.getLogger(__name__)
 

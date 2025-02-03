@@ -1,8 +1,10 @@
-import pytest
+from typing import List, Tuple
+
 import pysam
+import pytest
+
 from tidesurf import TranscriptIndex, UMICounter
 from tidesurf.counter import ReadType
-from typing import List, Tuple
 
 TEST_GTF_FILE = "test_data/genes.gtf"
 TRANSCRIPT_INDEX = TranscriptIndex(TEST_GTF_FILE)

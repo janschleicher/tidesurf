@@ -1,8 +1,9 @@
-from tidesurf import UMICounter, TranscriptIndex
+import anndata as ad
 import numpy as np
 import pandas as pd
-import anndata as ad
 import pytest
+
+from tidesurf import TranscriptIndex, UMICounter
 
 
 @pytest.mark.parametrize(

@@ -1,16 +1,18 @@
 """Module for counting UMIs with reads mapping to transcripts."""
 
+import logging
+from bisect import bisect
+from enum import Enum
+from typing import Dict, List, Literal, Optional, Tuple
+
 import numpy as np
 import polars as pl
-from bisect import bisect
 import pysam
 from scipy.sparse import csr_matrix, lil_matrix
 from tqdm import tqdm
 from tqdm.contrib.logging import logging_redirect_tqdm
-from tidesurf.transcript import Exon, Intron, TranscriptIndex, Strand
-from enum import Enum
-from typing import Literal, Tuple, Optional, Dict, List
-import logging
+
+from tidesurf.transcript import Exon, Intron, Strand, TranscriptIndex
 
 log = logging.getLogger(__name__)
 
