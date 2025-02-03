@@ -28,6 +28,15 @@ Fragments, implemented in Python. It enables the quantification of spliced and u
     usage
     api
 
+Citation
+--------
+
+If you use ``tidesurf`` in your research, please cite the following publication:
+
+Schleicher, J.T., and Claassen, M. (2025).
+Accurate quantification of spliced and unspliced transcripts for single-cell RNA sequencing with tidesurf.
+*bioRxiv* 2025.01.28.635274; DOI: `10.1101/2025.01.28.635274 <https://doi.org/10.1101/2025.01.28.635274>`_.
+
 .. start-badges
 
 .. |Python 3.10| image:: https://img.shields.io/badge/python-3.10-blue.svg

@@ -83,3 +83,11 @@ For contributing, you should install `tidesurf` in development mode:
 
 This will install the additional dependencies `ruff` and `pytest`, which are used for formatting and code style, and testing, respectively.
 Please run these before commiting new code.
+
+## Citation
+
+If you use `tidesurf` in your research, please cite the following publication:
+
+Schleicher, J.T., and Claassen, M. (2025).
+Accurate quantification of spliced and unspliced transcripts for single-cell RNA sequencing with tidesurf.
+_bioRxiv_ 2025.01.28.635274; DOI: [10.1101/2025.01.28.635274](https://doi.org/10.1101/2025.01.28.635274).
