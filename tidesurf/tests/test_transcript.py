@@ -1,12 +1,12 @@
 import pytest
 
 from tidesurf.transcript import (
-    GenomicFeature,
     Exon,
+    GenomicFeature,
     Intron,
+    Strand,
     Transcript,
     TranscriptIndex,
-    Strand,
 )
 
 TEST_GTF_FILE = "test_data/genes.gtf"

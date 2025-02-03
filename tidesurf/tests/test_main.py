@@ -1,9 +1,10 @@
 import os
 import shutil
-import numpy as np
-import anndata as ad
-import pytest
 from typing import Optional
+
+import anndata as ad
+import numpy as np
+import pytest
 
 TEST_OUT_CR_5P = "test_data/adata_cr_out.h5ad"
 TEST_OUT_CR_3P = "test_data/adata_cr_out_3p.h5ad"
