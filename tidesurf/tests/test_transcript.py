@@ -1,6 +1,6 @@
 import pytest
 
-from tidesurf.transcript import (
+from tidesurf.transcript_cy import (
     Exon,
     GenomicFeature,
     Intron,
@@ -15,11 +15,11 @@ TEST_GTF_FILE = "test_data/genes.gtf"
 def test_strand():
     strand_1 = Strand("+")
     assert str(strand_1) == "+"
-    assert strand_1.antisense() == Strand("-")
+    assert strand_1.antisense() == Strand("-").value
 
     strand_2 = Strand("-")
     assert str(strand_2) == "-"
-    assert strand_2.antisense() == Strand("+")
+    assert strand_2.antisense() == Strand("+").value
 
     assert strand_1 < strand_2
     assert strand_2 > strand_1
@@ -260,7 +260,7 @@ def test_transcript_index():
                     transcript.chromosome == chromosome
                 ), f"Chromosome mismatch: {transcript.chromosome} != {chromosome}"
                 assert (
-                    transcript.strand == strand
+                    transcript.strand.value == strand
                 ), f"Strand mismatch: {transcript.strand} != {strand}"
                 assert (
                     transcript.start <= pos <= transcript.end

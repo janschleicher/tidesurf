@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=64", "setuptools-scm>=8"]
+requires = ["setuptools>=74.1", "setuptools-scm>=8", "cython"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -11,29 +11,25 @@ license = { text = "GPL-3.0 license" }
 requires-python = ">=3.10"
 
 authors = [
-    {email = "jan.schleicher@uni-tuebingen.de"},
-    {name = "Jan Schleicher"}
+    { email = "jan.schleicher@uni-tuebingen.de" },
+    { name = "Jan Schleicher" },
 ]
 
-keywords = [
-    "scRNA-seq",
-    "quantification",
-    "splicing",
-    "velocity"
-]
+keywords = ["scRNA-seq", "quantification", "splicing", "velocity"]
 
 classifiers = [
-        "Development Status :: 3 - Alpha",
-        "Intended Audience :: Science/Research",
-        "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
-        "Programming Language :: Python :: 3.10",
-        "Programming Language :: Python :: 3.11",
-        "Topic :: Scientific/Engineering :: Bio-Informatics",
-        "Operating System :: MacOS",
-        "Operating System :: Unix"
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Operating System :: MacOS",
+    "Operating System :: Unix",
 ]
 
 dependencies = [
+    "cython",
     "numpy",
     "polars",
     "scipy",
@@ -46,16 +42,20 @@ dependencies = [
 Repository = "https://github.com/janschleicher/tidesurf"
 
 [project.optional-dependencies]
-dev = [
-    "ruff",
-    "pytest"
-]
+dev = ["ruff", "pytest"]
 doc = [
     "sphinx",
     "sphinx-book-theme",
     "sphinx-autodoc-typehints",
     "sphinx-copybutton",
-    "sphinx-autoapi"
+    "sphinx-autoapi",
+]
+
+[tool.setuptools]
+ext-modules = [
+    { name = "tidesurf.transcript", sources = [
+        "tidesurf/transcript.py",
+    ] },
 ]
 
 [tool.setuptools_scm]
@@ -124,10 +124,12 @@ docstring-code-format = true
 
 #SOURCE: https://stackoverflow.com/a/76739181
 [tool.setuptools.packages.find]
-where = ["."]  # list of folders that contain the packages (["."] by default)
-include = ["tidesurf"]  # package names should match these glob patterns (["*"] by default)
-exclude = []  # exclude packages matching these glob patterns (empty by default)
-namespaces = false  # to disable scanning PEP 420 namespaces (true by default)
+where = ["."] # list of folders that contain the packages (["."] by default)
+include = [
+    "tidesurf",
+] # package names should match these glob patterns (["*"] by default)
+exclude = [] # exclude packages matching these glob patterns (empty by default)
+namespaces = false # to disable scanning PEP 420 namespaces (true by default)
 
 [project.scripts]
 tidesurf = "tidesurf.main:main"
