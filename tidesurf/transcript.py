@@ -1,3 +1,5 @@
+# cython: embedsignature=True, annotation_typing=False
+
 """Module for working with genomic features and GTF files."""
 
 import logging
@@ -53,6 +55,7 @@ class Strand:
 
     @cython.ccall
     def antisense(self) -> str:
+        """Return the antisense strand."""
         return Strand.MINUS if self.value == Strand.PLUS else Strand.PLUS
 
     def __lt__(self, other) -> bool:
@@ -67,7 +70,7 @@ class Strand:
     def __str__(self) -> str:
         return self.value
 
-    def __hash__(self) -> cython.int:
+    def __hash__(self) -> int:
         return hash(self.value)
 
 
@@ -123,8 +126,8 @@ class GenomicFeature:
         transcript_name: str,
         chromosome: str,
         strand: str,
-        start: cython.int,
-        end: cython.int,
+        start: int,
+        end: int,
     ) -> None:
         self.gene_id = gene_id
         self.gene_name = gene_name
@@ -140,10 +143,10 @@ class GenomicFeature:
         self,
         chromosome: str,
         strand: str,
-        start: cython.int,
-        end: cython.int,
-        min_overlap: cython.int = 1,
-    ) -> cython.bint:
+        start: int,
+        end: int,
+        min_overlap: int = 1,
+    ) -> bool:
         """
         Check if the feature overlaps with a given region.
 
@@ -189,7 +192,7 @@ class GenomicFeature:
             and self.end == other.end
         )
 
-    def __hash__(self) -> cython.int:
+    def __hash__(self) -> int:
         return hash(
             (
                 self.gene_id,
@@ -239,8 +242,8 @@ class Exon(GenomicFeature):
         transcript_name: str,
         chromosome: str,
         strand: str,
-        start: cython.int,
-        end: cython.int,
+        start: int,
+        end: int,
         exon_id: str,
         exon_number: int,
     ) -> None:
@@ -288,8 +291,8 @@ class Intron(GenomicFeature):
         transcript_name: str,
         chromosome: str,
         strand: str,
-        start: cython.int,
-        end: cython.int,
+        start: int,
+        end: int,
     ) -> None:
         super(Intron, self).__init__(
             gene_id=gene_id,
@@ -335,8 +338,8 @@ class Transcript(GenomicFeature):
         transcript_name: str,
         chromosome: str,
         strand: str,
-        start: cython.int,
-        end: cython.int,
+        start: int,
+        end: int,
         regions: Optional[List[Union[Exon, Intron]]] = None,
     ) -> None:
         super(Transcript, self).__init__(
@@ -402,7 +405,7 @@ class Transcript(GenomicFeature):
             f"containing {len(self.regions)} exons/introns>"
         )
 
-    def __hash__(self) -> cython.int:
+    def __hash__(self) -> int:
         return hash(self.transcript_id)
 
 
@@ -487,6 +490,33 @@ class TranscriptIndex:
         self.transcripts_by_region = {}
         self.read_gtf(gtf_file)
 
+    @cython.ccall
+    def _add_transcripts(
+        self,
+        chrom_transcript_dict: Dict[str, Transcript],
+        start_end_positions: List[Tuple[int, int, Transcript]],
+        curr_chrom: str,
+        curr_strand: str,
+    ):
+        self.transcripts.update(chrom_transcript_dict)
+        start_end_positions.sort()
+        regions = [(0, set())]
+        for pos, is_end, trans in start_end_positions:
+            if is_end == 0:
+                # Multiple transcripts starting at the same position
+                if regions[-1][0] == pos:
+                    regions[-1] = (pos, regions[-1][1] | {trans})
+                else:
+                    regions.append((pos, regions[-1][1] | {trans}))
+            else:
+                # Multiple transcripts ending at the same position
+                if regions[-1][0] == pos + 1:
+                    regions[-1] = (pos + 1, regions[-1][1] - {trans})
+                else:
+                    regions.append((pos + 1, regions[-1][1] - {trans}))
+        self.transcripts_by_region[curr_chrom, curr_strand] = regions
+
+    @cython.ccall
     def read_gtf(self, gtf_file: str):
         """
         Read a GTF file and construct an index of transcripts.
@@ -543,25 +573,6 @@ class TranscriptIndex:
                 lines.append(gtf_line)
         lines.sort()
 
-        def _add_transcripts():
-            self.transcripts.update(chrom_transcript_dict)
-            start_end_positions.sort()
-            regions = [(0, set())]
-            for pos, is_end, trans in start_end_positions:
-                if is_end == 0:
-                    # Multiple transcripts starting at the same position
-                    if regions[-1][0] == pos:
-                        regions[-1] = (pos, regions[-1][1] | {trans})
-                    else:
-                        regions.append((pos, regions[-1][1] | {trans}))
-                else:
-                    # Multiple transcripts ending at the same position
-                    if regions[-1][0] == pos + 1:
-                        regions[-1] = (pos + 1, regions[-1][1] - {trans})
-                    else:
-                        regions.append((pos + 1, regions[-1][1] - {trans}))
-            self.transcripts_by_region[curr_chrom, curr_strand] = regions
-
         # Construct index from lines
         chrom_transcript_dict = {}
         start_end_positions = []
@@ -579,7 +590,12 @@ class TranscriptIndex:
                             curr_strand,
                         ) in self.transcripts_by_region.keys():
                             raise ValueError("GTF file was not sorted properly.")
-                        _add_transcripts()
+                        self._add_transcripts(
+                            chrom_transcript_dict=chrom_transcript_dict,
+                            start_end_positions=start_end_positions,
+                            curr_chrom=curr_chrom,
+                            curr_strand=curr_strand,
+                        )
                     curr_chrom = line.chromosome
                     curr_strand = line.strand
                     start_end_positions = []
@@ -627,7 +643,12 @@ class TranscriptIndex:
         if curr_chrom is not None and curr_strand is not None:
             if (curr_chrom, curr_strand) in self.transcripts_by_region.keys():
                 raise ValueError("GTF file was not sorted properly.")
-            _add_transcripts()
+            self._add_transcripts(
+                chrom_transcript_dict=chrom_transcript_dict,
+                start_end_positions=start_end_positions,
+                curr_chrom=curr_chrom,
+                curr_strand=curr_strand,
+            )
 
         # Sort exons in all transcripts
         for transcript in self.transcripts.values():
@@ -644,8 +665,9 @@ class TranscriptIndex:
             return self.transcripts[transcript_id]
         return None
 
+    @cython.ccall
     def get_overlapping_transcripts(
-        self, chromosome: str, strand: str, start: cython.int, end: cython.int
+        self, chromosome: str, strand: str, start: int, end: int
     ) -> List[Transcript]:
         """
         Get transcripts that overlap with a given region.
@@ -669,7 +691,7 @@ class TranscriptIndex:
             bisect(
                 self.transcripts_by_region[chromosome, strand],
                 start,
-                key=lambda x: x[0],
+                key=_bisect_sort_key,
             )
             - 1
         )
@@ -678,7 +700,7 @@ class TranscriptIndex:
             bisect(
                 self.transcripts_by_region[chromosome, strand],
                 end,
-                key=lambda x: x[0],
+                key=_bisect_sort_key,
             )
             - 1
         )
@@ -699,3 +721,8 @@ class TranscriptIndex:
     @property
     def transcripts_by_region(self):
         return self.transcripts_by_region
+
+
+@cython.ccall
+def _bisect_sort_key(x: Tuple[int, Set[Transcript]]) -> int:
+    return x[0]

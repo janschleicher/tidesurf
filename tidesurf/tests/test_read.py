@@ -4,7 +4,7 @@ import pysam
 import pytest
 
 from tidesurf import TranscriptIndex, UMICounter
-from tidesurf.counter import ReadType
+from tidesurf.read import ReadType
 
 TEST_GTF_FILE = "test_data/genes.gtf"
 TRANSCRIPT_INDEX = TranscriptIndex(TEST_GTF_FILE)
@@ -112,7 +112,7 @@ READS = [
         9_671_600,
         [(pysam.CMATCH, 100)],
         True,
-        [("Mybl1", ReadType.AMBIGUOUS)],
+        [("Mybl1", ReadType.AMBIGUOUS_READ)],
     ),
     (
         "ACTG",

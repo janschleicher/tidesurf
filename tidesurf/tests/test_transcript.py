@@ -1,6 +1,6 @@
 import pytest
 
-from tidesurf.transcript_cy import (
+from tidesurf.transcript import (
     Exon,
     GenomicFeature,
     Intron,
