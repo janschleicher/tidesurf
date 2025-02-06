@@ -72,7 +72,7 @@ class UMICounter:
         transcript_index: TranscriptIndex,
         orientation: Literal["sense", "antisense"],
         min_intron_overlap: int = 5,
-        cbc_chunk_size: int = 100,
+        cbc_chunk_size: int = 10,
         multi_mapped_reads: bool = False,
     ) -> None:
         self.transcript_index = transcript_index
@@ -265,7 +265,7 @@ class UMICounter:
         n_cells = cells.shape[0]
         n_genes = genes.shape[0]
 
-        # Map cells and genes to integer indicex
+        # Map cells and genes to integer indices
         cbc_map = {cbc: i for i, cbc in enumerate(cells)}
         gene_map = {gene: i for i, gene in enumerate(genes)}
 

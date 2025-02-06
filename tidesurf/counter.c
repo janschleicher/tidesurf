@@ -3099,7 +3099,7 @@ typedef struct {
   PyObject *__pyx_int_1;
   PyObject *__pyx_int_2;
   PyObject *__pyx_int_5;
-  PyObject *__pyx_int_100;
+  PyObject *__pyx_int_10;
   PyObject *__pyx_int_255;
   PyObject *__pyx_int_115228533;
   PyObject *__pyx_int_234824627;
@@ -3442,7 +3442,7 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_int_1);
   Py_CLEAR(clear_module_state->__pyx_int_2);
   Py_CLEAR(clear_module_state->__pyx_int_5);
-  Py_CLEAR(clear_module_state->__pyx_int_100);
+  Py_CLEAR(clear_module_state->__pyx_int_10);
   Py_CLEAR(clear_module_state->__pyx_int_255);
   Py_CLEAR(clear_module_state->__pyx_int_115228533);
   Py_CLEAR(clear_module_state->__pyx_int_234824627);
@@ -3763,7 +3763,7 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_int_1);
   Py_VISIT(traverse_module_state->__pyx_int_2);
   Py_VISIT(traverse_module_state->__pyx_int_5);
-  Py_VISIT(traverse_module_state->__pyx_int_100);
+  Py_VISIT(traverse_module_state->__pyx_int_10);
   Py_VISIT(traverse_module_state->__pyx_int_255);
   Py_VISIT(traverse_module_state->__pyx_int_115228533);
   Py_VISIT(traverse_module_state->__pyx_int_234824627);
@@ -4096,7 +4096,7 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_int_1 __pyx_mstate_global->__pyx_int_1
 #define __pyx_int_2 __pyx_mstate_global->__pyx_int_2
 #define __pyx_int_5 __pyx_mstate_global->__pyx_int_5
-#define __pyx_int_100 __pyx_mstate_global->__pyx_int_100
+#define __pyx_int_10 __pyx_mstate_global->__pyx_int_10
 #define __pyx_int_255 __pyx_mstate_global->__pyx_int_255
 #define __pyx_int_115228533 __pyx_mstate_global->__pyx_int_115228533
 #define __pyx_int_234824627 __pyx_mstate_global->__pyx_int_234824627
@@ -4464,11 +4464,11 @@ static int __pyx_pw_8tidesurf_7counter_10UMICounter_1__init__(PyObject *__pyx_v_
   {
     PyObject **__pyx_pyargnames[] = {&__pyx_n_s_transcript_index,&__pyx_n_s_orientation,&__pyx_n_s_min_intron_overlap,&__pyx_n_s_cbc_chunk_size,&__pyx_n_s_multi_mapped_reads,0};
     values[2] = __Pyx_Arg_NewRef_VARARGS(((PyObject *)__pyx_int_5));
-    values[3] = __Pyx_Arg_NewRef_VARARGS(((PyObject *)__pyx_int_100));
+    values[3] = __Pyx_Arg_NewRef_VARARGS(((PyObject *)__pyx_int_10));
 
     /* "tidesurf/counter.py":76
  *         min_intron_overlap: int = 5,
- *         cbc_chunk_size: int = 100,
+ *         cbc_chunk_size: int = 10,
  *         multi_mapped_reads: bool = False,             # <<<<<<<<<<<<<<
  *     ) -> None:
  *         self.transcript_index = transcript_index
@@ -9361,7 +9361,7 @@ static PyObject *__pyx_f_8tidesurf_7counter_10UMICounter_count(struct __pyx_obj_
  *         n_cells = cells.shape[0]
  *         n_genes = genes.shape[0]             # <<<<<<<<<<<<<<
  * 
- *         # Map cells and genes to integer indicex
+ *         # Map cells and genes to integer indices
  */
   __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_genes, __pyx_n_s_shape); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 266, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
@@ -9373,7 +9373,7 @@ static PyObject *__pyx_f_8tidesurf_7counter_10UMICounter_count(struct __pyx_obj_
 
   /* "tidesurf/counter.py":269
  * 
- *         # Map cells and genes to integer indicex
+ *         # Map cells and genes to integer indices
  *         cbc_map = {cbc: i for i, cbc in enumerate(cells)}             # <<<<<<<<<<<<<<
  *         gene_map = {gene: i for i, gene in enumerate(genes)}
  * 
@@ -9461,7 +9461,7 @@ static PyObject *__pyx_f_8tidesurf_7counter_10UMICounter_count(struct __pyx_obj_
   __pyx_t_1 = 0;
 
   /* "tidesurf/counter.py":270
- *         # Map cells and genes to integer indicex
+ *         # Map cells and genes to integer indices
  *         cbc_map = {cbc: i for i, cbc in enumerate(cells)}
  *         gene_map = {gene: i for i, gene in enumerate(genes)}             # <<<<<<<<<<<<<<
  * 
@@ -14999,7 +14999,7 @@ static struct PyGetSetDef __pyx_getsets_8tidesurf_7counter_UMICounter[] = {
 #if CYTHON_USE_TYPE_SPECS
 static PyType_Slot __pyx_type_8tidesurf_7counter_UMICounter_slots[] = {
   {Py_tp_dealloc, (void *)__pyx_tp_dealloc_8tidesurf_7counter_UMICounter},
-  {Py_tp_doc, (void *)PyDoc_STR("UMICounter(transcript_index: TranscriptIndex, orientation: Literal['sense', 'antisense'], min_intron_overlap: int = 5, cbc_chunk_size: int = 100, multi_mapped_reads: bool = False) -> None\n\n    Counter for unique molecular identifiers (UMIs) with reads mapping\n    to transcripts in single-cell RNA-seq data.\n\n    :param transcript_index: Transcript index.\n    :param orientation: Orientation in which reads map to transcripts.\n        Either \"sense\" or \"antisense\".\n    :param min_intron_overlap: Minimum overlap of reads with introns\n        required to consider them intronic.\n    :param cbc_chunk_size: Number of cells per chunk for demultiplexing\n        UMIs. Increasing the chunk size will result in higher memory\n        requirements.\n    :param multi_mapped_reads: Whether to count multi-mapped reads.\n    ")},
+  {Py_tp_doc, (void *)PyDoc_STR("UMICounter(transcript_index: TranscriptIndex, orientation: Literal['sense', 'antisense'], min_intron_overlap: int = 5, cbc_chunk_size: int = 10, multi_mapped_reads: bool = False) -> None\n\n    Counter for unique molecular identifiers (UMIs) with reads mapping\n    to transcripts in single-cell RNA-seq data.\n\n    :param transcript_index: Transcript index.\n    :param orientation: Orientation in which reads map to transcripts.\n        Either \"sense\" or \"antisense\".\n    :param min_intron_overlap: Minimum overlap of reads with introns\n        required to consider them intronic.\n    :param cbc_chunk_size: Number of cells per chunk for demultiplexing\n        UMIs. Increasing the chunk size will result in higher memory\n        requirements.\n    :param multi_mapped_reads: Whether to count multi-mapped reads.\n    ")},
   {Py_tp_traverse, (void *)__pyx_tp_traverse_8tidesurf_7counter_UMICounter},
   {Py_tp_clear, (void *)__pyx_tp_clear_8tidesurf_7counter_UMICounter},
   {Py_tp_methods, (void *)__pyx_methods_8tidesurf_7counter_UMICounter},
@@ -15048,7 +15048,7 @@ static PyTypeObject __pyx_type_8tidesurf_7counter_UMICounter = {
   0, /*tp_setattro*/
   0, /*tp_as_buffer*/
   Py_TPFLAGS_DEFAULT|Py_TPFLAGS_HAVE_VERSION_TAG|Py_TPFLAGS_CHECKTYPES|Py_TPFLAGS_HAVE_NEWBUFFER|Py_TPFLAGS_BASETYPE|Py_TPFLAGS_HAVE_GC, /*tp_flags*/
-  PyDoc_STR("UMICounter(transcript_index: TranscriptIndex, orientation: Literal['sense', 'antisense'], min_intron_overlap: int = 5, cbc_chunk_size: int = 100, multi_mapped_reads: bool = False) -> None\n\n    Counter for unique molecular identifiers (UMIs) with reads mapping\n    to transcripts in single-cell RNA-seq data.\n\n    :param transcript_index: Transcript index.\n    :param orientation: Orientation in which reads map to transcripts.\n        Either \"sense\" or \"antisense\".\n    :param min_intron_overlap: Minimum overlap of reads with introns\n        required to consider them intronic.\n    :param cbc_chunk_size: Number of cells per chunk for demultiplexing\n        UMIs. Increasing the chunk size will result in higher memory\n        requirements.\n    :param multi_mapped_reads: Whether to count multi-mapped reads.\n    "), /*tp_doc*/
+  PyDoc_STR("UMICounter(transcript_index: TranscriptIndex, orientation: Literal['sense', 'antisense'], min_intron_overlap: int = 5, cbc_chunk_size: int = 10, multi_mapped_reads: bool = False) -> None\n\n    Counter for unique molecular identifiers (UMIs) with reads mapping\n    to transcripts in single-cell RNA-seq data.\n\n    :param transcript_index: Transcript index.\n    :param orientation: Orientation in which reads map to transcripts.\n        Either \"sense\" or \"antisense\".\n    :param min_intron_overlap: Minimum overlap of reads with introns\n        required to consider them intronic.\n    :param cbc_chunk_size: Number of cells per chunk for demultiplexing\n        UMIs. Increasing the chunk size will result in higher memory\n        requirements.\n    :param multi_mapped_reads: Whether to count multi-mapped reads.\n    "), /*tp_doc*/
   __pyx_tp_traverse_8tidesurf_7counter_UMICounter, /*tp_traverse*/
   __pyx_tp_clear_8tidesurf_7counter_UMICounter, /*tp_clear*/
   0, /*tp_richcompare*/
@@ -15672,7 +15672,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitConstants(void) {
   __pyx_int_1 = PyInt_FromLong(1); if (unlikely(!__pyx_int_1)) __PYX_ERR(0, 1, __pyx_L1_error)
   __pyx_int_2 = PyInt_FromLong(2); if (unlikely(!__pyx_int_2)) __PYX_ERR(0, 1, __pyx_L1_error)
   __pyx_int_5 = PyInt_FromLong(5); if (unlikely(!__pyx_int_5)) __PYX_ERR(0, 1, __pyx_L1_error)
-  __pyx_int_100 = PyInt_FromLong(100); if (unlikely(!__pyx_int_100)) __PYX_ERR(0, 1, __pyx_L1_error)
+  __pyx_int_10 = PyInt_FromLong(10); if (unlikely(!__pyx_int_10)) __PYX_ERR(0, 1, __pyx_L1_error)
   __pyx_int_255 = PyInt_FromLong(255); if (unlikely(!__pyx_int_255)) __PYX_ERR(0, 1, __pyx_L1_error)
   __pyx_int_115228533 = PyInt_FromLong(115228533L); if (unlikely(!__pyx_int_115228533)) __PYX_ERR(0, 1, __pyx_L1_error)
   __pyx_int_234824627 = PyInt_FromLong(234824627L); if (unlikely(!__pyx_int_234824627)) __PYX_ERR(0, 1, __pyx_L1_error)

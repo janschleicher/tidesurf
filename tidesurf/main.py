@@ -25,6 +25,7 @@ def run(
     whitelist: Optional[str] = None,
     num_umis: Optional[int] = None,
     min_intron_overlap: int = 5,
+    cbc_chunk_size: int = 10,
     multi_mapped_reads: bool = False,
 ) -> None:
     """
@@ -165,6 +166,13 @@ def main() -> None:
         "intron to be considered intronic.",
     )
     parser.add_argument(
+        "--cbc_chunk_size",
+        type=int,
+        default=10,
+        help="Number of cell barcodes to process in each chunk when "
+        "deduplicating UMIs.",
+    )
+    parser.add_argument(
         "--multi_mapped_reads",
         action="store_true",
         help="Take reads mapping to multiple genes into account "
@@ -209,6 +217,7 @@ def main() -> None:
         whitelist=args.whitelist,
         num_umis=args.num_umis,
         min_intron_overlap=args.min_intron_overlap,
+        cbc_chunk_size=args.cbc_chunk_size,
         multi_mapped_reads=args.multi_mapped_reads,
     )
     end_time = datetime.now()
