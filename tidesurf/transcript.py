@@ -1,13 +1,12 @@
-# cython: embedsignature=True, annotation_typing=False
-
 """Module for working with genomic features and GTF files."""
 
 import logging
 from bisect import bisect
 from dataclasses import dataclass
-from typing import Dict, List, Literal, Optional, Set, Tuple, Union
+from typing import Dict, List, Optional, Set, Tuple, Union
 
 import cython
+from cython.cimports.tidesurf.enums import Strand
 from tqdm import tqdm
 from tqdm.contrib.logging import logging_redirect_tqdm
 
@@ -32,46 +31,6 @@ ALLOWED_BIOTYPES = {
     "TR_V_pseudogene",
     "TR_J_pseudogene",
 }
-
-
-@cython.cclass
-class Strand:
-    """
-    Simple enum-like class for strand information.
-    """
-
-    PLUS: str = "+"
-    """Plus strand."""
-    MINUS: str = "-"
-    """Minus strand."""
-
-    value = cython.declare(str, visibility="readonly")
-    """Strand value."""
-
-    def __init__(self, val: Literal["+", "-"]) -> None:
-        if val not in [self.PLUS, self.MINUS]:
-            raise ValueError(f"Invalid value: {val}")
-        self.value = self.PLUS if val == "+" else self.MINUS
-
-    @cython.ccall
-    def antisense(self) -> str:
-        """Return the antisense strand."""
-        return Strand.MINUS if self.value == Strand.PLUS else Strand.PLUS
-
-    def __lt__(self, other) -> bool:
-        return self.value < other.value
-
-    def __gt__(self, other) -> bool:
-        return self.value > other.value
-
-    def __eq__(self, other) -> bool:
-        return self.value == other.value
-
-    def __str__(self) -> str:
-        return self.value
-
-    def __hash__(self) -> int:
-        return hash(self.value)
 
 
 @cython.cclass
@@ -101,22 +60,22 @@ class GenomicFeature:
         "end",
     ]
 
-    gene_id = cython.declare(str, visibility="readonly")
-    """ID of the corresponding gene."""
-    gene_name = cython.declare(str, visibility="readonly")
-    """Name of the corresponding gene."""
-    transcript_id = cython.declare(str, visibility="readonly")
-    """ID of the corresponding transcript."""
-    transcript_name = cython.declare(str, visibility="readonly")
-    """Name of the corresponding transcript."""
-    chromosome = cython.declare(str, visibility="readonly")
-    """Chromosome on which the feature is located."""
-    strand = cython.declare(Strand, visibility="readonly")
-    """Strand on which the feature is located."""
-    start = cython.declare(cython.int, visibility="readonly")
-    """Genomic start position of the feature (0-based)."""
-    end = cython.declare(cython.int, visibility="readonly")
-    """Genomic end position of the feature (0-based)."""
+    # gene_id = cython.declare(str, visibility="readonly")
+    # """ID of the corresponding gene."""
+    # gene_name = cython.declare(str, visibility="readonly")
+    # """Name of the corresponding gene."""
+    # transcript_id = cython.declare(str, visibility="readonly")
+    # """ID of the corresponding transcript."""
+    # transcript_name = cython.declare(str, visibility="readonly")
+    # """Name of the corresponding transcript."""
+    # chromosome = cython.declare(str, visibility="readonly")
+    # """Chromosome on which the feature is located."""
+    # strand = cython.declare(cython.int, visibility="readonly")
+    # """Strand on which the feature is located."""
+    # start = cython.declare(cython.int, visibility="readonly")
+    # """Genomic start position of the feature (0-based)."""
+    # end = cython.declare(cython.int, visibility="readonly")
+    # """Genomic end position of the feature (0-based)."""
 
     def __init__(
         self,
@@ -125,7 +84,7 @@ class GenomicFeature:
         transcript_id: str,
         transcript_name: str,
         chromosome: str,
-        strand: str,
+        strand: Strand,
         start: int,
         end: int,
     ) -> None:
@@ -134,19 +93,18 @@ class GenomicFeature:
         self.transcript_id = transcript_id
         self.transcript_name = transcript_name
         self.chromosome = chromosome
-        self.strand = Strand(strand)
+        self.strand = strand
         self.start = start
         self.end = end
 
-    @cython.ccall
     def overlaps(
         self,
         chromosome: str,
-        strand: str,
+        strand: Strand,
         start: int,
         end: int,
         min_overlap: int = 1,
-    ) -> bool:
+    ):
         """
         Check if the feature overlaps with a given region.
 
@@ -157,7 +115,7 @@ class GenomicFeature:
         :param min_overlap: Minimum number of overlapping bases.
         :return: Whether the feature overlaps with the region.
         """
-        if self.chromosome != chromosome or self.strand != Strand(strand):
+        if self.chromosome != chromosome or self.strand != strand:
             return False
         assert start <= end, "Start position must be less than or equal to end position"
         return (
@@ -211,7 +169,7 @@ class GenomicFeature:
         )
 
 
-@cython.cclass
+# @cython.cclass
 class Exon(GenomicFeature):
     """
     An exon of a transcript. Identified by an exon ID and exon number.
@@ -229,10 +187,10 @@ class Exon(GenomicFeature):
     """
 
     __slots__ = ["exon_id", "exon_number"]
-    exon_id = cython.declare(str, visibility="readonly")
-    """ID of the exon."""
-    exon_number = cython.declare(cython.int, visibility="readonly")
-    """Number of the exon in the transcript."""
+    # exon_id = cython.declare(str, visibility="readonly")
+    # """ID of the exon."""
+    # exon_number = cython.declare(cython.int, visibility="readonly")
+    # """Number of the exon in the transcript."""
 
     def __init__(
         self,
@@ -241,7 +199,7 @@ class Exon(GenomicFeature):
         transcript_id: str,
         transcript_name: str,
         chromosome: str,
-        strand: str,
+        strand: Strand,
         start: int,
         end: int,
         exon_id: str,
@@ -290,7 +248,7 @@ class Intron(GenomicFeature):
         transcript_id: str,
         transcript_name: str,
         chromosome: str,
-        strand: str,
+        strand: Strand,
         start: int,
         end: int,
     ) -> None:
@@ -327,8 +285,8 @@ class Transcript(GenomicFeature):
     """
 
     __slots__ = ["regions"]
-    regions = cython.declare(List[Union[Exon, Intron]], visibility="readonly")
-    """List of exons and introns in the transcript."""
+    # regions = cython.declare(List[Union[Exon, Intron]], visibility="readonly")
+    # """List of exons and introns in the transcript."""
 
     def __init__(
         self,
@@ -337,7 +295,7 @@ class Transcript(GenomicFeature):
         transcript_id: str,
         transcript_name: str,
         chromosome: str,
-        strand: str,
+        strand: Strand,
         start: int,
         end: int,
         regions: Optional[List[Union[Exon, Intron]]] = None,
@@ -357,7 +315,6 @@ class Transcript(GenomicFeature):
         else:
             self.regions = regions
 
-    @cython.ccall
     def add_exon(self, exon: Exon):
         """
         Add an exon to the transcript.
@@ -367,7 +324,6 @@ class Transcript(GenomicFeature):
         if exon not in self.regions:
             self.regions.append(exon)
 
-    @cython.ccall
     def sort_regions(self):
         """
         Sort regions by start position and insert introns.
@@ -387,7 +343,7 @@ class Transcript(GenomicFeature):
                     self.transcript_id,
                     self.transcript_name,
                     self.chromosome,
-                    str(self.strand),
+                    self.strand,
                     exon.end + 1,
                     self.regions[i + 1].start - 1,
                 )
@@ -438,7 +394,7 @@ class GTFLine:
     """End position of feature (0-based)."""
     score: str
     """Feature score."""
-    strand: str
+    strand: Strand
     """Strand of the feature."""
     frame: str
     """Frame of the feature."""
@@ -480,23 +436,22 @@ class TranscriptIndex:
     """
 
     __slots__ = ["transcripts", "transcripts_by_region"]
-    transcripts = cython.declare(Dict[str, Transcript], visibility="readonly")
-    """Dictionary of transcripts by ID."""
-    transcripts_by_region: Dict[Tuple[str, str], List[Tuple[int, Set[Transcript]]]]
-    """Dictionary of transcript intervals by chromosome and strand."""
+    # transcripts = cython.declare(Dict[str, Transcript], visibility="readonly")
+    # """Dictionary of transcripts by ID."""
+    # transcripts_by_region: Dict[Tuple[str, str], List[Tuple[int, Set[Transcript]]]]
+    # """Dictionary of transcript intervals by chromosome and strand."""
 
     def __init__(self, gtf_file: str) -> None:
         self.transcripts = {}
         self.transcripts_by_region = {}
         self.read_gtf(gtf_file)
 
-    @cython.ccall
     def _add_transcripts(
         self,
         chrom_transcript_dict: Dict[str, Transcript],
         start_end_positions: List[Tuple[int, int, Transcript]],
         curr_chrom: str,
-        curr_strand: str,
+        curr_strand: int,
     ):
         self.transcripts.update(chrom_transcript_dict)
         start_end_positions.sort()
@@ -516,7 +471,6 @@ class TranscriptIndex:
                     regions.append((pos + 1, regions[-1][1] - {trans}))
         self.transcripts_by_region[curr_chrom, curr_strand] = regions
 
-    @cython.ccall
     def read_gtf(self, gtf_file: str):
         """
         Read a GTF file and construct an index of transcripts.
@@ -537,19 +491,21 @@ class TranscriptIndex:
                     curr_chrom,
                     source,
                     feature,
-                    start,
-                    end,
+                    start_str,
+                    end_str,
                     score,
-                    curr_strand,
+                    curr_strand_str,
                     frame,
                     attributes_str,
                 ) = line.strip().split("\t")
+
+                curr_strand = Strand.PLUS if curr_strand_str == "+" else Strand.MINUS
 
                 # Only keep exons and transcripts
                 if feature not in ["exon", "transcript"]:
                     continue
 
-                start, end = int(start), int(end)
+                start, end = int(start_str), int(end_str)
                 attributes = {
                     key: value.strip('"')
                     for attr in attributes_str.split("; ")
@@ -612,7 +568,7 @@ class TranscriptIndex:
                             transcript_id=line.attributes["transcript_id"],
                             transcript_name=line.attributes["transcript_name"],
                             chromosome=line.chromosome,
-                            strand=str(line.strand),
+                            strand=line.strand,
                             start=line.start,
                             end=line.end,
                         )
@@ -629,7 +585,7 @@ class TranscriptIndex:
                         transcript_id=line.attributes["transcript_id"],
                         transcript_name=line.attributes["transcript_name"],
                         chromosome=line.chromosome,
-                        strand=str(line.strand),
+                        strand=line.strand,
                         start=line.start,
                         end=line.end,
                         exon_id=line.attributes["exon_id"],
@@ -665,9 +621,12 @@ class TranscriptIndex:
             return self.transcripts[transcript_id]
         return None
 
-    @cython.ccall
     def get_overlapping_transcripts(
-        self, chromosome: str, strand: str, start: int, end: int
+        self,
+        chromosome: str,
+        strand: Strand,
+        start: int,
+        end: int,
     ) -> List[Transcript]:
         """
         Get transcripts that overlap with a given region.
@@ -718,11 +677,6 @@ class TranscriptIndex:
 
         return sorted(overlapping_transcripts)
 
-    @property
-    def transcripts_by_region(self):
-        return self.transcripts_by_region
 
-
-@cython.ccall
 def _bisect_sort_key(x: Tuple[int, Set[Transcript]]) -> int:
     return x[0]

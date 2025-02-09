@@ -2,7 +2,9 @@
 requires = [
     "setuptools>=74.1",
     "setuptools-scm>=8",
-    "cython",
+    "wheel",
+    "Cython",
+    "pysam",
 ]
 build-backend = "setuptools.build_meta"
 
@@ -55,12 +57,12 @@ doc = [
     "sphinx-autoapi",
 ]
 
-[tool.setuptools]
-ext-modules = [
-    { name = "tidesurf.transcript", sources = ["tidesurf/transcript.py"] },
-    { name = "tidesurf.counter", sources = ["tidesurf/counter.py"] },
-    { name = "tidesurf.read", sources = ["tidesurf/read.pyx"] },
-]
+# [tool.setuptools]
+# ext-modules = [
+#     { name = "tidesurf.transcript", sources = ["tidesurf/transcript.py"] },
+#     { name = "tidesurf.counter", sources = ["tidesurf/counter.py"] },
+#     { name = "tidesurf.enums", sources = ["tidesurf/enums.pyx"] },
+# ]
 
 [tool.setuptools_scm]
 

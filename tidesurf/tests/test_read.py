@@ -4,7 +4,7 @@ import pysam
 import pytest
 
 from tidesurf import TranscriptIndex, UMICounter
-from tidesurf.read import ReadType
+from tidesurf.enums import ReadType
 
 TEST_GTF_FILE = "test_data/genes.gtf"
 TRANSCRIPT_INDEX = TranscriptIndex(TEST_GTF_FILE)

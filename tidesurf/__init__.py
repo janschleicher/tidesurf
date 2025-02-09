@@ -1,10 +1,11 @@
 from importlib.metadata import PackageNotFoundError, version
 
 from tidesurf.counter import UMICounter
+from tidesurf.enums import ReadType, SpliceType, Strand
 from tidesurf.transcript import (
     Exon,
     GenomicFeature,
-    Strand,
+    Intron,
     Transcript,
     TranscriptIndex,
 )
@@ -15,9 +16,12 @@ except PackageNotFoundError:
     pass
 
 __all__ = [
-    "Strand",
-    "GenomicFeature",
     "Exon",
+    "GenomicFeature",
+    "Intron",
+    "ReadType",
+    "SpliceType",
+    "Strand",
     "Transcript",
     "TranscriptIndex",
     "UMICounter",

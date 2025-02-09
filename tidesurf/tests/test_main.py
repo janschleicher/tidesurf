@@ -35,10 +35,10 @@ TEST_OUT_TS_FILTER_UMI = "test_data/tidesurf_out/tidesurf_filter_umi.h5ad"
 @pytest.mark.parametrize(
     "no_filter_cells, whitelist, num_umis, test_out_ts",
     [
-        (True, None, None, TEST_OUT_TS_NO_FILTER),
-        (False, None, None, TEST_OUT_TS_FILTER_CR),
-        (False, "cellranger", None, TEST_OUT_TS_FILTER_CR),
-        (False, "test_data/whitelist.tsv", None, TEST_OUT_TS_FILTER_CR),
+        (True, None, -1, TEST_OUT_TS_NO_FILTER),
+        (False, None, -1, TEST_OUT_TS_FILTER_CR),
+        (False, "cellranger", -1, TEST_OUT_TS_FILTER_CR),
+        (False, "test_data/whitelist.tsv", -1, TEST_OUT_TS_FILTER_CR),
         (False, None, 10, TEST_OUT_TS_FILTER_UMI),
         (False, "cellranger", 10, None),
     ],
@@ -50,22 +50,25 @@ def test_main(
     multi_mapped_reads: bool,
     no_filter_cells: bool,
     whitelist: Optional[str],
-    num_umis: Optional[int],
+    num_umis: int,
     test_out_cr: str,
     test_out_ts: str,
 ):
     if orientation == "sense" and whitelist:
         whitelist = whitelist.replace("whitelist", "whitelist_3p")
-    os.system(
+    cmd = (
         f"tidesurf -o test_out --orientation {orientation} "
         f"{'--no_filter_cells ' if no_filter_cells else ''}"
         f"{f'--whitelist {whitelist} ' if whitelist else ''}"
-        f"{f'--num_umis {num_umis} ' if num_umis else ''}"
+        f"{f'--num_umis {num_umis} ' if num_umis != -1 else ''}"
         f"{'--multi_mapped_reads ' if multi_mapped_reads else ''}"
         f"{sample_dir} {gtf_file}"
     )
+    print(whitelist, num_umis)
+    print(cmd)
+    os.system(cmd)
     adata_cr = ad.read_h5ad(test_out_cr)
-    if whitelist and num_umis:
+    if whitelist and num_umis != -1:
         assert not os.path.exists("test_out"), (
             "No output should be generated with both whitelist and "
             "num_umis present (mutually exclusive arguments)."
