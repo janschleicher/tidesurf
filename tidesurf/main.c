@@ -4,9 +4,9 @@
 {
     "distutils": {
         "include_dirs": [
-            "/private/var/folders/_b/6c3pcz5j4rjfdjl180035yrm0000gn/T/pip-build-env-ladnv3mc/overlay/lib/python3.10/site-packages/pysam",
-            "/private/var/folders/_b/6c3pcz5j4rjfdjl180035yrm0000gn/T/pip-build-env-ladnv3mc/overlay/lib/python3.10/site-packages/pysam/include/htslib",
-            "/private/var/folders/_b/6c3pcz5j4rjfdjl180035yrm0000gn/T/pip-build-env-ladnv3mc/overlay/lib/python3.10/site-packages/pysam/include/samtools"
+            "/private/var/folders/_b/6c3pcz5j4rjfdjl180035yrm0000gn/T/pip-build-env-rmb08_q4/overlay/lib/python3.10/site-packages/pysam",
+            "/private/var/folders/_b/6c3pcz5j4rjfdjl180035yrm0000gn/T/pip-build-env-rmb08_q4/overlay/lib/python3.10/site-packages/pysam/include/htslib",
+            "/private/var/folders/_b/6c3pcz5j4rjfdjl180035yrm0000gn/T/pip-build-env-rmb08_q4/overlay/lib/python3.10/site-packages/pysam/include/samtools"
         ],
         "name": "tidesurf.main",
         "sources": [

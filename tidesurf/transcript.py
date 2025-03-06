@@ -68,6 +68,7 @@ class GenomicFeature:
         self.start = start
         self.end = end
 
+    @cython.embedsignature(False)
     def overlaps(
         self,
         chromosome: str,
@@ -77,6 +78,8 @@ class GenomicFeature:
         min_overlap: int = 1,
     ) -> bool:
         """
+        overlaps(chromosome: str, strand: Strand, start: int, end: int, min_overlap: int = 1) -> bool:
+
         Check if the feature overlaps with a given region.
 
         :param chromosome: Chromosome of interest.
@@ -276,8 +279,11 @@ class Transcript(GenomicFeature):
         else:
             self.regions = regions
 
+    @cython.embedsignature(False)
     def add_exon(self, exon: Exon):
         """
+        add_exon(exon: Exon)
+
         Add an exon to the transcript.
 
         :param exon: Exon to add.
@@ -285,8 +291,11 @@ class Transcript(GenomicFeature):
         if exon not in self.regions:
             self.regions.append(exon)
 
+    @cython.embedsignature(False)
     def sort_regions(self):
         """
+        sort_regions()
+
         Sort regions by start position and insert introns.
         """
         self.regions = sorted(set(self.regions))
@@ -428,8 +437,11 @@ class TranscriptIndex:
                     regions.append((pos + 1, regions[-1][1] - {trans}))
         self.transcripts_by_region[curr_chrom, curr_strand] = regions
 
+    @cython.embedsignature(False)
     def read_gtf(self, gtf_file: str):
         """
+        read_gtf(gtf_file: str)
+
         Read a GTF file and construct an index of transcripts.
 
         :param gtf_file: Path to GTF file.
@@ -578,6 +590,7 @@ class TranscriptIndex:
             return self.transcripts[transcript_id]
         return None
 
+    @cython.embedsignature(False)
     def get_overlapping_transcripts(
         self,
         chromosome: str,
@@ -586,6 +599,8 @@ class TranscriptIndex:
         end: int,
     ) -> List[Transcript]:
         """
+        get_overlapping_transcripts(chromosome: str, strand: Strand, start: int, end: int) -> List[Transcript]
+
         Get transcripts that overlap with a given region.
 
         :param chromosome: Chromosome of interest.

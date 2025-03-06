@@ -2288,6 +2288,8 @@ static int __Pyx_InitStrings(__Pyx_StringTabEntry *t);
 
 /* #### Code section: module_declarations ### */
 
+/* Module declarations from "cython" */
+
 /* Module declarations from "tidesurf.enums" */
 static PyObject *__Pyx_OrderedDict = 0;
 static PyObject *__Pyx_EnumBase = 0;
@@ -2452,6 +2454,8 @@ typedef struct {
   #endif
   #ifdef __Pyx_Coroutine_USED
   PyTypeObject *__pyx_CoroutineType;
+  #endif
+  #if CYTHON_USE_MODULE_STATE
   #endif
   #if CYTHON_USE_MODULE_STATE
   PyObject *__Pyx_EnumMeta;
@@ -2928,6 +2932,8 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #endif
 #ifdef __Pyx_Coroutine_USED
 #define __pyx_CoroutineType __pyx_mstate_global->__pyx_CoroutineType
+#endif
+#if CYTHON_USE_MODULE_STATE
 #endif
 #if CYTHON_USE_MODULE_STATE
 #define __Pyx_EnumMeta __pyx_mstate_global->__Pyx_EnumMeta
@@ -5882,9 +5888,9 @@ static PyObject *__pyx_unpickle___Pyx_EnumMeta__set_state(struct __pyx_obj___Pyx
   return __pyx_r;
 }
 
-/* "tidesurf/enums.pyx":3
- * """Module containing enums for tidesurf."""
+/* "tidesurf/enums.pyx":6
  * 
+ * @cython.embedsignature.format("python")
  * cpdef Strand antisense(Strand strand):             # <<<<<<<<<<<<<<
  *     """Return the antisense of a given strand."""
  *     if strand == Strand.PLUS:
@@ -5906,7 +5912,7 @@ static enum __pyx_t_8tidesurf_5enums_Strand __pyx_f_8tidesurf_5enums_antisense(e
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("antisense", 1);
 
-  /* "tidesurf/enums.pyx":5
+  /* "tidesurf/enums.pyx":8
  * cpdef Strand antisense(Strand strand):
  *     """Return the antisense of a given strand."""
  *     if strand == Strand.PLUS:             # <<<<<<<<<<<<<<
@@ -5916,7 +5922,7 @@ static enum __pyx_t_8tidesurf_5enums_Strand __pyx_f_8tidesurf_5enums_antisense(e
   switch (__pyx_v_strand) {
     case __pyx_e_8tidesurf_5enums_PLUS:
 
-    /* "tidesurf/enums.pyx":6
+    /* "tidesurf/enums.pyx":9
  *     """Return the antisense of a given strand."""
  *     if strand == Strand.PLUS:
  *         return Strand.MINUS             # <<<<<<<<<<<<<<
@@ -5926,7 +5932,7 @@ static enum __pyx_t_8tidesurf_5enums_Strand __pyx_f_8tidesurf_5enums_antisense(e
     __pyx_r = __pyx_e_8tidesurf_5enums_MINUS;
     goto __pyx_L0;
 
-    /* "tidesurf/enums.pyx":5
+    /* "tidesurf/enums.pyx":8
  * cpdef Strand antisense(Strand strand):
  *     """Return the antisense of a given strand."""
  *     if strand == Strand.PLUS:             # <<<<<<<<<<<<<<
@@ -5936,7 +5942,7 @@ static enum __pyx_t_8tidesurf_5enums_Strand __pyx_f_8tidesurf_5enums_antisense(e
     break;
     case __pyx_e_8tidesurf_5enums_MINUS:
 
-    /* "tidesurf/enums.pyx":8
+    /* "tidesurf/enums.pyx":11
  *         return Strand.MINUS
  *     elif strand == Strand.MINUS:
  *         return Strand.PLUS             # <<<<<<<<<<<<<<
@@ -5946,7 +5952,7 @@ static enum __pyx_t_8tidesurf_5enums_Strand __pyx_f_8tidesurf_5enums_antisense(e
     __pyx_r = __pyx_e_8tidesurf_5enums_PLUS;
     goto __pyx_L0;
 
-    /* "tidesurf/enums.pyx":7
+    /* "tidesurf/enums.pyx":10
  *     if strand == Strand.PLUS:
  *         return Strand.MINUS
  *     elif strand == Strand.MINUS:             # <<<<<<<<<<<<<<
@@ -5956,22 +5962,22 @@ static enum __pyx_t_8tidesurf_5enums_Strand __pyx_f_8tidesurf_5enums_antisense(e
     break;
     default:
 
-    /* "tidesurf/enums.pyx":10
+    /* "tidesurf/enums.pyx":13
  *         return Strand.PLUS
  *     else:
  *         raise ValueError("Invalid strand")             # <<<<<<<<<<<<<<
  */
-    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__4, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 10, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__4, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 13, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_Raise(__pyx_t_1, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __PYX_ERR(0, 10, __pyx_L1_error)
+    __PYX_ERR(0, 13, __pyx_L1_error)
     break;
   }
 
-  /* "tidesurf/enums.pyx":3
- * """Module containing enums for tidesurf."""
+  /* "tidesurf/enums.pyx":6
  * 
+ * @cython.embedsignature.format("python")
  * cpdef Strand antisense(Strand strand):             # <<<<<<<<<<<<<<
  *     """Return the antisense of a given strand."""
  *     if strand == Strand.PLUS:
@@ -5995,7 +6001,7 @@ PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
 PyObject *__pyx_args, PyObject *__pyx_kwds
 #endif
 ); /*proto*/
-PyDoc_STRVAR(__pyx_doc_8tidesurf_5enums_antisense, "antisense(Strand strand) -> Strand\nReturn the antisense of a given strand.");
+PyDoc_STRVAR(__pyx_doc_8tidesurf_5enums_antisense, "antisense(strand: Strand) -> Strand\nReturn the antisense of a given strand.");
 static PyMethodDef __pyx_mdef_8tidesurf_5enums_1antisense = {"antisense", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_8tidesurf_5enums_1antisense, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_8tidesurf_5enums_antisense};
 static PyObject *__pyx_pw_8tidesurf_5enums_1antisense(PyObject *__pyx_self, 
 #if CYTHON_METH_FASTCALL
@@ -6041,23 +6047,23 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
           (void)__Pyx_Arg_NewRef_FASTCALL(values[0]);
           kw_args--;
         }
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 3, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 6, __pyx_L3_error)
         else goto __pyx_L5_argtuple_error;
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t kwd_pos_args = __pyx_nargs;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "antisense") < 0)) __PYX_ERR(0, 3, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "antisense") < 0)) __PYX_ERR(0, 6, __pyx_L3_error)
       }
     } else if (unlikely(__pyx_nargs != 1)) {
       goto __pyx_L5_argtuple_error;
     } else {
       values[0] = __Pyx_Arg_FASTCALL(__pyx_args, 0);
     }
-    __pyx_v_strand = ((enum __pyx_t_8tidesurf_5enums_Strand)__Pyx_PyInt_As_enum____pyx_t_8tidesurf_5enums_Strand(values[0])); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 3, __pyx_L3_error)
+    __pyx_v_strand = ((enum __pyx_t_8tidesurf_5enums_Strand)__Pyx_PyInt_As_enum____pyx_t_8tidesurf_5enums_Strand(values[0])); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 6, __pyx_L3_error)
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("antisense", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 3, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("antisense", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 6, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -6094,8 +6100,8 @@ static PyObject *__pyx_pf_8tidesurf_5enums_antisense(CYTHON_UNUSED PyObject *__p
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("antisense", 1);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_8tidesurf_5enums_antisense(__pyx_v_strand, 0); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 3, __pyx_L1_error)
-  __pyx_t_2 = __Pyx_Enum_8tidesurf_5enums_enum__dunderpyx_t_8tidesurf_5enums_Strand_to_py(__pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 3, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_8tidesurf_5enums_antisense(__pyx_v_strand, 0); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 6, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_Enum_8tidesurf_5enums_enum__dunderpyx_t_8tidesurf_5enums_Strand_to_py(__pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 6, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_r = __pyx_t_2;
   __pyx_t_2 = 0;
@@ -6385,7 +6391,7 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
 }
 /* #### Code section: cached_builtins ### */
 static CYTHON_SMALL_CODE int __Pyx_InitCachedBuiltins(void) {
-  __pyx_builtin_ValueError = __Pyx_GetBuiltinName(__pyx_n_s_ValueError); if (!__pyx_builtin_ValueError) __PYX_ERR(0, 10, __pyx_L1_error)
+  __pyx_builtin_ValueError = __Pyx_GetBuiltinName(__pyx_n_s_ValueError); if (!__pyx_builtin_ValueError) __PYX_ERR(0, 13, __pyx_L1_error)
   return 0;
   __pyx_L1_error:;
   return -1;
@@ -6407,12 +6413,12 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_GOTREF(__pyx_tuple__2);
   __Pyx_GIVEREF(__pyx_tuple__2);
 
-  /* "tidesurf/enums.pyx":10
+  /* "tidesurf/enums.pyx":13
  *         return Strand.PLUS
  *     else:
  *         raise ValueError("Invalid strand")             # <<<<<<<<<<<<<<
  */
-  __pyx_tuple__4 = PyTuple_Pack(1, __pyx_kp_u_Invalid_strand); if (unlikely(!__pyx_tuple__4)) __PYX_ERR(0, 10, __pyx_L1_error)
+  __pyx_tuple__4 = PyTuple_Pack(1, __pyx_kp_u_Invalid_strand); if (unlikely(!__pyx_tuple__4)) __PYX_ERR(0, 13, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__4);
   __Pyx_GIVEREF(__pyx_tuple__4);
 
@@ -6510,17 +6516,17 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_GIVEREF(__pyx_tuple__18);
   __pyx_codeobj__19 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__18, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_stringsource, __pyx_n_s_pyx_unpickle___Pyx_EnumMeta, 1, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__19)) __PYX_ERR(1, 1, __pyx_L1_error)
 
-  /* "tidesurf/enums.pyx":3
- * """Module containing enums for tidesurf."""
+  /* "tidesurf/enums.pyx":6
  * 
+ * @cython.embedsignature.format("python")
  * cpdef Strand antisense(Strand strand):             # <<<<<<<<<<<<<<
  *     """Return the antisense of a given strand."""
  *     if strand == Strand.PLUS:
  */
-  __pyx_tuple__20 = PyTuple_Pack(1, __pyx_n_s_strand); if (unlikely(!__pyx_tuple__20)) __PYX_ERR(0, 3, __pyx_L1_error)
+  __pyx_tuple__20 = PyTuple_Pack(1, __pyx_n_s_strand); if (unlikely(!__pyx_tuple__20)) __PYX_ERR(0, 6, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__20);
   __Pyx_GIVEREF(__pyx_tuple__20);
-  __pyx_codeobj__21 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__20, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_tidesurf_enums_pyx, __pyx_n_s_antisense, 3, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__21)) __PYX_ERR(0, 3, __pyx_L1_error)
+  __pyx_codeobj__21 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__20, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_tidesurf_enums_pyx, __pyx_n_s_antisense, 6, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__21)) __PYX_ERR(0, 6, __pyx_L1_error)
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
@@ -8410,22 +8416,22 @@ if (!__Pyx_RefNanny) {
   }
   __pyx_L9:;
 
-  /* "tidesurf/enums.pyx":3
- * """Module containing enums for tidesurf."""
+  /* "tidesurf/enums.pyx":6
  * 
+ * @cython.embedsignature.format("python")
  * cpdef Strand antisense(Strand strand):             # <<<<<<<<<<<<<<
  *     """Return the antisense of a given strand."""
  *     if strand == Strand.PLUS:
  */
-  __pyx_t_5 = __Pyx_CyFunction_New(&__pyx_mdef_8tidesurf_5enums_1antisense, 0, __pyx_n_s_antisense, NULL, __pyx_kp_s_tidesurf_enums, __pyx_d, ((PyObject *)__pyx_codeobj__21)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 3, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_CyFunction_New(&__pyx_mdef_8tidesurf_5enums_1antisense, 0, __pyx_n_s_antisense, NULL, __pyx_kp_s_tidesurf_enums, __pyx_d, ((PyObject *)__pyx_codeobj__21)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 6, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_antisense, __pyx_t_5) < 0) __PYX_ERR(0, 3, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_antisense, __pyx_t_5) < 0) __PYX_ERR(0, 6, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
   /* "tidesurf/enums.pyx":1
  * """Module containing enums for tidesurf."""             # <<<<<<<<<<<<<<
  * 
- * cpdef Strand antisense(Strand strand):
+ * cimport cython
  */
   __pyx_t_5 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);

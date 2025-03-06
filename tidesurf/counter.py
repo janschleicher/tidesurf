@@ -60,6 +60,7 @@ class UMICounter:
         self.MIN_INTRON_OVERLAP = min_intron_overlap
         self.multi_mapped_reads = multi_mapped_reads
 
+    @cython.embedsignature(False)
     def count(
         self,
         bam_file: str,
@@ -68,6 +69,8 @@ class UMICounter:
         num_umis: int = -1,
     ) -> Tuple[np.ndarray, np.ndarray, Dict[str, csr_matrix]]:
         """
+        count(bam_file: str, filter_cells: bool = False, whitelist: str = None, num_umis: int = -1) -> Tuple[np.ndarray, np.ndarray, Dict[str, csr_matrix]]
+
         Count UMIs with reads mapping to transcripts.
 
         :param bam_file: Path to BAM file.
