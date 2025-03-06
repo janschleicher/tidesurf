@@ -13,9 +13,6 @@ from cython.cimports.tidesurf.transcript import TranscriptIndex
 
 import tidesurf
 
-# from tidesurf.counter import UMICounter
-# from tidesurf.transcript import TranscriptIndex
-
 log = logging.getLogger(__name__)
 
 

@@ -14,10 +14,10 @@ tidesurf.counter.UMICounter
    .. autosummary::
       :toctree: .
    
-      ~UMICounter.transcript_index
-      ~UMICounter.orientation
       ~UMICounter.MIN_INTRON_OVERLAP
       ~UMICounter.multi_mapped_reads
+      ~UMICounter.orientation
+      ~UMICounter.transcript_index
    
    
 

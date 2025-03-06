@@ -1,7 +1,7 @@
-tidesurf.transcript.Strand
-==========================
+tidesurf.enums.Strand
+=====================
 
-.. currentmodule:: tidesurf.transcript
+.. currentmodule:: tidesurf.enums
 
 .. add toctree option to make autodoc generate the pages
 
@@ -20,12 +20,5 @@ tidesurf.transcript.Strand
    
 
    
-   
-   .. rubric:: Methods
-
-   .. autosummary::
-      :toctree: .
-   
-      ~Strand.antisense
    
    

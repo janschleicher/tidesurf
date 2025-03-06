@@ -3,6 +3,8 @@
 # For the full list of built-in configuration values, see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
+from sphinx.ext import autodoc
+
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
@@ -37,5 +39,38 @@ html_static_path = ["_static"]
 
 # Automatic generation of API documentation
 autosummary_generate = True
-autodoc_member_order = "bysource"
-typehints_defaults = "braces"
+autodoc_default_options = {
+    "member-order": "alphabetical",
+    "show-inheritance": True,
+}
+
+
+def setup(app):
+    def skip_member(app, what, name, obj, skip, options):
+        # exclude attributes and methods added to enum by cython
+        if name in [
+            "real",
+            "imag",
+            "numerator",
+            "denominator",
+            "conjugate",
+            "bit_length",
+            "bit_count",
+            "to_bytes",
+            "from_bytes",
+            "as_integer_ratio",
+        ]:
+            return True
+        return None
+
+    app.connect("autodoc-skip-member", skip_member)
+
+
+class MockedClassDocumenter(autodoc.ClassDocumenter):
+    def add_line(self, line: str, source: str, *lineno: int) -> None:
+        if line == "   Bases: :py:class:`object`":
+            return
+        super().add_line(line, source, *lineno)
+
+
+autodoc.ClassDocumenter = MockedClassDocumenter

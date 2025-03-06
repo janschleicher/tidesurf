@@ -22,7 +22,6 @@
       GTFLine
       GenomicFeature
       Intron
-      Strand
       Transcript
       TranscriptIndex
    

@@ -2,7 +2,7 @@
 
 import logging
 from bisect import bisect
-from typing import Dict, List, Literal, Optional, Set, Tuple
+from typing import Dict, List, Literal, Set, Tuple
 
 import cython
 import numpy as np
@@ -48,21 +48,6 @@ class UMICounter:
     :param multi_mapped_reads: Whether to count multi-mapped reads.
     """
 
-    __slots__ = [
-        "transcript_index",
-        "orientation",
-        "MIN_INTRON_OVERLAP",
-        "multi_mapped_reads",
-    ]
-    # transcript_index: TranscriptIndex
-    # """Transcript index for extraction of overlapping transcripts."""
-    # orientation = cython.declare(str, visibility="readonly")
-    # """Orientation in which reads map to transcripts."""
-    # MIN_INTRON_OVERLAP = cython.declare(cython.int, visibility="readonly")
-    # """Minimum overlap of reads with introns required to consider them intronic."""
-    # multi_mapped_reads = cython.declare(cython.bint, visibility="readonly")
-    # """Whether to count multi-mapped reads."""
-
     def __init__(
         self,
         transcript_index: TranscriptIndex,
@@ -75,13 +60,12 @@ class UMICounter:
         self.MIN_INTRON_OVERLAP = min_intron_overlap
         self.multi_mapped_reads = multi_mapped_reads
 
-    # @cython.ccall
     def count(
         self,
-        bam_file,  #: str,
-        filter_cells,  #: cython.bint = False,
-        whitelist=None,  #: str = None,
-        num_umis=-1,  #: cython.int = -1,
+        bam_file: str,
+        filter_cells: bool = False,
+        whitelist: str = None,
+        num_umis: int = -1,
     ) -> Tuple[np.ndarray, np.ndarray, Dict[str, csr_matrix]]:
         """
         Count UMIs with reads mapping to transcripts.
@@ -144,7 +128,7 @@ class UMICounter:
                         skipped_reads["whitelist"] += 1
                         continue
                 res = self._process_read(bam_read)
-                if res is not None:
+                if res:
                     cbc, results_list = res
                     if cbc in results:
                         results[cbc].extend(results_list)
@@ -301,7 +285,7 @@ class UMICounter:
 
     def _process_read(
         self, read: AlignedSegment
-    ) -> Optional[Tuple[str, List[Tuple[str, str, int, float]]]]:
+    ) -> Tuple[str, List[Tuple[str, str, int, float]]]:
         """
         Process a single read.
 
@@ -312,9 +296,9 @@ class UMICounter:
         umi = str(read.get_tag("UB"))
         chromosome = read.reference_name
         strand = Strand.PLUS if read.is_forward else Strand.MINUS
-        start = read.reference_start
-        end = read.reference_end - 1  # pysam reference_end is exclusive
-        length = read.infer_read_length()
+        start: cython.int = read.reference_start
+        end: cython.int = read.reference_end - 1  # pysam reference_end is exclusive
+        length: cython.int = read.infer_read_length()
 
         if self.orientation == "antisense":
             strand = antisense(strand)
@@ -327,7 +311,7 @@ class UMICounter:
         )
 
         # Only keep transcripts with minimum overlap of 50% of the read length.
-        min_overlap = length // 2
+        min_overlap: cython.int = length // 2
         overlapping_transcripts = [
             t
             for t in overlapping_transcripts
@@ -341,12 +325,14 @@ class UMICounter:
         ]
 
         if not overlapping_transcripts:
-            return None
+            return tuple()
 
         # Determine length of read without soft-clipped bases and count
         # inserted bases (present in read, but not in reference)
-        clipped_length = length
-        insertion_length = 0
+        clipped_length: cython.int = length
+        insertion_length: cython.int = 0
+        cigar_op: cython.int
+        n_bases: cython.int
         for cigar_op, n_bases in read.cigartuples:
             if cigar_op == CSOFT_CLIP:
                 clipped_length -= n_bases
@@ -359,10 +345,10 @@ class UMICounter:
         }
         for trans in overlapping_transcripts:
             # Loop over exons and introns
-            total_exon_overlap = 0
-            total_intron_overlap = 0
-            n_exons = 0
-            left_idx = max(
+            total_exon_overlap: cython.int = 0
+            total_intron_overlap: cython.int = 0
+            n_exons: cython.int = 0
+            left_idx: cython.int = max(
                 bisect(trans.regions, start, key=_genomic_feature_sort_key) - 1, 0
             )
             for region in trans.regions[left_idx:]:
@@ -412,7 +398,7 @@ class UMICounter:
         processed_reads = []
         n_genes = len(read_types_per_gene)
         if n_genes > 1 and not self.multi_mapped_reads:
-            return None
+            return tuple()
         for gene_name, read_types in read_types_per_gene.items():
             if not read_types:
                 continue
@@ -426,12 +412,13 @@ class UMICounter:
 
             processed_reads.append((umi, gene_name, int(read_type), 1.0 / n_genes))
         if not processed_reads:
-            return None
+            return tuple()
         return cbc, processed_reads
 
 
-@cython.ccall
-def _genomic_feature_sort_key(gen_feat: GenomicFeature):
+@cython.cfunc
+@cython.inline
+def _genomic_feature_sort_key(gen_feat: GenomicFeature) -> int:
     return gen_feat.start
 
 

@@ -57,13 +57,6 @@ doc = [
     "sphinx-autoapi",
 ]
 
-# [tool.setuptools]
-# ext-modules = [
-#     { name = "tidesurf.transcript", sources = ["tidesurf/transcript.py"] },
-#     { name = "tidesurf.counter", sources = ["tidesurf/counter.py"] },
-#     { name = "tidesurf.enums", sources = ["tidesurf/enums.pyx"] },
-# ]
-
 [tool.setuptools_scm]
 
 [tool.ruff]

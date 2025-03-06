@@ -18,8 +18,6 @@
    .. autosummary::
       :toctree:
    
-      ReadType
-      SpliceType
       UMICounter
    
    

@@ -14,10 +14,10 @@ tidesurf.transcript.Exon
    .. autosummary::
       :toctree: .
    
-      ~Exon.exon_id
-      ~Exon.exon_number
       ~Exon.chromosome
       ~Exon.end
+      ~Exon.exon_id
+      ~Exon.exon_number
       ~Exon.gene_id
       ~Exon.gene_name
       ~Exon.start

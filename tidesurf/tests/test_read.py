@@ -188,7 +188,7 @@ def test_read_processing(multi_mapped_reads: bool) -> None:
     for cbc, umi, ref_name, ref_start, cigar, is_reversed, expected_result in READS:
         read = mock_read(cbc, umi, ref_name, ref_start, cigar, is_reverse=is_reversed)
         res = counter._process_read(read)
-        if res is None:
+        if not res:
             assert (expected_result == [("", None)]) or (
                 not multi_mapped_reads and len(expected_result) > 1
             ), "Read was filtered out when it should not be."
