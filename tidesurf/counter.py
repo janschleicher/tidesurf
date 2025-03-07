@@ -2,7 +2,7 @@
 
 import logging
 from bisect import bisect
-from typing import Dict, List, Literal, Set, Tuple
+from typing import Dict, List, Literal, Optional, Set, Tuple
 
 import cython
 import numpy as np
@@ -40,12 +40,17 @@ class UMICounter:
     Counter for unique molecular identifiers (UMIs) with reads mapping
     to transcripts in single-cell RNA-seq data.
 
-    :param transcript_index: Transcript index.
-    :param orientation: Orientation in which reads map to transcripts.
-        Either "sense" or "antisense".
-    :param min_intron_overlap: Minimum overlap of reads with introns
-        required to consider them intronic.
-    :param multi_mapped_reads: Whether to count multi-mapped reads.
+    Parameters
+    ----------
+    transcript_index: TranscriptIndex
+        Transcript index.
+    orientation: Literal['sense', 'antisense']
+        Orientation in which reads map to transcripts.
+    min_intron_overlap: int
+        Minimum overlap of reads with introns required to consider them
+        intronic (default: `5`).
+    multi_mapped_reads: bool
+        Whether to count multi-mapped reads (default: `False`).
     """
 
     def __init__(
@@ -65,25 +70,35 @@ class UMICounter:
         self,
         bam_file: str,
         filter_cells: bool = False,
-        whitelist: str = None,
+        whitelist: Optional[str] = None,
         num_umis: int = -1,
     ) -> Tuple[np.ndarray, np.ndarray, Dict[str, csr_matrix]]:
         """
-        count(bam_file: str, filter_cells: bool = False, whitelist: str = None, num_umis: int = -1) -> Tuple[np.ndarray, np.ndarray, Dict[str, csr_matrix]]
+        count(bam_file: str, filter_cells: bool = False, whitelist: Optional[str] = None, num_umis: int = -1) -> Tuple[np.ndarray, np.ndarray, Dict[str, csr_matrix]]
 
         Count UMIs with reads mapping to transcripts.
 
-        :param bam_file: Path to BAM file.
-        :param filter_cells: Whether to filter cells.
-        :param whitelist: If `filter_cells` is True: path to cell
-            barcode whitelist file. Mutually exclusive with `num_umis`.
-        :param num_umis: If `filter_cells` is True: set to an integer to
-            only keep cells with at least that many UMIs. Mutually
-            exclusive with `whitelist`. Default -1 corresponds to not
-            filtering based on number of UMIs.
-        :return: cells (array of shape (n_cells,)), genes (array of
-            shape (n_genes,)), counts (sparse matrix of shape
-            (n_cells, n_genes)).
+        Parameters
+        ----------
+        bam_file
+            Path to BAM file.
+        filter_cells
+            Whether to filter cells (default: `False`).
+        whitelist
+            If `filter_cells` is True: path to cell barcode whitelist
+            file. Mutually exclusive with `num_umis` (default: `None`).
+        num_umis
+            If `filter_cells` is True: set to an integer to only keep
+            cells with at least that many UMIs. Mutually exclusive with
+            `whitelist` (default: `-1`; corresponds to not filtering based
+            on number of UMIs).
+
+        Returns
+        -------
+        Tuple[np.ndarray, np.ndarray, Dict[str, csr_matrix]]
+            Cells (array of shape `(n_cells,)`), genes (array of shape
+            `(n_genes,)`), counts (dictionary with sparse matrices of shape
+            `(n_cells, n_genes)` for spliced, unspliced, and ambiguous).
         """
         wl: Set
         if filter_cells:
@@ -292,8 +307,15 @@ class UMICounter:
         """
         Process a single read.
 
-        :param read: The read to process.
-        :return: cell barcode, list of UMI, gene name, and read type.
+        Parameters
+        ----------
+        read
+            The read to process.
+
+        Returns
+        -------
+        Tuple[str, List[Tuple[str, str, int, float]]]
+            Cell barcode, list of UMIs, gene names, and read types.
         """
         cbc = str(read.get_tag("CB"))
         umi = str(read.get_tag("UB"))

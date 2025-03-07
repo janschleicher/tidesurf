@@ -38,14 +38,24 @@ class GenomicFeature:
     A genomic feature on a particular strand on a chromosome. Identified
     by a gene ID, gene name, transcript ID, and transcript name.
 
-    :param gene_id: ID of the corresponding gene.
-    :param gene_name: Name of the corresponding gene.
-    :param transcript_id: ID of the corresponding transcript.
-    :param transcript_name: Name of the corresponding transcript.
-    :param chromosome: Chromosome on which the feature is located.
-    :param strand: Strand on which the feature is located.
-    :param start: Genomic start position of the feature (0-based).
-    :param end: Genomic end position of the feature (0-based
+    Parameters
+    ----------
+    gene_id: str
+        ID of the corresponding gene.
+    gene_name: str
+        Name of the corresponding gene.
+    transcript_id: str
+        ID of the corresponding transcript.
+    transcript_name: str
+        Name of the corresponding transcript.
+    chromosome: str
+        Chromosome on which the feature is located.
+    strand: Strand
+        Strand on which the feature is located.
+    start: int
+        Genomic start position of the feature (0-based).
+    end: int
+        Genomic end position of the feature (0-based
     """
 
     def __init__(
@@ -78,16 +88,28 @@ class GenomicFeature:
         min_overlap: int = 1,
     ) -> bool:
         """
-        overlaps(chromosome: str, strand: Strand, start: int, end: int, min_overlap: int = 1) -> bool:
+        overlaps(chromosome: str, strand: Strand, start: int, end: int, min_overlap: int = 1) -> bool
 
         Check if the feature overlaps with a given region.
 
-        :param chromosome: Chromosome of interest.
-        :param strand: Strand of interest.
-        :param start: Start position of region.
-        :param end: End position of region.
-        :param min_overlap: Minimum number of overlapping bases.
-        :return: Whether the feature overlaps with the region.
+        Parameters
+        ----------
+        chromosome
+            Chromosome of interest.
+        strand
+            Strand of interest.
+        start
+            Genomic start position of region.
+        end
+            Genomic end position of region.
+        min_overlap
+            Minimum number of overlapping bases (default: `1`).
+
+        Returns
+        -------
+        bool
+            Whether the feature overlaps with the region by at least
+            `min_overlap` bases.
         """
         if self.chromosome != chromosome or self.strand != strand:
             return False
@@ -148,16 +170,28 @@ class Exon(GenomicFeature):
     """
     An exon of a transcript. Identified by an exon ID and exon number.
 
-    :param gene_id: ID of the corresponding gene.
-    :param gene_name: Name of the corresponding gene.
-    :param transcript_id: ID of the corresponding transcript.
-    :param transcript_name: Name of the corresponding transcript.
-    :param chromosome: Chromosome on which the exon is located.
-    :param strand: Strand on which the exon is located.
-    :param start: Genomic start position of the exon (0-based).
-    :param end: Genomic end position of the exon (0-based).
-    :param exon_id: ID of the exon.
-    :param exon_number: Number of the exon in the transcript.
+    Parameters
+    ----------
+    gene_id: str
+        ID of the corresponding gene.
+    gene_name: str
+        Name of the corresponding gene.
+    transcript_id: str
+        ID of the corresponding transcript.
+    transcript_name: str
+        Name of the corresponding transcript.
+    chromosome: str
+        Chromosome on which the exon is located.
+    strand: Strand
+        Strand on which the exon is located.
+    start: int
+        Genomic start position of the exon (0-based).
+    end: int
+        Genomic end position of the exon (0-based).
+    exon_id: str
+        ID of the exon.
+    exon_number: int
+        Number of the exon in the transcript.
     """
 
     def __init__(
@@ -199,14 +233,24 @@ class Intron(GenomicFeature):
     """
     An intron of a transcript.
 
-    :param gene_id: ID of the corresponding gene.
-    :param gene_name: Name of the corresponding gene.
-    :param transcript_id: ID of the corresponding transcript.
-    :param transcript_name: Name of the corresponding transcript.
-    :param chromosome: Chromosome on which the exon is located.
-    :param strand: Strand on which the exon is located.
-    :param start: Genomic start position of the exon (0-based).
-    :param end: Genomic end position of the exon (0-based).
+    Parameters
+    ----------
+    gene_id: str
+        ID of the corresponding gene.
+    gene_name: str
+        Name of the corresponding gene.
+    transcript_id: str
+        ID of the corresponding transcript.
+    transcript_name: str
+        Name of the corresponding transcript.
+    chromosome: str
+        Chromosome on which the exon is located.
+    strand: Strand
+        Strand on which the exon is located.
+    start: int
+        Genomic start position of the exon (0-based).
+    end: int
+        Genomic end position of the exon (0-based).
     """
 
     def __init__(
@@ -237,18 +281,29 @@ class Transcript(GenomicFeature):
     """
     A transcript. Contains a list of exons and introns.
 
-    :param gene_id: ID of the corresponding gene.
-    :param gene_name: Name of the corresponding gene.
-    :param transcript_id: ID of the transcript.
-    :param transcript_name: Name of the transcript.
-    :param chromosome: Chromosome on which the transcript is located.
-    :param strand: Strand on which the transcript is located.
-    :param start: Genomic start position of the transcript (0-based).
-    :param end: Genomic end position of the transcript (0-based).
-    :param regions: List of exons and introns in the transcript. A
-        Transcript object can be initialized without regions (default),
-        in which case they should be added later. If only exons are
-        added, introns can be inserted with
+    Parameters
+    ----------
+    gene_id: str
+        ID of the corresponding gene.
+    gene_name: str
+        Name of the corresponding gene.
+    transcript_id: str
+        ID of the corresponding transcript.
+    transcript_name: str
+        Name of the corresponding transcript.
+    chromosome: str
+        Chromosome on which the exon is located.
+    strand: Strand
+        Strand on which the exon is located.
+    start: int
+        Genomic start position of the exon (0-based).
+    end: int
+        Genomic end position of the exon (0-based).
+    regions: List[Union[Exon, Intron]]
+        List of exons and introns in the transcript. A
+        :class:`Transcript` object can be initialized without regions
+        (default: `None`), in which case they should be added later. If
+        only exons are added, introns can be inserted with
         :meth:`~tidesurf.transcript.Transcript.sort_regions`.
     """
 
@@ -286,7 +341,10 @@ class Transcript(GenomicFeature):
 
         Add an exon to the transcript.
 
-        :param exon: Exon to add.
+        Parameters
+        ----------
+        exon:
+            Exon to add.
         """
         if exon not in self.regions:
             self.regions.append(exon)
@@ -340,15 +398,26 @@ class GTFLine:
     """
     A line from a GTF file, corresponding to particular genomic feature.
 
-    :param chromosome: Chromosome of the feature.
-    :param source: Source of the feature.
-    :param feature: Type of feature.
-    :param start: Genomic start position of feature (0-based).
-    :param end: Genomic end position of feature (0-based).
-    :param score: Feature score.
-    :param strand: Strand of the feature.
-    :param frame: Frame of the feature.
-    :param attributes: Additional attributes of the feature.
+    Parameters
+    ----------
+    chromosome: str
+        Chromosome of the feature.
+    source: str
+        Source of the feature.
+    feature: str
+        Type of feature.
+    start: int
+        Genomic start position of feature (0-based).
+    end: int
+        Genomic end position of feature (0-based).
+    score: str
+        Feature score.
+    strand: Strand
+        Strand of the feature.
+    frame: str
+        Frame of the feature.
+    attributes: Dict[str, str]
+        Additional attributes of the feature.
     """
 
     def __init__(
@@ -404,7 +473,10 @@ class TranscriptIndex:
     An index of transcripts from a GTF file. Allows for quick retrieval
     of transcripts on a particular chromosome and strand.
 
-    :param gtf_file: Path to GTF file.
+    Parameters
+    ----------
+    gtf_file: str
+        Path to GTF file.
     """
 
     def __init__(self, gtf_file: str) -> None:
@@ -444,7 +516,10 @@ class TranscriptIndex:
 
         Read a GTF file and construct an index of transcripts.
 
-        :param gtf_file: Path to GTF file.
+        Parameters
+        ----------
+        gtf_file
+            Path to GTF file.
         """
         lines = []
 
@@ -583,8 +658,15 @@ class TranscriptIndex:
         """
         Get a transcript by its ID.
 
-        :param transcript_id: Transcript ID.
-        :return: Transcript object.
+        Parameters
+        ----------
+        transcript_id
+            Transcript ID.
+
+        Returns
+        -------
+        Optional[Transcript]
+            Transcript object with the given ID if it is in the index.
         """
         if transcript_id in self.transcripts.keys():
             return self.transcripts[transcript_id]
@@ -603,11 +685,21 @@ class TranscriptIndex:
 
         Get transcripts that overlap with a given region.
 
-        :param chromosome: Chromosome of interest.
-        :param strand: Strand of interest.
-        :param start: Start position of region.
-        :param end: End position of region.
-        :return: List of transcripts that overlap with the region.
+        Parameters
+        ----------
+        chromosome
+            Chromosome of interest.
+        strand
+            Strand of interest.
+        start
+            Genomic start position of the region.
+        end
+            Genomic end position of the region.
+
+        Returns
+        -------
+        List[Transcript]
+            List of transcripts that overlap with the region.
         """
         assert (
             start <= end
