@@ -4,23 +4,23 @@
 {
     "distutils": {
         "depends": [
-            "/private/var/folders/_b/6c3pcz5j4rjfdjl180035yrm0000gn/T/pip-build-env-7n2ywolr/overlay/lib/python3.10/site-packages/pysam/htslib_util.h",
-            "/private/var/folders/_b/6c3pcz5j4rjfdjl180035yrm0000gn/T/pip-build-env-7n2ywolr/overlay/lib/python3.10/site-packages/pysam/include/htslib/htslib/bgzf.h",
-            "/private/var/folders/_b/6c3pcz5j4rjfdjl180035yrm0000gn/T/pip-build-env-7n2ywolr/overlay/lib/python3.10/site-packages/pysam/include/htslib/htslib/cram.h",
-            "/private/var/folders/_b/6c3pcz5j4rjfdjl180035yrm0000gn/T/pip-build-env-7n2ywolr/overlay/lib/python3.10/site-packages/pysam/include/htslib/htslib/faidx.h",
-            "/private/var/folders/_b/6c3pcz5j4rjfdjl180035yrm0000gn/T/pip-build-env-7n2ywolr/overlay/lib/python3.10/site-packages/pysam/include/htslib/htslib/hfile.h",
-            "/private/var/folders/_b/6c3pcz5j4rjfdjl180035yrm0000gn/T/pip-build-env-7n2ywolr/overlay/lib/python3.10/site-packages/pysam/include/htslib/htslib/hts.h",
-            "/private/var/folders/_b/6c3pcz5j4rjfdjl180035yrm0000gn/T/pip-build-env-7n2ywolr/overlay/lib/python3.10/site-packages/pysam/include/htslib/htslib/kstring.h",
-            "/private/var/folders/_b/6c3pcz5j4rjfdjl180035yrm0000gn/T/pip-build-env-7n2ywolr/overlay/lib/python3.10/site-packages/pysam/include/htslib/htslib/sam.h",
-            "/private/var/folders/_b/6c3pcz5j4rjfdjl180035yrm0000gn/T/pip-build-env-7n2ywolr/overlay/lib/python3.10/site-packages/pysam/include/htslib/htslib/tbx.h",
-            "/private/var/folders/_b/6c3pcz5j4rjfdjl180035yrm0000gn/T/pip-build-env-7n2ywolr/overlay/lib/python3.10/site-packages/pysam/include/htslib/htslib/vcf.h",
-            "/private/var/folders/_b/6c3pcz5j4rjfdjl180035yrm0000gn/T/pip-build-env-7n2ywolr/overlay/lib/python3.10/site-packages/pysam/include/htslib/htslib/vcfutils.h",
-            "/private/var/folders/_b/6c3pcz5j4rjfdjl180035yrm0000gn/T/pip-build-env-7n2ywolr/overlay/lib/python3.10/site-packages/pysam/pysam_stream.h"
+            "/private/var/folders/_b/6c3pcz5j4rjfdjl180035yrm0000gn/T/pip-build-env-na55c1cy/overlay/lib/python3.10/site-packages/pysam/htslib_util.h",
+            "/private/var/folders/_b/6c3pcz5j4rjfdjl180035yrm0000gn/T/pip-build-env-na55c1cy/overlay/lib/python3.10/site-packages/pysam/include/htslib/htslib/bgzf.h",
+            "/private/var/folders/_b/6c3pcz5j4rjfdjl180035yrm0000gn/T/pip-build-env-na55c1cy/overlay/lib/python3.10/site-packages/pysam/include/htslib/htslib/cram.h",
+            "/private/var/folders/_b/6c3pcz5j4rjfdjl180035yrm0000gn/T/pip-build-env-na55c1cy/overlay/lib/python3.10/site-packages/pysam/include/htslib/htslib/faidx.h",
+            "/private/var/folders/_b/6c3pcz5j4rjfdjl180035yrm0000gn/T/pip-build-env-na55c1cy/overlay/lib/python3.10/site-packages/pysam/include/htslib/htslib/hfile.h",
+            "/private/var/folders/_b/6c3pcz5j4rjfdjl180035yrm0000gn/T/pip-build-env-na55c1cy/overlay/lib/python3.10/site-packages/pysam/include/htslib/htslib/hts.h",
+            "/private/var/folders/_b/6c3pcz5j4rjfdjl180035yrm0000gn/T/pip-build-env-na55c1cy/overlay/lib/python3.10/site-packages/pysam/include/htslib/htslib/kstring.h",
+            "/private/var/folders/_b/6c3pcz5j4rjfdjl180035yrm0000gn/T/pip-build-env-na55c1cy/overlay/lib/python3.10/site-packages/pysam/include/htslib/htslib/sam.h",
+            "/private/var/folders/_b/6c3pcz5j4rjfdjl180035yrm0000gn/T/pip-build-env-na55c1cy/overlay/lib/python3.10/site-packages/pysam/include/htslib/htslib/tbx.h",
+            "/private/var/folders/_b/6c3pcz5j4rjfdjl180035yrm0000gn/T/pip-build-env-na55c1cy/overlay/lib/python3.10/site-packages/pysam/include/htslib/htslib/vcf.h",
+            "/private/var/folders/_b/6c3pcz5j4rjfdjl180035yrm0000gn/T/pip-build-env-na55c1cy/overlay/lib/python3.10/site-packages/pysam/include/htslib/htslib/vcfutils.h",
+            "/private/var/folders/_b/6c3pcz5j4rjfdjl180035yrm0000gn/T/pip-build-env-na55c1cy/overlay/lib/python3.10/site-packages/pysam/pysam_stream.h"
         ],
         "include_dirs": [
-            "/private/var/folders/_b/6c3pcz5j4rjfdjl180035yrm0000gn/T/pip-build-env-7n2ywolr/overlay/lib/python3.10/site-packages/pysam",
-            "/private/var/folders/_b/6c3pcz5j4rjfdjl180035yrm0000gn/T/pip-build-env-7n2ywolr/overlay/lib/python3.10/site-packages/pysam/include/htslib",
-            "/private/var/folders/_b/6c3pcz5j4rjfdjl180035yrm0000gn/T/pip-build-env-7n2ywolr/overlay/lib/python3.10/site-packages/pysam/include/samtools"
+            "/private/var/folders/_b/6c3pcz5j4rjfdjl180035yrm0000gn/T/pip-build-env-na55c1cy/overlay/lib/python3.10/site-packages/pysam",
+            "/private/var/folders/_b/6c3pcz5j4rjfdjl180035yrm0000gn/T/pip-build-env-na55c1cy/overlay/lib/python3.10/site-packages/pysam/include/htslib",
+            "/private/var/folders/_b/6c3pcz5j4rjfdjl180035yrm0000gn/T/pip-build-env-na55c1cy/overlay/lib/python3.10/site-packages/pysam/include/samtools"
         ],
         "name": "tidesurf.counter",
         "sources": [

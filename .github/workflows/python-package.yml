@@ -31,6 +31,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         python -m pip install flake8 pytest pytest-cov
+        export EXT_BUILD_DEBUG=1
         pip install -e .
     - name: Lint with flake8
       run: |
