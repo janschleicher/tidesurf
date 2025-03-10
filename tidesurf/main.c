@@ -4,9 +4,9 @@
 {
     "distutils": {
         "include_dirs": [
-            "/private/var/folders/_b/6c3pcz5j4rjfdjl180035yrm0000gn/T/pip-build-env-na55c1cy/overlay/lib/python3.10/site-packages/pysam",
-            "/private/var/folders/_b/6c3pcz5j4rjfdjl180035yrm0000gn/T/pip-build-env-na55c1cy/overlay/lib/python3.10/site-packages/pysam/include/htslib",
-            "/private/var/folders/_b/6c3pcz5j4rjfdjl180035yrm0000gn/T/pip-build-env-na55c1cy/overlay/lib/python3.10/site-packages/pysam/include/samtools"
+            "/private/var/folders/_b/6c3pcz5j4rjfdjl180035yrm0000gn/T/pip-build-env-xo6slcti/overlay/lib/python3.10/site-packages/pysam",
+            "/private/var/folders/_b/6c3pcz5j4rjfdjl180035yrm0000gn/T/pip-build-env-xo6slcti/overlay/lib/python3.10/site-packages/pysam/include/htslib",
+            "/private/var/folders/_b/6c3pcz5j4rjfdjl180035yrm0000gn/T/pip-build-env-xo6slcti/overlay/lib/python3.10/site-packages/pysam/include/samtools"
         ],
         "name": "tidesurf.main",
         "sources": [
@@ -2839,10 +2839,6 @@ static CYTHON_INLINE int __Pyx_PyUnicode_Equals(PyObject* s1, PyObject* s2, int 
 #define __Pyx_ArgsSlice_FASTCALL(args, start, stop) PyTuple_GetSlice(args, start, stop)
 #endif
 
-/* RaiseArgTupleInvalid.proto */
-static void __Pyx_RaiseArgtupleInvalid(const char* func_name, int exact,
-    Py_ssize_t num_min, Py_ssize_t num_max, Py_ssize_t num_found);
-
 /* RaiseDoubleKeywords.proto */
 static void __Pyx_RaiseDoubleKeywordsError(const char* func_name, PyObject* kw_name);
 
@@ -2851,6 +2847,10 @@ static int __Pyx_ParseOptionalKeywords(PyObject *kwds, PyObject *const *kwvalues
     PyObject **argnames[],
     PyObject *kwds2, PyObject *values[], Py_ssize_t num_pos_args,
     const char* function_name);
+
+/* RaiseArgTupleInvalid.proto */
+static void __Pyx_RaiseArgtupleInvalid(const char* func_name, int exact,
+    Py_ssize_t num_min, Py_ssize_t num_max, Py_ssize_t num_found);
 
 /* PyDictVersioning.proto */
 #if CYTHON_USE_DICT_VERSIONS && CYTHON_USE_TYPE_SLOTS
@@ -2899,6 +2899,35 @@ static PyObject *__Pyx__GetModuleGlobalName(PyObject *name, PY_UINT64_T *dict_ve
 static CYTHON_INLINE PyObject *__Pyx__GetModuleGlobalName(PyObject *name);
 #endif
 
+/* PyObjectFormatSimple.proto */
+#if CYTHON_COMPILING_IN_PYPY
+    #define __Pyx_PyObject_FormatSimple(s, f) (\
+        likely(PyUnicode_CheckExact(s)) ? (Py_INCREF(s), s) :\
+        PyObject_Format(s, f))
+#elif PY_MAJOR_VERSION < 3
+    #define __Pyx_PyObject_FormatSimple(s, f) (\
+        likely(PyUnicode_CheckExact(s)) ? (Py_INCREF(s), s) :\
+        likely(PyString_CheckExact(s)) ? PyUnicode_FromEncodedObject(s, NULL, "strict") :\
+        PyObject_Format(s, f))
+#elif CYTHON_USE_TYPE_SLOTS
+    #define __Pyx_PyObject_FormatSimple(s, f) (\
+        likely(PyUnicode_CheckExact(s)) ? (Py_INCREF(s), s) :\
+        likely(PyLong_CheckExact(s)) ? PyLong_Type.tp_repr(s) :\
+        likely(PyFloat_CheckExact(s)) ? PyFloat_Type.tp_repr(s) :\
+        PyObject_Format(s, f))
+#else
+    #define __Pyx_PyObject_FormatSimple(s, f) (\
+        likely(PyUnicode_CheckExact(s)) ? (Py_INCREF(s), s) :\
+        PyObject_Format(s, f))
+#endif
+
+/* PyObjectCall.proto */
+#if CYTHON_COMPILING_IN_CPYTHON
+static CYTHON_INLINE PyObject* __Pyx_PyObject_Call(PyObject *func, PyObject *arg, PyObject *kw);
+#else
+#define __Pyx_PyObject_Call(func, arg, kw) PyObject_Call(func, arg, kw)
+#endif
+
 /* PyFunctionFastCall.proto */
 #if CYTHON_FAST_PYCALL
 #if !CYTHON_VECTORCALL
@@ -2934,13 +2963,6 @@ static PyObject *__Pyx_PyFunction_FastCallDict(PyObject *func, PyObject **args, 
 #endif
 #endif
 
-/* PyObjectCall.proto */
-#if CYTHON_COMPILING_IN_CPYTHON
-static CYTHON_INLINE PyObject* __Pyx_PyObject_Call(PyObject *func, PyObject *arg, PyObject *kw);
-#else
-#define __Pyx_PyObject_Call(func, arg, kw) PyObject_Call(func, arg, kw)
-#endif
-
 /* PyObjectCallMethO.proto */
 #if CYTHON_COMPILING_IN_CPYTHON
 static CYTHON_INLINE PyObject* __Pyx_PyObject_CallMethO(PyObject *func, PyObject *arg);
@@ -2974,28 +2996,6 @@ static CYTHON_INLINE PyObject *__Pyx_GetItemInt_Tuple_Fast(PyObject *o, Py_ssize
 static PyObject *__Pyx_GetItemInt_Generic(PyObject *o, PyObject* j);
 static CYTHON_INLINE PyObject *__Pyx_GetItemInt_Fast(PyObject *o, Py_ssize_t i,
                                                      int is_list, int wraparound, int boundscheck);
-
-/* PyObjectFormatSimple.proto */
-#if CYTHON_COMPILING_IN_PYPY
-    #define __Pyx_PyObject_FormatSimple(s, f) (\
-        likely(PyUnicode_CheckExact(s)) ? (Py_INCREF(s), s) :\
-        PyObject_Format(s, f))
-#elif PY_MAJOR_VERSION < 3
-    #define __Pyx_PyObject_FormatSimple(s, f) (\
-        likely(PyUnicode_CheckExact(s)) ? (Py_INCREF(s), s) :\
-        likely(PyString_CheckExact(s)) ? PyUnicode_FromEncodedObject(s, NULL, "strict") :\
-        PyObject_Format(s, f))
-#elif CYTHON_USE_TYPE_SLOTS
-    #define __Pyx_PyObject_FormatSimple(s, f) (\
-        likely(PyUnicode_CheckExact(s)) ? (Py_INCREF(s), s) :\
-        likely(PyLong_CheckExact(s)) ? PyLong_Type.tp_repr(s) :\
-        likely(PyFloat_CheckExact(s)) ? PyFloat_Type.tp_repr(s) :\
-        PyObject_Format(s, f))
-#else
-    #define __Pyx_PyObject_FormatSimple(s, f) (\
-        likely(PyUnicode_CheckExact(s)) ? (Py_INCREF(s), s) :\
-        PyObject_Format(s, f))
-#endif
 
 /* JoinPyUnicode.proto */
 static PyObject* __Pyx_PyUnicode_Join(PyObject* value_tuple, Py_ssize_t value_count, Py_ssize_t result_ulength,
@@ -3592,19 +3592,19 @@ int __pyx_module_is_main_tidesurf__main = 0;
 static PyObject *__pyx_builtin_zip;
 static PyObject *__pyx_builtin_MemoryError;
 /* #### Code section: string_decls ### */
-static const char __pyx_k_[] = "";
 static const char __pyx_k_X[] = "X";
 static const char __pyx_k_f[] = "f";
 static const char __pyx_k_o[] = "-o";
 static const char __pyx_k_v[] = "-v";
 static const char __pyx_k_w[] = "w";
-static const char __pyx_k__2[] = ".";
 static const char __pyx_k_ad[] = "ad";
 static const char __pyx_k_os[] = "os";
 static const char __pyx_k_re[] = "re";
 static const char __pyx_k_wl[] = "wl";
+static const char __pyx_k__11[] = "";
+static const char __pyx_k__12[] = ".";
 static const char __pyx_k__13[] = "*";
-static const char __pyx_k__19[] = "?";
+static const char __pyx_k__22[] = "?";
 static const char __pyx_k_int[] = "int";
 static const char __pyx_k_log[] = "log";
 static const char __pyx_k_now[] = "now";
@@ -3612,6 +3612,7 @@ static const char __pyx_k_run[] = "run";
 static const char __pyx_k_str[] = "str";
 static const char __pyx_k_zip[] = "zip";
 static const char __pyx_k_INFO[] = "INFO";
+static const char __pyx_k_List[] = "List";
 static const char __pyx_k_None[] = "None";
 static const char __pyx_k_Path[] = "Path";
 static const char __pyx_k_args[] = "args";
@@ -3646,7 +3647,7 @@ static const char __pyx_k_import[] = "__import__";
 static const char __pyx_k_isfile[] = "isfile";
 static const char __pyx_k_layers[] = "layers";
 static const char __pyx_k_main_2[] = "main";
-static const char __pyx_k_output[] = "output";
+static const char __pyx_k_output[] = "--output";
 static const char __pyx_k_parser[] = "parser";
 static const char __pyx_k_prog_s[] = "%(prog)s ";
 static const char __pyx_k_return[] = "return";
@@ -3666,6 +3667,7 @@ static const char __pyx_k_spliced[] = "spliced";
 static const char __pyx_k_version[] = "__version__";
 static const char __pyx_k_GTF_FILE[] = "GTF_FILE";
 static const char __pyx_k_Optional[] = "Optional";
+static const char __pyx_k_arg_list[] = "arg_list";
 static const char __pyx_k_argparse[] = "argparse";
 static const char __pyx_k_bam_file[] = "bam_file";
 static const char __pyx_k_datetime[] = "datetime";
@@ -3675,9 +3677,9 @@ static const char __pyx_k_filename[] = "filename";
 static const char __pyx_k_gtf_file[] = "gtf_file";
 static const char __pyx_k_handlers[] = "handlers";
 static const char __pyx_k_makedirs[] = "makedirs";
-static const char __pyx_k_num_umis[] = "num_umis";
-static const char __pyx_k_output_2[] = "--output";
-static const char __pyx_k_tidesurf[] = "tidesurf_";
+static const char __pyx_k_num_umis[] = "--num_umis";
+static const char __pyx_k_output_2[] = "output";
+static const char __pyx_k_tidesurf[] = "tidesurf";
 static const char __pyx_k_ambiguous[] = "ambiguous";
 static const char __pyx_k_antisense[] = "antisense";
 static const char __pyx_k_arg_group[] = "arg_group";
@@ -3689,18 +3691,18 @@ static const char __pyx_k_unspliced[] = "unspliced";
 static const char __pyx_k_var_names[] = "var_names";
 static const char __pyx_k_version_2[] = "--version";
 static const char __pyx_k_version_3[] = "version";
-static const char __pyx_k_whitelist[] = "whitelist";
+static const char __pyx_k_whitelist[] = "--whitelist";
 static const char __pyx_k_Processing[] = "Processing ";
 static const char __pyx_k_SAMPLE_DIR[] = "SAMPLE_DIR";
 static const char __pyx_k_cellranger[] = "cellranger";
-static const char __pyx_k_num_umis_2[] = "--num_umis";
+static const char __pyx_k_num_umis_2[] = "num_umis";
 static const char __pyx_k_parse_args[] = "parse_args";
 static const char __pyx_k_pyx_vtable[] = "__pyx_vtable__";
 static const char __pyx_k_sample_dir[] = "sample_dir";
 static const char __pyx_k_sample_ids[] = "sample_ids";
 static const char __pyx_k_start_time[] = "start_time";
 static const char __pyx_k_store_true[] = "store_true";
-static const char __pyx_k_tidesurf_2[] = "tidesurf";
+static const char __pyx_k_tidesurf_2[] = "tidesurf_";
 static const char __pyx_k_write_h5ad[] = "write_h5ad";
 static const char __pyx_k_FileHandler[] = "FileHandler";
 static const char __pyx_k_Finished_in[] = "Finished in ";
@@ -3709,8 +3711,8 @@ static const char __pyx_k_Y_m_d_H_M_S[] = "%Y-%m-%d %H:%M:%S";
 static const char __pyx_k_basicConfig[] = "basicConfig";
 static const char __pyx_k_cr_pipeline[] = "cr_pipeline";
 static const char __pyx_k_description[] = "description";
-static const char __pyx_k_orientation[] = "orientation";
-static const char __pyx_k_whitelist_2[] = "--whitelist";
+static const char __pyx_k_orientation[] = "--orientation";
+static const char __pyx_k_whitelist_2[] = "whitelist";
 static const char __pyx_k_Optional_int[] = "Optional[int]";
 static const char __pyx_k_Optional_str[] = "Optional[str]";
 static const char __pyx_k_add_argument[] = "add_argument";
@@ -3721,8 +3723,8 @@ static const char __pyx_k_tidesurf_log[] = "tidesurf.log";
 static const char __pyx_k_tidesurf_out[] = "tidesurf_out";
 static const char __pyx_k_StreamHandler[] = "StreamHandler";
 static const char __pyx_k_counts_matrix[] = "counts_matrix";
-static const char __pyx_k_orientation_2[] = " orientation.";
-static const char __pyx_k_orientation_3[] = "--orientation";
+static const char __pyx_k_orientation_2[] = "orientation";
+static const char __pyx_k_orientation_3[] = " orientation.";
 static const char __pyx_k_tidesurf_h5ad[] = "tidesurf.h5ad";
 static const char __pyx_k_tidesurf_main[] = "tidesurf.main";
 static const char __pyx_k_ArgumentParser[] = "ArgumentParser";
@@ -3734,14 +3736,16 @@ static const char __pyx_k_Running_tidesurf[] = "Running tidesurf ";
 static const char __pyx_k_tidesurf_main_py[] = "tidesurf/main.py";
 static const char __pyx_k_transcript_index[] = "transcript_index";
 static const char __pyx_k_FileNotFoundError[] = "FileNotFoundError";
+static const char __pyx_k_Optional_List_str[] = "Optional[List[str]]";
 static const char __pyx_k_no_filter_cells_2[] = "no_filter_cells";
+static const char __pyx_k_argparse_Namespace[] = "argparse.Namespace";
 static const char __pyx_k_asyncio_coroutines[] = "asyncio.coroutines";
 static const char __pyx_k_cline_in_traceback[] = "cline_in_traceback";
-static const char __pyx_k_min_intron_overlap[] = "min_intron_overlap";
-static const char __pyx_k_multi_mapped_reads[] = "multi_mapped_reads";
+static const char __pyx_k_min_intron_overlap[] = "--min_intron_overlap";
+static const char __pyx_k_multi_mapped_reads[] = "--multi_mapped_reads";
 static const char __pyx_k_Do_not_filter_cells[] = "Do not filter cells.";
-static const char __pyx_k_min_intron_overlap_2[] = "--min_intron_overlap";
-static const char __pyx_k_multi_mapped_reads_2[] = "--multi_mapped_reads";
+static const char __pyx_k_min_intron_overlap_2[] = "min_intron_overlap";
+static const char __pyx_k_multi_mapped_reads_2[] = "multi_mapped_reads";
 static const char __pyx_k_outs_per_sample_outs[] = "/outs/per_sample_outs/";
 static const char __pyx_k_Literal_sense_antisense[] = "Literal['sense', 'antisense']";
 static const char __pyx_k_Building_transcript_index[] = "Building transcript index.";
@@ -3768,8 +3772,9 @@ static const char __pyx_k_outs_per_sample_outs_count_sampl[] = "outs/per_sample_
 /* #### Code section: decls ### */
 static int __pyx_pf_7cpython_5array_5array___getbuffer__(arrayobject *__pyx_v_self, Py_buffer *__pyx_v_info, CYTHON_UNUSED int __pyx_v_flags); /* proto */
 static void __pyx_pf_7cpython_5array_5array_2__releasebuffer__(CYTHON_UNUSED arrayobject *__pyx_v_self, Py_buffer *__pyx_v_info); /* proto */
-static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_sample_dir, PyObject *__pyx_v_gtf_file, PyObject *__pyx_v_output, PyObject *__pyx_v_orientation, PyObject *__pyx_v_filter_cells, PyObject *__pyx_v_whitelist, PyObject *__pyx_v_num_umis, PyObject *__pyx_v_min_intron_overlap, PyObject *__pyx_v_multi_mapped_reads); /* proto */
-static PyObject *__pyx_pf_8tidesurf_4main_2main(CYTHON_UNUSED PyObject *__pyx_self); /* proto */
+static PyObject *__pyx_pf_8tidesurf_4main_parse_args(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_arg_list); /* proto */
+static PyObject *__pyx_pf_8tidesurf_4main_2run(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_sample_dir, PyObject *__pyx_v_gtf_file, PyObject *__pyx_v_output, PyObject *__pyx_v_orientation, PyObject *__pyx_v_filter_cells, PyObject *__pyx_v_whitelist, PyObject *__pyx_v_num_umis, PyObject *__pyx_v_min_intron_overlap, PyObject *__pyx_v_multi_mapped_reads); /* proto */
+static PyObject *__pyx_pf_8tidesurf_4main_4main(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_arg_list); /* proto */
 /* #### Code section: late_includes ### */
 /* #### Code section: module_state ### */
 typedef struct {
@@ -3945,7 +3950,6 @@ typedef struct {
   PyTypeObject *__pyx_ptype_8tidesurf_7counter_UMICounter;
   #if CYTHON_USE_MODULE_STATE
   #endif
-  PyObject *__pyx_kp_u_;
   PyObject *__pyx_n_s_AnnData;
   PyObject *__pyx_n_s_ArgumentParser;
   PyObject *__pyx_kp_u_Building_transcript_index;
@@ -3957,6 +3961,7 @@ typedef struct {
   PyObject *__pyx_n_u_GTF_FILE;
   PyObject *__pyx_kp_u_GTF_file_with_transcript_informa;
   PyObject *__pyx_n_s_INFO;
+  PyObject *__pyx_n_s_List;
   PyObject *__pyx_n_s_Literal;
   PyObject *__pyx_kp_s_Literal_sense_antisense;
   PyObject *__pyx_n_s_MemoryError;
@@ -3967,6 +3972,7 @@ typedef struct {
   PyObject *__pyx_n_s_None;
   PyObject *__pyx_kp_u_None;
   PyObject *__pyx_n_s_Optional;
+  PyObject *__pyx_kp_s_Optional_List_str;
   PyObject *__pyx_kp_s_Optional_int;
   PyObject *__pyx_kp_s_Optional_str;
   PyObject *__pyx_kp_u_Orientation_of_reads_with_respec;
@@ -3985,9 +3991,10 @@ typedef struct {
   PyObject *__pyx_kp_u_Writing_output;
   PyObject *__pyx_n_s_X;
   PyObject *__pyx_kp_u_Y_m_d_H_M_S;
+  PyObject *__pyx_kp_u__11;
+  PyObject *__pyx_kp_u__12;
   PyObject *__pyx_n_s__13;
-  PyObject *__pyx_n_s__19;
-  PyObject *__pyx_kp_u__2;
+  PyObject *__pyx_n_s__22;
   PyObject *__pyx_n_s_action;
   PyObject *__pyx_n_s_ad;
   PyObject *__pyx_n_s_adata;
@@ -3997,7 +4004,9 @@ typedef struct {
   PyObject *__pyx_n_s_anndata;
   PyObject *__pyx_n_u_antisense;
   PyObject *__pyx_n_s_arg_group;
+  PyObject *__pyx_n_s_arg_list;
   PyObject *__pyx_n_s_argparse;
+  PyObject *__pyx_kp_s_argparse_Namespace;
   PyObject *__pyx_n_s_args;
   PyObject *__pyx_kp_u_asctime_s_module_s_levelname_s;
   PyObject *__pyx_n_s_asyncio_coroutines;
@@ -4053,26 +4062,26 @@ typedef struct {
   PyObject *__pyx_n_s_main_2;
   PyObject *__pyx_n_s_makedirs;
   PyObject *__pyx_n_s_metavar;
-  PyObject *__pyx_n_s_min_intron_overlap;
-  PyObject *__pyx_kp_u_min_intron_overlap_2;
+  PyObject *__pyx_kp_u_min_intron_overlap;
+  PyObject *__pyx_n_s_min_intron_overlap_2;
   PyObject *__pyx_n_s_mode;
   PyObject *__pyx_n_u_multi;
-  PyObject *__pyx_n_s_multi_mapped_reads;
-  PyObject *__pyx_kp_u_multi_mapped_reads_2;
+  PyObject *__pyx_kp_u_multi_mapped_reads;
+  PyObject *__pyx_n_s_multi_mapped_reads_2;
   PyObject *__pyx_n_s_name;
   PyObject *__pyx_kp_u_no_filter_cells;
   PyObject *__pyx_n_s_no_filter_cells_2;
   PyObject *__pyx_n_s_now;
-  PyObject *__pyx_n_s_num_umis;
-  PyObject *__pyx_kp_u_num_umis_2;
+  PyObject *__pyx_kp_u_num_umis;
+  PyObject *__pyx_n_s_num_umis_2;
   PyObject *__pyx_kp_u_o;
   PyObject *__pyx_n_s_obs_names;
-  PyObject *__pyx_n_s_orientation;
-  PyObject *__pyx_kp_u_orientation_2;
+  PyObject *__pyx_kp_u_orientation;
+  PyObject *__pyx_n_s_orientation_2;
   PyObject *__pyx_kp_u_orientation_3;
   PyObject *__pyx_n_s_os;
-  PyObject *__pyx_n_s_output;
-  PyObject *__pyx_kp_u_output_2;
+  PyObject *__pyx_kp_u_output;
+  PyObject *__pyx_n_s_output_2;
   PyObject *__pyx_kp_u_outs_filtered_feature_bc_matrix;
   PyObject *__pyx_kp_u_outs_per_sample_outs;
   PyObject *__pyx_kp_u_outs_per_sample_outs_count;
@@ -4100,8 +4109,8 @@ typedef struct {
   PyObject *__pyx_n_s_str;
   PyObject *__pyx_n_s_t_idx;
   PyObject *__pyx_n_s_test;
-  PyObject *__pyx_n_u_tidesurf;
-  PyObject *__pyx_n_s_tidesurf_2;
+  PyObject *__pyx_n_s_tidesurf;
+  PyObject *__pyx_n_u_tidesurf_2;
   PyObject *__pyx_kp_u_tidesurf_h5ad;
   PyObject *__pyx_kp_u_tidesurf_log;
   PyObject *__pyx_n_s_tidesurf_main;
@@ -4118,14 +4127,16 @@ typedef struct {
   PyObject *__pyx_n_s_version_3;
   PyObject *__pyx_n_u_version_3;
   PyObject *__pyx_n_u_w;
-  PyObject *__pyx_n_s_whitelist;
-  PyObject *__pyx_kp_u_whitelist_2;
+  PyObject *__pyx_kp_u_whitelist;
+  PyObject *__pyx_n_s_whitelist_2;
   PyObject *__pyx_n_s_wl;
   PyObject *__pyx_n_s_write_h5ad;
   PyObject *__pyx_n_s_zip;
   PyObject *__pyx_int_1;
   PyObject *__pyx_int_5;
   PyObject *__pyx_int_neg_1;
+  PyObject *__pyx_tuple_;
+  PyObject *__pyx_tuple__2;
   PyObject *__pyx_tuple__3;
   PyObject *__pyx_tuple__4;
   PyObject *__pyx_tuple__5;
@@ -4134,13 +4145,14 @@ typedef struct {
   PyObject *__pyx_tuple__8;
   PyObject *__pyx_tuple__9;
   PyObject *__pyx_tuple__10;
-  PyObject *__pyx_tuple__11;
-  PyObject *__pyx_tuple__12;
   PyObject *__pyx_tuple__14;
   PyObject *__pyx_tuple__16;
   PyObject *__pyx_tuple__17;
+  PyObject *__pyx_tuple__19;
+  PyObject *__pyx_tuple__20;
   PyObject *__pyx_codeobj__15;
   PyObject *__pyx_codeobj__18;
+  PyObject *__pyx_codeobj__21;
 } __pyx_mstate;
 
 #if CYTHON_USE_MODULE_STATE
@@ -4217,7 +4229,6 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_ptype_5pysam_18libcalignedsegment_PileupColumn);
   Py_CLEAR(clear_module_state->__pyx_ptype_5pysam_18libcalignedsegment_PileupRead);
   Py_CLEAR(clear_module_state->__pyx_ptype_8tidesurf_7counter_UMICounter);
-  Py_CLEAR(clear_module_state->__pyx_kp_u_);
   Py_CLEAR(clear_module_state->__pyx_n_s_AnnData);
   Py_CLEAR(clear_module_state->__pyx_n_s_ArgumentParser);
   Py_CLEAR(clear_module_state->__pyx_kp_u_Building_transcript_index);
@@ -4229,6 +4240,7 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_u_GTF_FILE);
   Py_CLEAR(clear_module_state->__pyx_kp_u_GTF_file_with_transcript_informa);
   Py_CLEAR(clear_module_state->__pyx_n_s_INFO);
+  Py_CLEAR(clear_module_state->__pyx_n_s_List);
   Py_CLEAR(clear_module_state->__pyx_n_s_Literal);
   Py_CLEAR(clear_module_state->__pyx_kp_s_Literal_sense_antisense);
   Py_CLEAR(clear_module_state->__pyx_n_s_MemoryError);
@@ -4239,6 +4251,7 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s_None);
   Py_CLEAR(clear_module_state->__pyx_kp_u_None);
   Py_CLEAR(clear_module_state->__pyx_n_s_Optional);
+  Py_CLEAR(clear_module_state->__pyx_kp_s_Optional_List_str);
   Py_CLEAR(clear_module_state->__pyx_kp_s_Optional_int);
   Py_CLEAR(clear_module_state->__pyx_kp_s_Optional_str);
   Py_CLEAR(clear_module_state->__pyx_kp_u_Orientation_of_reads_with_respec);
@@ -4257,9 +4270,10 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_kp_u_Writing_output);
   Py_CLEAR(clear_module_state->__pyx_n_s_X);
   Py_CLEAR(clear_module_state->__pyx_kp_u_Y_m_d_H_M_S);
+  Py_CLEAR(clear_module_state->__pyx_kp_u__11);
+  Py_CLEAR(clear_module_state->__pyx_kp_u__12);
   Py_CLEAR(clear_module_state->__pyx_n_s__13);
-  Py_CLEAR(clear_module_state->__pyx_n_s__19);
-  Py_CLEAR(clear_module_state->__pyx_kp_u__2);
+  Py_CLEAR(clear_module_state->__pyx_n_s__22);
   Py_CLEAR(clear_module_state->__pyx_n_s_action);
   Py_CLEAR(clear_module_state->__pyx_n_s_ad);
   Py_CLEAR(clear_module_state->__pyx_n_s_adata);
@@ -4269,7 +4283,9 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s_anndata);
   Py_CLEAR(clear_module_state->__pyx_n_u_antisense);
   Py_CLEAR(clear_module_state->__pyx_n_s_arg_group);
+  Py_CLEAR(clear_module_state->__pyx_n_s_arg_list);
   Py_CLEAR(clear_module_state->__pyx_n_s_argparse);
+  Py_CLEAR(clear_module_state->__pyx_kp_s_argparse_Namespace);
   Py_CLEAR(clear_module_state->__pyx_n_s_args);
   Py_CLEAR(clear_module_state->__pyx_kp_u_asctime_s_module_s_levelname_s);
   Py_CLEAR(clear_module_state->__pyx_n_s_asyncio_coroutines);
@@ -4325,26 +4341,26 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s_main_2);
   Py_CLEAR(clear_module_state->__pyx_n_s_makedirs);
   Py_CLEAR(clear_module_state->__pyx_n_s_metavar);
-  Py_CLEAR(clear_module_state->__pyx_n_s_min_intron_overlap);
-  Py_CLEAR(clear_module_state->__pyx_kp_u_min_intron_overlap_2);
+  Py_CLEAR(clear_module_state->__pyx_kp_u_min_intron_overlap);
+  Py_CLEAR(clear_module_state->__pyx_n_s_min_intron_overlap_2);
   Py_CLEAR(clear_module_state->__pyx_n_s_mode);
   Py_CLEAR(clear_module_state->__pyx_n_u_multi);
-  Py_CLEAR(clear_module_state->__pyx_n_s_multi_mapped_reads);
-  Py_CLEAR(clear_module_state->__pyx_kp_u_multi_mapped_reads_2);
+  Py_CLEAR(clear_module_state->__pyx_kp_u_multi_mapped_reads);
+  Py_CLEAR(clear_module_state->__pyx_n_s_multi_mapped_reads_2);
   Py_CLEAR(clear_module_state->__pyx_n_s_name);
   Py_CLEAR(clear_module_state->__pyx_kp_u_no_filter_cells);
   Py_CLEAR(clear_module_state->__pyx_n_s_no_filter_cells_2);
   Py_CLEAR(clear_module_state->__pyx_n_s_now);
-  Py_CLEAR(clear_module_state->__pyx_n_s_num_umis);
-  Py_CLEAR(clear_module_state->__pyx_kp_u_num_umis_2);
+  Py_CLEAR(clear_module_state->__pyx_kp_u_num_umis);
+  Py_CLEAR(clear_module_state->__pyx_n_s_num_umis_2);
   Py_CLEAR(clear_module_state->__pyx_kp_u_o);
   Py_CLEAR(clear_module_state->__pyx_n_s_obs_names);
-  Py_CLEAR(clear_module_state->__pyx_n_s_orientation);
-  Py_CLEAR(clear_module_state->__pyx_kp_u_orientation_2);
+  Py_CLEAR(clear_module_state->__pyx_kp_u_orientation);
+  Py_CLEAR(clear_module_state->__pyx_n_s_orientation_2);
   Py_CLEAR(clear_module_state->__pyx_kp_u_orientation_3);
   Py_CLEAR(clear_module_state->__pyx_n_s_os);
-  Py_CLEAR(clear_module_state->__pyx_n_s_output);
-  Py_CLEAR(clear_module_state->__pyx_kp_u_output_2);
+  Py_CLEAR(clear_module_state->__pyx_kp_u_output);
+  Py_CLEAR(clear_module_state->__pyx_n_s_output_2);
   Py_CLEAR(clear_module_state->__pyx_kp_u_outs_filtered_feature_bc_matrix);
   Py_CLEAR(clear_module_state->__pyx_kp_u_outs_per_sample_outs);
   Py_CLEAR(clear_module_state->__pyx_kp_u_outs_per_sample_outs_count);
@@ -4372,8 +4388,8 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s_str);
   Py_CLEAR(clear_module_state->__pyx_n_s_t_idx);
   Py_CLEAR(clear_module_state->__pyx_n_s_test);
-  Py_CLEAR(clear_module_state->__pyx_n_u_tidesurf);
-  Py_CLEAR(clear_module_state->__pyx_n_s_tidesurf_2);
+  Py_CLEAR(clear_module_state->__pyx_n_s_tidesurf);
+  Py_CLEAR(clear_module_state->__pyx_n_u_tidesurf_2);
   Py_CLEAR(clear_module_state->__pyx_kp_u_tidesurf_h5ad);
   Py_CLEAR(clear_module_state->__pyx_kp_u_tidesurf_log);
   Py_CLEAR(clear_module_state->__pyx_n_s_tidesurf_main);
@@ -4390,14 +4406,16 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s_version_3);
   Py_CLEAR(clear_module_state->__pyx_n_u_version_3);
   Py_CLEAR(clear_module_state->__pyx_n_u_w);
-  Py_CLEAR(clear_module_state->__pyx_n_s_whitelist);
-  Py_CLEAR(clear_module_state->__pyx_kp_u_whitelist_2);
+  Py_CLEAR(clear_module_state->__pyx_kp_u_whitelist);
+  Py_CLEAR(clear_module_state->__pyx_n_s_whitelist_2);
   Py_CLEAR(clear_module_state->__pyx_n_s_wl);
   Py_CLEAR(clear_module_state->__pyx_n_s_write_h5ad);
   Py_CLEAR(clear_module_state->__pyx_n_s_zip);
   Py_CLEAR(clear_module_state->__pyx_int_1);
   Py_CLEAR(clear_module_state->__pyx_int_5);
   Py_CLEAR(clear_module_state->__pyx_int_neg_1);
+  Py_CLEAR(clear_module_state->__pyx_tuple_);
+  Py_CLEAR(clear_module_state->__pyx_tuple__2);
   Py_CLEAR(clear_module_state->__pyx_tuple__3);
   Py_CLEAR(clear_module_state->__pyx_tuple__4);
   Py_CLEAR(clear_module_state->__pyx_tuple__5);
@@ -4406,13 +4424,14 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_tuple__8);
   Py_CLEAR(clear_module_state->__pyx_tuple__9);
   Py_CLEAR(clear_module_state->__pyx_tuple__10);
-  Py_CLEAR(clear_module_state->__pyx_tuple__11);
-  Py_CLEAR(clear_module_state->__pyx_tuple__12);
   Py_CLEAR(clear_module_state->__pyx_tuple__14);
   Py_CLEAR(clear_module_state->__pyx_tuple__16);
   Py_CLEAR(clear_module_state->__pyx_tuple__17);
+  Py_CLEAR(clear_module_state->__pyx_tuple__19);
+  Py_CLEAR(clear_module_state->__pyx_tuple__20);
   Py_CLEAR(clear_module_state->__pyx_codeobj__15);
   Py_CLEAR(clear_module_state->__pyx_codeobj__18);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__21);
   return 0;
 }
 #endif
@@ -4467,7 +4486,6 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_ptype_5pysam_18libcalignedsegment_PileupColumn);
   Py_VISIT(traverse_module_state->__pyx_ptype_5pysam_18libcalignedsegment_PileupRead);
   Py_VISIT(traverse_module_state->__pyx_ptype_8tidesurf_7counter_UMICounter);
-  Py_VISIT(traverse_module_state->__pyx_kp_u_);
   Py_VISIT(traverse_module_state->__pyx_n_s_AnnData);
   Py_VISIT(traverse_module_state->__pyx_n_s_ArgumentParser);
   Py_VISIT(traverse_module_state->__pyx_kp_u_Building_transcript_index);
@@ -4479,6 +4497,7 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_u_GTF_FILE);
   Py_VISIT(traverse_module_state->__pyx_kp_u_GTF_file_with_transcript_informa);
   Py_VISIT(traverse_module_state->__pyx_n_s_INFO);
+  Py_VISIT(traverse_module_state->__pyx_n_s_List);
   Py_VISIT(traverse_module_state->__pyx_n_s_Literal);
   Py_VISIT(traverse_module_state->__pyx_kp_s_Literal_sense_antisense);
   Py_VISIT(traverse_module_state->__pyx_n_s_MemoryError);
@@ -4489,6 +4508,7 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s_None);
   Py_VISIT(traverse_module_state->__pyx_kp_u_None);
   Py_VISIT(traverse_module_state->__pyx_n_s_Optional);
+  Py_VISIT(traverse_module_state->__pyx_kp_s_Optional_List_str);
   Py_VISIT(traverse_module_state->__pyx_kp_s_Optional_int);
   Py_VISIT(traverse_module_state->__pyx_kp_s_Optional_str);
   Py_VISIT(traverse_module_state->__pyx_kp_u_Orientation_of_reads_with_respec);
@@ -4507,9 +4527,10 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_kp_u_Writing_output);
   Py_VISIT(traverse_module_state->__pyx_n_s_X);
   Py_VISIT(traverse_module_state->__pyx_kp_u_Y_m_d_H_M_S);
+  Py_VISIT(traverse_module_state->__pyx_kp_u__11);
+  Py_VISIT(traverse_module_state->__pyx_kp_u__12);
   Py_VISIT(traverse_module_state->__pyx_n_s__13);
-  Py_VISIT(traverse_module_state->__pyx_n_s__19);
-  Py_VISIT(traverse_module_state->__pyx_kp_u__2);
+  Py_VISIT(traverse_module_state->__pyx_n_s__22);
   Py_VISIT(traverse_module_state->__pyx_n_s_action);
   Py_VISIT(traverse_module_state->__pyx_n_s_ad);
   Py_VISIT(traverse_module_state->__pyx_n_s_adata);
@@ -4519,7 +4540,9 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s_anndata);
   Py_VISIT(traverse_module_state->__pyx_n_u_antisense);
   Py_VISIT(traverse_module_state->__pyx_n_s_arg_group);
+  Py_VISIT(traverse_module_state->__pyx_n_s_arg_list);
   Py_VISIT(traverse_module_state->__pyx_n_s_argparse);
+  Py_VISIT(traverse_module_state->__pyx_kp_s_argparse_Namespace);
   Py_VISIT(traverse_module_state->__pyx_n_s_args);
   Py_VISIT(traverse_module_state->__pyx_kp_u_asctime_s_module_s_levelname_s);
   Py_VISIT(traverse_module_state->__pyx_n_s_asyncio_coroutines);
@@ -4575,26 +4598,26 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s_main_2);
   Py_VISIT(traverse_module_state->__pyx_n_s_makedirs);
   Py_VISIT(traverse_module_state->__pyx_n_s_metavar);
-  Py_VISIT(traverse_module_state->__pyx_n_s_min_intron_overlap);
-  Py_VISIT(traverse_module_state->__pyx_kp_u_min_intron_overlap_2);
+  Py_VISIT(traverse_module_state->__pyx_kp_u_min_intron_overlap);
+  Py_VISIT(traverse_module_state->__pyx_n_s_min_intron_overlap_2);
   Py_VISIT(traverse_module_state->__pyx_n_s_mode);
   Py_VISIT(traverse_module_state->__pyx_n_u_multi);
-  Py_VISIT(traverse_module_state->__pyx_n_s_multi_mapped_reads);
-  Py_VISIT(traverse_module_state->__pyx_kp_u_multi_mapped_reads_2);
+  Py_VISIT(traverse_module_state->__pyx_kp_u_multi_mapped_reads);
+  Py_VISIT(traverse_module_state->__pyx_n_s_multi_mapped_reads_2);
   Py_VISIT(traverse_module_state->__pyx_n_s_name);
   Py_VISIT(traverse_module_state->__pyx_kp_u_no_filter_cells);
   Py_VISIT(traverse_module_state->__pyx_n_s_no_filter_cells_2);
   Py_VISIT(traverse_module_state->__pyx_n_s_now);
-  Py_VISIT(traverse_module_state->__pyx_n_s_num_umis);
-  Py_VISIT(traverse_module_state->__pyx_kp_u_num_umis_2);
+  Py_VISIT(traverse_module_state->__pyx_kp_u_num_umis);
+  Py_VISIT(traverse_module_state->__pyx_n_s_num_umis_2);
   Py_VISIT(traverse_module_state->__pyx_kp_u_o);
   Py_VISIT(traverse_module_state->__pyx_n_s_obs_names);
-  Py_VISIT(traverse_module_state->__pyx_n_s_orientation);
-  Py_VISIT(traverse_module_state->__pyx_kp_u_orientation_2);
+  Py_VISIT(traverse_module_state->__pyx_kp_u_orientation);
+  Py_VISIT(traverse_module_state->__pyx_n_s_orientation_2);
   Py_VISIT(traverse_module_state->__pyx_kp_u_orientation_3);
   Py_VISIT(traverse_module_state->__pyx_n_s_os);
-  Py_VISIT(traverse_module_state->__pyx_n_s_output);
-  Py_VISIT(traverse_module_state->__pyx_kp_u_output_2);
+  Py_VISIT(traverse_module_state->__pyx_kp_u_output);
+  Py_VISIT(traverse_module_state->__pyx_n_s_output_2);
   Py_VISIT(traverse_module_state->__pyx_kp_u_outs_filtered_feature_bc_matrix);
   Py_VISIT(traverse_module_state->__pyx_kp_u_outs_per_sample_outs);
   Py_VISIT(traverse_module_state->__pyx_kp_u_outs_per_sample_outs_count);
@@ -4622,8 +4645,8 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s_str);
   Py_VISIT(traverse_module_state->__pyx_n_s_t_idx);
   Py_VISIT(traverse_module_state->__pyx_n_s_test);
-  Py_VISIT(traverse_module_state->__pyx_n_u_tidesurf);
-  Py_VISIT(traverse_module_state->__pyx_n_s_tidesurf_2);
+  Py_VISIT(traverse_module_state->__pyx_n_s_tidesurf);
+  Py_VISIT(traverse_module_state->__pyx_n_u_tidesurf_2);
   Py_VISIT(traverse_module_state->__pyx_kp_u_tidesurf_h5ad);
   Py_VISIT(traverse_module_state->__pyx_kp_u_tidesurf_log);
   Py_VISIT(traverse_module_state->__pyx_n_s_tidesurf_main);
@@ -4640,14 +4663,16 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s_version_3);
   Py_VISIT(traverse_module_state->__pyx_n_u_version_3);
   Py_VISIT(traverse_module_state->__pyx_n_u_w);
-  Py_VISIT(traverse_module_state->__pyx_n_s_whitelist);
-  Py_VISIT(traverse_module_state->__pyx_kp_u_whitelist_2);
+  Py_VISIT(traverse_module_state->__pyx_kp_u_whitelist);
+  Py_VISIT(traverse_module_state->__pyx_n_s_whitelist_2);
   Py_VISIT(traverse_module_state->__pyx_n_s_wl);
   Py_VISIT(traverse_module_state->__pyx_n_s_write_h5ad);
   Py_VISIT(traverse_module_state->__pyx_n_s_zip);
   Py_VISIT(traverse_module_state->__pyx_int_1);
   Py_VISIT(traverse_module_state->__pyx_int_5);
   Py_VISIT(traverse_module_state->__pyx_int_neg_1);
+  Py_VISIT(traverse_module_state->__pyx_tuple_);
+  Py_VISIT(traverse_module_state->__pyx_tuple__2);
   Py_VISIT(traverse_module_state->__pyx_tuple__3);
   Py_VISIT(traverse_module_state->__pyx_tuple__4);
   Py_VISIT(traverse_module_state->__pyx_tuple__5);
@@ -4656,13 +4681,14 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_tuple__8);
   Py_VISIT(traverse_module_state->__pyx_tuple__9);
   Py_VISIT(traverse_module_state->__pyx_tuple__10);
-  Py_VISIT(traverse_module_state->__pyx_tuple__11);
-  Py_VISIT(traverse_module_state->__pyx_tuple__12);
   Py_VISIT(traverse_module_state->__pyx_tuple__14);
   Py_VISIT(traverse_module_state->__pyx_tuple__16);
   Py_VISIT(traverse_module_state->__pyx_tuple__17);
+  Py_VISIT(traverse_module_state->__pyx_tuple__19);
+  Py_VISIT(traverse_module_state->__pyx_tuple__20);
   Py_VISIT(traverse_module_state->__pyx_codeobj__15);
   Py_VISIT(traverse_module_state->__pyx_codeobj__18);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__21);
   return 0;
 }
 #endif
@@ -4839,7 +4865,6 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_ptype_8tidesurf_7counter_UMICounter __pyx_mstate_global->__pyx_ptype_8tidesurf_7counter_UMICounter
 #if CYTHON_USE_MODULE_STATE
 #endif
-#define __pyx_kp_u_ __pyx_mstate_global->__pyx_kp_u_
 #define __pyx_n_s_AnnData __pyx_mstate_global->__pyx_n_s_AnnData
 #define __pyx_n_s_ArgumentParser __pyx_mstate_global->__pyx_n_s_ArgumentParser
 #define __pyx_kp_u_Building_transcript_index __pyx_mstate_global->__pyx_kp_u_Building_transcript_index
@@ -4851,6 +4876,7 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_u_GTF_FILE __pyx_mstate_global->__pyx_n_u_GTF_FILE
 #define __pyx_kp_u_GTF_file_with_transcript_informa __pyx_mstate_global->__pyx_kp_u_GTF_file_with_transcript_informa
 #define __pyx_n_s_INFO __pyx_mstate_global->__pyx_n_s_INFO
+#define __pyx_n_s_List __pyx_mstate_global->__pyx_n_s_List
 #define __pyx_n_s_Literal __pyx_mstate_global->__pyx_n_s_Literal
 #define __pyx_kp_s_Literal_sense_antisense __pyx_mstate_global->__pyx_kp_s_Literal_sense_antisense
 #define __pyx_n_s_MemoryError __pyx_mstate_global->__pyx_n_s_MemoryError
@@ -4861,6 +4887,7 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s_None __pyx_mstate_global->__pyx_n_s_None
 #define __pyx_kp_u_None __pyx_mstate_global->__pyx_kp_u_None
 #define __pyx_n_s_Optional __pyx_mstate_global->__pyx_n_s_Optional
+#define __pyx_kp_s_Optional_List_str __pyx_mstate_global->__pyx_kp_s_Optional_List_str
 #define __pyx_kp_s_Optional_int __pyx_mstate_global->__pyx_kp_s_Optional_int
 #define __pyx_kp_s_Optional_str __pyx_mstate_global->__pyx_kp_s_Optional_str
 #define __pyx_kp_u_Orientation_of_reads_with_respec __pyx_mstate_global->__pyx_kp_u_Orientation_of_reads_with_respec
@@ -4879,9 +4906,10 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_kp_u_Writing_output __pyx_mstate_global->__pyx_kp_u_Writing_output
 #define __pyx_n_s_X __pyx_mstate_global->__pyx_n_s_X
 #define __pyx_kp_u_Y_m_d_H_M_S __pyx_mstate_global->__pyx_kp_u_Y_m_d_H_M_S
+#define __pyx_kp_u__11 __pyx_mstate_global->__pyx_kp_u__11
+#define __pyx_kp_u__12 __pyx_mstate_global->__pyx_kp_u__12
 #define __pyx_n_s__13 __pyx_mstate_global->__pyx_n_s__13
-#define __pyx_n_s__19 __pyx_mstate_global->__pyx_n_s__19
-#define __pyx_kp_u__2 __pyx_mstate_global->__pyx_kp_u__2
+#define __pyx_n_s__22 __pyx_mstate_global->__pyx_n_s__22
 #define __pyx_n_s_action __pyx_mstate_global->__pyx_n_s_action
 #define __pyx_n_s_ad __pyx_mstate_global->__pyx_n_s_ad
 #define __pyx_n_s_adata __pyx_mstate_global->__pyx_n_s_adata
@@ -4891,7 +4919,9 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s_anndata __pyx_mstate_global->__pyx_n_s_anndata
 #define __pyx_n_u_antisense __pyx_mstate_global->__pyx_n_u_antisense
 #define __pyx_n_s_arg_group __pyx_mstate_global->__pyx_n_s_arg_group
+#define __pyx_n_s_arg_list __pyx_mstate_global->__pyx_n_s_arg_list
 #define __pyx_n_s_argparse __pyx_mstate_global->__pyx_n_s_argparse
+#define __pyx_kp_s_argparse_Namespace __pyx_mstate_global->__pyx_kp_s_argparse_Namespace
 #define __pyx_n_s_args __pyx_mstate_global->__pyx_n_s_args
 #define __pyx_kp_u_asctime_s_module_s_levelname_s __pyx_mstate_global->__pyx_kp_u_asctime_s_module_s_levelname_s
 #define __pyx_n_s_asyncio_coroutines __pyx_mstate_global->__pyx_n_s_asyncio_coroutines
@@ -4947,26 +4977,26 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s_main_2 __pyx_mstate_global->__pyx_n_s_main_2
 #define __pyx_n_s_makedirs __pyx_mstate_global->__pyx_n_s_makedirs
 #define __pyx_n_s_metavar __pyx_mstate_global->__pyx_n_s_metavar
-#define __pyx_n_s_min_intron_overlap __pyx_mstate_global->__pyx_n_s_min_intron_overlap
-#define __pyx_kp_u_min_intron_overlap_2 __pyx_mstate_global->__pyx_kp_u_min_intron_overlap_2
+#define __pyx_kp_u_min_intron_overlap __pyx_mstate_global->__pyx_kp_u_min_intron_overlap
+#define __pyx_n_s_min_intron_overlap_2 __pyx_mstate_global->__pyx_n_s_min_intron_overlap_2
 #define __pyx_n_s_mode __pyx_mstate_global->__pyx_n_s_mode
 #define __pyx_n_u_multi __pyx_mstate_global->__pyx_n_u_multi
-#define __pyx_n_s_multi_mapped_reads __pyx_mstate_global->__pyx_n_s_multi_mapped_reads
-#define __pyx_kp_u_multi_mapped_reads_2 __pyx_mstate_global->__pyx_kp_u_multi_mapped_reads_2
+#define __pyx_kp_u_multi_mapped_reads __pyx_mstate_global->__pyx_kp_u_multi_mapped_reads
+#define __pyx_n_s_multi_mapped_reads_2 __pyx_mstate_global->__pyx_n_s_multi_mapped_reads_2
 #define __pyx_n_s_name __pyx_mstate_global->__pyx_n_s_name
 #define __pyx_kp_u_no_filter_cells __pyx_mstate_global->__pyx_kp_u_no_filter_cells
 #define __pyx_n_s_no_filter_cells_2 __pyx_mstate_global->__pyx_n_s_no_filter_cells_2
 #define __pyx_n_s_now __pyx_mstate_global->__pyx_n_s_now
-#define __pyx_n_s_num_umis __pyx_mstate_global->__pyx_n_s_num_umis
-#define __pyx_kp_u_num_umis_2 __pyx_mstate_global->__pyx_kp_u_num_umis_2
+#define __pyx_kp_u_num_umis __pyx_mstate_global->__pyx_kp_u_num_umis
+#define __pyx_n_s_num_umis_2 __pyx_mstate_global->__pyx_n_s_num_umis_2
 #define __pyx_kp_u_o __pyx_mstate_global->__pyx_kp_u_o
 #define __pyx_n_s_obs_names __pyx_mstate_global->__pyx_n_s_obs_names
-#define __pyx_n_s_orientation __pyx_mstate_global->__pyx_n_s_orientation
-#define __pyx_kp_u_orientation_2 __pyx_mstate_global->__pyx_kp_u_orientation_2
+#define __pyx_kp_u_orientation __pyx_mstate_global->__pyx_kp_u_orientation
+#define __pyx_n_s_orientation_2 __pyx_mstate_global->__pyx_n_s_orientation_2
 #define __pyx_kp_u_orientation_3 __pyx_mstate_global->__pyx_kp_u_orientation_3
 #define __pyx_n_s_os __pyx_mstate_global->__pyx_n_s_os
-#define __pyx_n_s_output __pyx_mstate_global->__pyx_n_s_output
-#define __pyx_kp_u_output_2 __pyx_mstate_global->__pyx_kp_u_output_2
+#define __pyx_kp_u_output __pyx_mstate_global->__pyx_kp_u_output
+#define __pyx_n_s_output_2 __pyx_mstate_global->__pyx_n_s_output_2
 #define __pyx_kp_u_outs_filtered_feature_bc_matrix __pyx_mstate_global->__pyx_kp_u_outs_filtered_feature_bc_matrix
 #define __pyx_kp_u_outs_per_sample_outs __pyx_mstate_global->__pyx_kp_u_outs_per_sample_outs
 #define __pyx_kp_u_outs_per_sample_outs_count __pyx_mstate_global->__pyx_kp_u_outs_per_sample_outs_count
@@ -4994,8 +5024,8 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s_str __pyx_mstate_global->__pyx_n_s_str
 #define __pyx_n_s_t_idx __pyx_mstate_global->__pyx_n_s_t_idx
 #define __pyx_n_s_test __pyx_mstate_global->__pyx_n_s_test
-#define __pyx_n_u_tidesurf __pyx_mstate_global->__pyx_n_u_tidesurf
-#define __pyx_n_s_tidesurf_2 __pyx_mstate_global->__pyx_n_s_tidesurf_2
+#define __pyx_n_s_tidesurf __pyx_mstate_global->__pyx_n_s_tidesurf
+#define __pyx_n_u_tidesurf_2 __pyx_mstate_global->__pyx_n_u_tidesurf_2
 #define __pyx_kp_u_tidesurf_h5ad __pyx_mstate_global->__pyx_kp_u_tidesurf_h5ad
 #define __pyx_kp_u_tidesurf_log __pyx_mstate_global->__pyx_kp_u_tidesurf_log
 #define __pyx_n_s_tidesurf_main __pyx_mstate_global->__pyx_n_s_tidesurf_main
@@ -5012,14 +5042,16 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s_version_3 __pyx_mstate_global->__pyx_n_s_version_3
 #define __pyx_n_u_version_3 __pyx_mstate_global->__pyx_n_u_version_3
 #define __pyx_n_u_w __pyx_mstate_global->__pyx_n_u_w
-#define __pyx_n_s_whitelist __pyx_mstate_global->__pyx_n_s_whitelist
-#define __pyx_kp_u_whitelist_2 __pyx_mstate_global->__pyx_kp_u_whitelist_2
+#define __pyx_kp_u_whitelist __pyx_mstate_global->__pyx_kp_u_whitelist
+#define __pyx_n_s_whitelist_2 __pyx_mstate_global->__pyx_n_s_whitelist_2
 #define __pyx_n_s_wl __pyx_mstate_global->__pyx_n_s_wl
 #define __pyx_n_s_write_h5ad __pyx_mstate_global->__pyx_n_s_write_h5ad
 #define __pyx_n_s_zip __pyx_mstate_global->__pyx_n_s_zip
 #define __pyx_int_1 __pyx_mstate_global->__pyx_int_1
 #define __pyx_int_5 __pyx_mstate_global->__pyx_int_5
 #define __pyx_int_neg_1 __pyx_mstate_global->__pyx_int_neg_1
+#define __pyx_tuple_ __pyx_mstate_global->__pyx_tuple_
+#define __pyx_tuple__2 __pyx_mstate_global->__pyx_tuple__2
 #define __pyx_tuple__3 __pyx_mstate_global->__pyx_tuple__3
 #define __pyx_tuple__4 __pyx_mstate_global->__pyx_tuple__4
 #define __pyx_tuple__5 __pyx_mstate_global->__pyx_tuple__5
@@ -5028,13 +5060,14 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_tuple__8 __pyx_mstate_global->__pyx_tuple__8
 #define __pyx_tuple__9 __pyx_mstate_global->__pyx_tuple__9
 #define __pyx_tuple__10 __pyx_mstate_global->__pyx_tuple__10
-#define __pyx_tuple__11 __pyx_mstate_global->__pyx_tuple__11
-#define __pyx_tuple__12 __pyx_mstate_global->__pyx_tuple__12
 #define __pyx_tuple__14 __pyx_mstate_global->__pyx_tuple__14
 #define __pyx_tuple__16 __pyx_mstate_global->__pyx_tuple__16
 #define __pyx_tuple__17 __pyx_mstate_global->__pyx_tuple__17
+#define __pyx_tuple__19 __pyx_mstate_global->__pyx_tuple__19
+#define __pyx_tuple__20 __pyx_mstate_global->__pyx_tuple__20
 #define __pyx_codeobj__15 __pyx_mstate_global->__pyx_codeobj__15
 #define __pyx_codeobj__18 __pyx_mstate_global->__pyx_codeobj__18
+#define __pyx_codeobj__21 __pyx_mstate_global->__pyx_codeobj__21
 /* #### Code section: module_code ### */
 
 /* "cpython/complex.pxd":19
@@ -5974,22 +6007,711 @@ static CYTHON_INLINE void __pyx_f_7cpython_5array_zero(arrayobject *__pyx_v_self
 /* "tidesurf/main.py":19
  * 
  * 
- * def run(             # <<<<<<<<<<<<<<
- *     sample_dir: str,
- *     gtf_file: str,
+ * def parse_args(arg_list: Optional[List[str]] = None) -> argparse.Namespace:             # <<<<<<<<<<<<<<
+ *     parser = argparse.ArgumentParser(
+ *         description="Program: tidesurf (Tool for IDentification and "
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_8tidesurf_4main_1run(PyObject *__pyx_self, 
+static PyObject *__pyx_pw_8tidesurf_4main_1parse_args(PyObject *__pyx_self, 
 #if CYTHON_METH_FASTCALL
 PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
 #else
 PyObject *__pyx_args, PyObject *__pyx_kwds
 #endif
 ); /*proto*/
-PyDoc_STRVAR(__pyx_doc_8tidesurf_4main_run, "run(sample_dir: str, gtf_file: str, output: str, orientation: Literal['sense', 'antisense'] = u'sense', filter_cells: bool = False, whitelist: Optional[str] = None, num_umis: Optional[int] = None, min_intron_overlap: int = 5, multi_mapped_reads: bool = False) -> None\n\n    Run tidesurf on a 10x sample directory.\n    :param sample_dir: 10x Cell Ranger count/multi output directory.\n    :param gtf_file: Path to GTF file with transcript annotations.\n    :param output: Path to output directory.\n    :param orientation: Orientation in which reads map to transcripts.\n    :param filter_cells: Whether to filter cells.\n    :param whitelist: If `filter_cells` is True: path to cell\n        barcode whitelist file. Set to 'cellranger' to use barcodes in\n        the sample directory. Mutually exclusive with `num_umis`.\n    :param num_umis: If `filter_cells` is True: set to an integer to\n        only keep cells with at least that many UMIs. Mutually exclusive\n        with `whitelist`.\n    :param min_intron_overlap: Minimum overlap of reads with introns\n        required to consider them intronic.\n    :param multi_mapped_reads: Whether to count multi-mapped reads\n    :return:\n    ");
-static PyMethodDef __pyx_mdef_8tidesurf_4main_1run = {"run", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_8tidesurf_4main_1run, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_8tidesurf_4main_run};
-static PyObject *__pyx_pw_8tidesurf_4main_1run(PyObject *__pyx_self, 
+PyDoc_STRVAR(__pyx_doc_8tidesurf_4main_parse_args, "parse_args(arg_list: Optional[List[str]] = None) -> argparse.Namespace");
+static PyMethodDef __pyx_mdef_8tidesurf_4main_1parse_args = {"parse_args", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_8tidesurf_4main_1parse_args, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_8tidesurf_4main_parse_args};
+static PyObject *__pyx_pw_8tidesurf_4main_1parse_args(PyObject *__pyx_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+) {
+  PyObject *__pyx_v_arg_list = 0;
+  #if !CYTHON_METH_FASTCALL
+  CYTHON_UNUSED Py_ssize_t __pyx_nargs;
+  #endif
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject* values[1] = {0};
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("parse_args (wrapper)", 0);
+  #if !CYTHON_METH_FASTCALL
+  #if CYTHON_ASSUME_SAFE_MACROS
+  __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
+  #else
+  __pyx_nargs = PyTuple_Size(__pyx_args); if (unlikely(__pyx_nargs < 0)) return NULL;
+  #endif
+  #endif
+  __pyx_kwvalues = __Pyx_KwValues_FASTCALL(__pyx_args, __pyx_nargs);
+  {
+    PyObject **__pyx_pyargnames[] = {&__pyx_n_s_arg_list,0};
+    values[0] = __Pyx_Arg_NewRef_FASTCALL(((PyObject *)Py_None));
+    if (__pyx_kwds) {
+      Py_ssize_t kw_args;
+      switch (__pyx_nargs) {
+        case  1: values[0] = __Pyx_Arg_FASTCALL(__pyx_args, 0);
+        CYTHON_FALLTHROUGH;
+        case  0: break;
+        default: goto __pyx_L5_argtuple_error;
+      }
+      kw_args = __Pyx_NumKwargs_FASTCALL(__pyx_kwds);
+      switch (__pyx_nargs) {
+        case  0:
+        if (kw_args > 0) {
+          PyObject* value = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_arg_list);
+          if (value) { values[0] = __Pyx_Arg_NewRef_FASTCALL(value); kw_args--; }
+          else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 19, __pyx_L3_error)
+        }
+      }
+      if (unlikely(kw_args > 0)) {
+        const Py_ssize_t kwd_pos_args = __pyx_nargs;
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "parse_args") < 0)) __PYX_ERR(0, 19, __pyx_L3_error)
+      }
+    } else {
+      switch (__pyx_nargs) {
+        case  1: values[0] = __Pyx_Arg_FASTCALL(__pyx_args, 0);
+        CYTHON_FALLTHROUGH;
+        case  0: break;
+        default: goto __pyx_L5_argtuple_error;
+      }
+    }
+    __pyx_v_arg_list = values[0];
+  }
+  goto __pyx_L6_skip;
+  __pyx_L5_argtuple_error:;
+  __Pyx_RaiseArgtupleInvalid("parse_args", 0, 0, 1, __pyx_nargs); __PYX_ERR(0, 19, __pyx_L3_error)
+  __pyx_L6_skip:;
+  goto __pyx_L4_argument_unpacking_done;
+  __pyx_L3_error:;
+  {
+    Py_ssize_t __pyx_temp;
+    for (__pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+      __Pyx_Arg_XDECREF_FASTCALL(values[__pyx_temp]);
+    }
+  }
+  __Pyx_AddTraceback("tidesurf.main.parse_args", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_RefNannyFinishContext();
+  return NULL;
+  __pyx_L4_argument_unpacking_done:;
+  __pyx_r = __pyx_pf_8tidesurf_4main_parse_args(__pyx_self, __pyx_v_arg_list);
+
+  /* function exit code */
+  {
+    Py_ssize_t __pyx_temp;
+    for (__pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+      __Pyx_Arg_XDECREF_FASTCALL(values[__pyx_temp]);
+    }
+  }
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_8tidesurf_4main_parse_args(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_arg_list) {
+  PyObject *__pyx_v_parser = NULL;
+  PyObject *__pyx_v_arg_group = NULL;
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  PyObject *__pyx_t_2 = NULL;
+  PyObject *__pyx_t_3 = NULL;
+  PyObject *__pyx_t_4 = NULL;
+  unsigned int __pyx_t_5;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("parse_args", 1);
+
+  /* "tidesurf/main.py":20
+ * 
+ * def parse_args(arg_list: Optional[List[str]] = None) -> argparse.Namespace:
+ *     parser = argparse.ArgumentParser(             # <<<<<<<<<<<<<<
+ *         description="Program: tidesurf (Tool for IDentification and "
+ *         "Enumeration of Spliced and Unspliced Read Fragments)\n"
+ */
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_argparse); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 20, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_ArgumentParser); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 20, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+
+  /* "tidesurf/main.py":21
+ * def parse_args(arg_list: Optional[List[str]] = None) -> argparse.Namespace:
+ *     parser = argparse.ArgumentParser(
+ *         description="Program: tidesurf (Tool for IDentification and "             # <<<<<<<<<<<<<<
+ *         "Enumeration of Spliced and Unspliced Read Fragments)\n"
+ *         f"Version: {tidesurf.__version__}",
+ */
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 21, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+
+  /* "tidesurf/main.py":23
+ *         description="Program: tidesurf (Tool for IDentification and "
+ *         "Enumeration of Spliced and Unspliced Read Fragments)\n"
+ *         f"Version: {tidesurf.__version__}",             # <<<<<<<<<<<<<<
+ *         formatter_class=argparse.RawDescriptionHelpFormatter,
+ *     )
+ */
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_tidesurf); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 23, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_version); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 23, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_t_3 = __Pyx_PyObject_FormatSimple(__pyx_t_4, __pyx_empty_unicode); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 23, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+
+  /* "tidesurf/main.py":21
+ * def parse_args(arg_list: Optional[List[str]] = None) -> argparse.Namespace:
+ *     parser = argparse.ArgumentParser(
+ *         description="Program: tidesurf (Tool for IDentification and "             # <<<<<<<<<<<<<<
+ *         "Enumeration of Spliced and Unspliced Read Fragments)\n"
+ *         f"Version: {tidesurf.__version__}",
+ */
+  __pyx_t_4 = __Pyx_PyUnicode_Concat(__pyx_kp_u_Program_tidesurf_Tool_for_IDenti, __pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 21, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_description, __pyx_t_4) < 0) __PYX_ERR(0, 21, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+
+  /* "tidesurf/main.py":24
+ *         "Enumeration of Spliced and Unspliced Read Fragments)\n"
+ *         f"Version: {tidesurf.__version__}",
+ *         formatter_class=argparse.RawDescriptionHelpFormatter,             # <<<<<<<<<<<<<<
+ *     )
+ *     parser.add_argument(
+ */
+  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_argparse); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 24, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_RawDescriptionHelpFormatter); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 24, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_formatter_class, __pyx_t_3) < 0) __PYX_ERR(0, 21, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "tidesurf/main.py":20
+ * 
+ * def parse_args(arg_list: Optional[List[str]] = None) -> argparse.Namespace:
+ *     parser = argparse.ArgumentParser(             # <<<<<<<<<<<<<<
+ *         description="Program: tidesurf (Tool for IDentification and "
+ *         "Enumeration of Spliced and Unspliced Read Fragments)\n"
+ */
+  __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_empty_tuple, __pyx_t_1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 20, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_v_parser = __pyx_t_3;
+  __pyx_t_3 = 0;
+
+  /* "tidesurf/main.py":26
+ *         formatter_class=argparse.RawDescriptionHelpFormatter,
+ *     )
+ *     parser.add_argument(             # <<<<<<<<<<<<<<
+ *         "-v",
+ *         "--version",
+ */
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_parser, __pyx_n_s_add_argument); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 26, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+
+  /* "tidesurf/main.py":29
+ *         "-v",
+ *         "--version",
+ *         action="version",             # <<<<<<<<<<<<<<
+ *         version=f"%(prog)s {tidesurf.__version__}",
+ *     )
+ */
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 29, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_action, __pyx_n_u_version_3) < 0) __PYX_ERR(0, 29, __pyx_L1_error)
+
+  /* "tidesurf/main.py":30
+ *         "--version",
+ *         action="version",
+ *         version=f"%(prog)s {tidesurf.__version__}",             # <<<<<<<<<<<<<<
+ *     )
+ *     parser.add_argument(
+ */
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_tidesurf); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 30, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_version); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 30, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_2 = __Pyx_PyObject_FormatSimple(__pyx_t_4, __pyx_empty_unicode); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 30, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+  __pyx_t_4 = __Pyx_PyUnicode_Concat(__pyx_kp_u_prog_s, __pyx_t_2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 30, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_version_3, __pyx_t_4) < 0) __PYX_ERR(0, 29, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+
+  /* "tidesurf/main.py":26
+ *         formatter_class=argparse.RawDescriptionHelpFormatter,
+ *     )
+ *     parser.add_argument(             # <<<<<<<<<<<<<<
+ *         "-v",
+ *         "--version",
+ */
+  __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_tuple_, __pyx_t_1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 26, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+
+  /* "tidesurf/main.py":32
+ *         version=f"%(prog)s {tidesurf.__version__}",
+ *     )
+ *     parser.add_argument(             # <<<<<<<<<<<<<<
+ *         "--orientation",
+ *         type=str,
+ */
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_parser, __pyx_n_s_add_argument); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 32, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+
+  /* "tidesurf/main.py":34
+ *     parser.add_argument(
+ *         "--orientation",
+ *         type=str,             # <<<<<<<<<<<<<<
+ *         default="sense",
+ *         choices=["sense", "antisense"],
+ */
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 34, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_type, ((PyObject *)(&PyUnicode_Type))) < 0) __PYX_ERR(0, 34, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_default, __pyx_n_u_sense) < 0) __PYX_ERR(0, 34, __pyx_L1_error)
+
+  /* "tidesurf/main.py":36
+ *         type=str,
+ *         default="sense",
+ *         choices=["sense", "antisense"],             # <<<<<<<<<<<<<<
+ *         help="Orientation of reads with respect to transcripts. For 10x"
+ *         " Genomics, use 'sense' for three prime and 'antisense' for "
+ */
+  __pyx_t_3 = PyList_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 36, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_INCREF(__pyx_n_u_sense);
+  __Pyx_GIVEREF(__pyx_n_u_sense);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_u_sense)) __PYX_ERR(0, 36, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_antisense);
+  __Pyx_GIVEREF(__pyx_n_u_antisense);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 1, __pyx_n_u_antisense)) __PYX_ERR(0, 36, __pyx_L1_error);
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_choices, __pyx_t_3) < 0) __PYX_ERR(0, 34, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_help, __pyx_kp_u_Orientation_of_reads_with_respec) < 0) __PYX_ERR(0, 34, __pyx_L1_error)
+
+  /* "tidesurf/main.py":32
+ *         version=f"%(prog)s {tidesurf.__version__}",
+ *     )
+ *     parser.add_argument(             # <<<<<<<<<<<<<<
+ *         "--orientation",
+ *         type=str,
+ */
+  __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_tuple__2, __pyx_t_1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 32, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "tidesurf/main.py":41
+ *         "five prime.",
+ *     )
+ *     parser.add_argument(             # <<<<<<<<<<<<<<
+ *         "-o", "--output", type=str, default="tidesurf_out", help="Output directory."
+ *     )
+ */
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_parser, __pyx_n_s_add_argument); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 41, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+
+  /* "tidesurf/main.py":42
+ *     )
+ *     parser.add_argument(
+ *         "-o", "--output", type=str, default="tidesurf_out", help="Output directory."             # <<<<<<<<<<<<<<
+ *     )
+ *     parser.add_argument(
+ */
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 42, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_type, ((PyObject *)(&PyUnicode_Type))) < 0) __PYX_ERR(0, 42, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_default, __pyx_n_u_tidesurf_out) < 0) __PYX_ERR(0, 42, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_help, __pyx_kp_u_Output_directory) < 0) __PYX_ERR(0, 42, __pyx_L1_error)
+
+  /* "tidesurf/main.py":41
+ *         "five prime.",
+ *     )
+ *     parser.add_argument(             # <<<<<<<<<<<<<<
+ *         "-o", "--output", type=str, default="tidesurf_out", help="Output directory."
+ *     )
+ */
+  __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_tuple__3, __pyx_t_1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 41, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+
+  /* "tidesurf/main.py":44
+ *         "-o", "--output", type=str, default="tidesurf_out", help="Output directory."
+ *     )
+ *     parser.add_argument(             # <<<<<<<<<<<<<<
+ *         "--no_filter_cells",
+ *         action="store_true",
+ */
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_parser, __pyx_n_s_add_argument); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 44, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+
+  /* "tidesurf/main.py":46
+ *     parser.add_argument(
+ *         "--no_filter_cells",
+ *         action="store_true",             # <<<<<<<<<<<<<<
+ *         help="Do not filter cells.",
+ *     )
+ */
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 46, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_action, __pyx_n_u_store_true) < 0) __PYX_ERR(0, 46, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_help, __pyx_kp_u_Do_not_filter_cells) < 0) __PYX_ERR(0, 46, __pyx_L1_error)
+
+  /* "tidesurf/main.py":44
+ *         "-o", "--output", type=str, default="tidesurf_out", help="Output directory."
+ *     )
+ *     parser.add_argument(             # <<<<<<<<<<<<<<
+ *         "--no_filter_cells",
+ *         action="store_true",
+ */
+  __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_tuple__4, __pyx_t_1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 44, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "tidesurf/main.py":49
+ *         help="Do not filter cells.",
+ *     )
+ *     arg_group = parser.add_mutually_exclusive_group()             # <<<<<<<<<<<<<<
+ *     arg_group.add_argument(
+ *         "--whitelist",
+ */
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_parser, __pyx_n_s_add_mutually_exclusive_group); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 49, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_4 = NULL;
+  __pyx_t_5 = 0;
+  #if CYTHON_UNPACK_METHODS
+  if (likely(PyMethod_Check(__pyx_t_1))) {
+    __pyx_t_4 = PyMethod_GET_SELF(__pyx_t_1);
+    if (likely(__pyx_t_4)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_1);
+      __Pyx_INCREF(__pyx_t_4);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_1, function);
+      __pyx_t_5 = 1;
+    }
+  }
+  #endif
+  {
+    PyObject *__pyx_callargs[2] = {__pyx_t_4, NULL};
+    __pyx_t_3 = __Pyx_PyObject_FastCall(__pyx_t_1, __pyx_callargs+1-__pyx_t_5, 0+__pyx_t_5);
+    __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
+    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 49, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  }
+  __pyx_v_arg_group = __pyx_t_3;
+  __pyx_t_3 = 0;
+
+  /* "tidesurf/main.py":50
+ *     )
+ *     arg_group = parser.add_mutually_exclusive_group()
+ *     arg_group.add_argument(             # <<<<<<<<<<<<<<
+ *         "--whitelist",
+ *         type=str,
+ */
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_arg_group, __pyx_n_s_add_argument); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 50, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+
+  /* "tidesurf/main.py":52
+ *     arg_group.add_argument(
+ *         "--whitelist",
+ *         type=str,             # <<<<<<<<<<<<<<
+ *         help="Whitelist for cell filtering. Set to 'cellranger' to use "
+ *         "barcodes in the sample directory. Alternatively, provide a "
+ */
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 52, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_type, ((PyObject *)(&PyUnicode_Type))) < 0) __PYX_ERR(0, 52, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_help, __pyx_kp_u_Whitelist_for_cell_filtering_Set) < 0) __PYX_ERR(0, 52, __pyx_L1_error)
+
+  /* "tidesurf/main.py":50
+ *     )
+ *     arg_group = parser.add_mutually_exclusive_group()
+ *     arg_group.add_argument(             # <<<<<<<<<<<<<<
+ *         "--whitelist",
+ *         type=str,
+ */
+  __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_tuple__5, __pyx_t_1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 50, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+
+  /* "tidesurf/main.py":57
+ *         "path to a whitelist.",
+ *     )
+ *     arg_group.add_argument(             # <<<<<<<<<<<<<<
+ *         "--num_umis",
+ *         type=int,
+ */
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_arg_group, __pyx_n_s_add_argument); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 57, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+
+  /* "tidesurf/main.py":59
+ *     arg_group.add_argument(
+ *         "--num_umis",
+ *         type=int,             # <<<<<<<<<<<<<<
+ *         help="Minimum number of UMIs for filtering a cell.",
+ *     )
+ */
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 59, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_type, ((PyObject *)(&PyInt_Type))) < 0) __PYX_ERR(0, 59, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_help, __pyx_kp_u_Minimum_number_of_UMIs_for_filte) < 0) __PYX_ERR(0, 59, __pyx_L1_error)
+
+  /* "tidesurf/main.py":57
+ *         "path to a whitelist.",
+ *     )
+ *     arg_group.add_argument(             # <<<<<<<<<<<<<<
+ *         "--num_umis",
+ *         type=int,
+ */
+  __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_tuple__6, __pyx_t_1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 57, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "tidesurf/main.py":62
+ *         help="Minimum number of UMIs for filtering a cell.",
+ *     )
+ *     parser.add_argument(             # <<<<<<<<<<<<<<
+ *         "--min_intron_overlap",
+ *         type=int,
+ */
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_parser, __pyx_n_s_add_argument); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 62, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+
+  /* "tidesurf/main.py":64
+ *     parser.add_argument(
+ *         "--min_intron_overlap",
+ *         type=int,             # <<<<<<<<<<<<<<
+ *         default=5,
+ *         help="Minimum number of bases that a read must overlap with an "
+ */
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 64, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_type, ((PyObject *)(&PyInt_Type))) < 0) __PYX_ERR(0, 64, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_default, __pyx_int_5) < 0) __PYX_ERR(0, 64, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_help, __pyx_kp_u_Minimum_number_of_bases_that_a_r) < 0) __PYX_ERR(0, 64, __pyx_L1_error)
+
+  /* "tidesurf/main.py":62
+ *         help="Minimum number of UMIs for filtering a cell.",
+ *     )
+ *     parser.add_argument(             # <<<<<<<<<<<<<<
+ *         "--min_intron_overlap",
+ *         type=int,
+ */
+  __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_tuple__7, __pyx_t_1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 62, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+
+  /* "tidesurf/main.py":69
+ *         "intron to be considered intronic.",
+ *     )
+ *     parser.add_argument(             # <<<<<<<<<<<<<<
+ *         "--multi_mapped_reads",
+ *         action="store_true",
+ */
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_parser, __pyx_n_s_add_argument); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 69, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+
+  /* "tidesurf/main.py":71
+ *     parser.add_argument(
+ *         "--multi_mapped_reads",
+ *         action="store_true",             # <<<<<<<<<<<<<<
+ *         help="Take reads mapping to multiple genes into account "
+ *         "(default: reads mapping to more than one gene are discarded).",
+ */
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 71, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_action, __pyx_n_u_store_true) < 0) __PYX_ERR(0, 71, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_help, __pyx_kp_u_Take_reads_mapping_to_multiple_g) < 0) __PYX_ERR(0, 71, __pyx_L1_error)
+
+  /* "tidesurf/main.py":69
+ *         "intron to be considered intronic.",
+ *     )
+ *     parser.add_argument(             # <<<<<<<<<<<<<<
+ *         "--multi_mapped_reads",
+ *         action="store_true",
+ */
+  __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_tuple__8, __pyx_t_1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 69, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "tidesurf/main.py":75
+ *         "(default: reads mapping to more than one gene are discarded).",
+ *     )
+ *     parser.add_argument(             # <<<<<<<<<<<<<<
+ *         "sample_dir",
+ *         metavar="SAMPLE_DIR",
+ */
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_parser, __pyx_n_s_add_argument); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 75, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+
+  /* "tidesurf/main.py":77
+ *     parser.add_argument(
+ *         "sample_dir",
+ *         metavar="SAMPLE_DIR",             # <<<<<<<<<<<<<<
+ *         help="Sample directory containing Cell Ranger output.",
+ *     )
+ */
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 77, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_metavar, __pyx_n_u_SAMPLE_DIR) < 0) __PYX_ERR(0, 77, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_help, __pyx_kp_u_Sample_directory_containing_Cell) < 0) __PYX_ERR(0, 77, __pyx_L1_error)
+
+  /* "tidesurf/main.py":75
+ *         "(default: reads mapping to more than one gene are discarded).",
+ *     )
+ *     parser.add_argument(             # <<<<<<<<<<<<<<
+ *         "sample_dir",
+ *         metavar="SAMPLE_DIR",
+ */
+  __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_tuple__9, __pyx_t_1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 75, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+
+  /* "tidesurf/main.py":80
+ *         help="Sample directory containing Cell Ranger output.",
+ *     )
+ *     parser.add_argument(             # <<<<<<<<<<<<<<
+ *         "gtf_file", metavar="GTF_FILE", help="GTF file with transcript information."
+ *     )
+ */
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_parser, __pyx_n_s_add_argument); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 80, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+
+  /* "tidesurf/main.py":81
+ *     )
+ *     parser.add_argument(
+ *         "gtf_file", metavar="GTF_FILE", help="GTF file with transcript information."             # <<<<<<<<<<<<<<
+ *     )
+ *     return parser.parse_args(arg_list)
+ */
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 81, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_metavar, __pyx_n_u_GTF_FILE) < 0) __PYX_ERR(0, 81, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_help, __pyx_kp_u_GTF_file_with_transcript_informa) < 0) __PYX_ERR(0, 81, __pyx_L1_error)
+
+  /* "tidesurf/main.py":80
+ *         help="Sample directory containing Cell Ranger output.",
+ *     )
+ *     parser.add_argument(             # <<<<<<<<<<<<<<
+ *         "gtf_file", metavar="GTF_FILE", help="GTF file with transcript information."
+ *     )
+ */
+  __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_tuple__10, __pyx_t_1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 80, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "tidesurf/main.py":83
+ *         "gtf_file", metavar="GTF_FILE", help="GTF file with transcript information."
+ *     )
+ *     return parser.parse_args(arg_list)             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+  __Pyx_XDECREF(__pyx_r);
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_parser, __pyx_n_s_parse_args); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 83, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_4 = NULL;
+  __pyx_t_5 = 0;
+  #if CYTHON_UNPACK_METHODS
+  if (likely(PyMethod_Check(__pyx_t_1))) {
+    __pyx_t_4 = PyMethod_GET_SELF(__pyx_t_1);
+    if (likely(__pyx_t_4)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_1);
+      __Pyx_INCREF(__pyx_t_4);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_1, function);
+      __pyx_t_5 = 1;
+    }
+  }
+  #endif
+  {
+    PyObject *__pyx_callargs[2] = {__pyx_t_4, __pyx_v_arg_list};
+    __pyx_t_3 = __Pyx_PyObject_FastCall(__pyx_t_1, __pyx_callargs+1-__pyx_t_5, 1+__pyx_t_5);
+    __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
+    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 83, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  }
+  __pyx_r = __pyx_t_3;
+  __pyx_t_3 = 0;
+  goto __pyx_L0;
+
+  /* "tidesurf/main.py":19
+ * 
+ * 
+ * def parse_args(arg_list: Optional[List[str]] = None) -> argparse.Namespace:             # <<<<<<<<<<<<<<
+ *     parser = argparse.ArgumentParser(
+ *         description="Program: tidesurf (Tool for IDentification and "
+ */
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_4);
+  __Pyx_AddTraceback("tidesurf.main.parse_args", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XDECREF(__pyx_v_parser);
+  __Pyx_XDECREF(__pyx_v_arg_group);
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "tidesurf/main.py":86
+ * 
+ * 
+ * def run(             # <<<<<<<<<<<<<<
+ *     sample_dir: str,
+ *     gtf_file: str,
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_8tidesurf_4main_3run(PyObject *__pyx_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+); /*proto*/
+PyDoc_STRVAR(__pyx_doc_8tidesurf_4main_2run, "run(sample_dir: str, gtf_file: str, output: str, orientation: Literal['sense', 'antisense'] = u'sense', filter_cells: bool = False, whitelist: Optional[str] = None, num_umis: Optional[int] = None, min_intron_overlap: int = 5, multi_mapped_reads: bool = False) -> None\n\n    Run tidesurf on a 10x sample directory.\n    :param sample_dir: 10x Cell Ranger count/multi output directory.\n    :param gtf_file: Path to GTF file with transcript annotations.\n    :param output: Path to output directory.\n    :param orientation: Orientation in which reads map to transcripts.\n    :param filter_cells: Whether to filter cells.\n    :param whitelist: If `filter_cells` is True: path to cell\n        barcode whitelist file. Set to 'cellranger' to use barcodes in\n        the sample directory. Mutually exclusive with `num_umis`.\n    :param num_umis: If `filter_cells` is True: set to an integer to\n        only keep cells with at least that many UMIs. Mutually exclusive\n        with `whitelist`.\n    :param min_intron_overlap: Minimum overlap of reads with introns\n        required to consider them intronic.\n    :param multi_mapped_reads: Whether to count multi-mapped reads\n    :return:\n    ");
+static PyMethodDef __pyx_mdef_8tidesurf_4main_3run = {"run", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_8tidesurf_4main_3run, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_8tidesurf_4main_2run};
+static PyObject *__pyx_pw_8tidesurf_4main_3run(PyObject *__pyx_self, 
 #if CYTHON_METH_FASTCALL
 PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
 #else
@@ -6025,10 +6747,10 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   #endif
   __pyx_kwvalues = __Pyx_KwValues_FASTCALL(__pyx_args, __pyx_nargs);
   {
-    PyObject **__pyx_pyargnames[] = {&__pyx_n_s_sample_dir,&__pyx_n_s_gtf_file,&__pyx_n_s_output,&__pyx_n_s_orientation,&__pyx_n_s_filter_cells,&__pyx_n_s_whitelist,&__pyx_n_s_num_umis,&__pyx_n_s_min_intron_overlap,&__pyx_n_s_multi_mapped_reads,0};
+    PyObject **__pyx_pyargnames[] = {&__pyx_n_s_sample_dir,&__pyx_n_s_gtf_file,&__pyx_n_s_output_2,&__pyx_n_s_orientation_2,&__pyx_n_s_filter_cells,&__pyx_n_s_whitelist_2,&__pyx_n_s_num_umis_2,&__pyx_n_s_min_intron_overlap_2,&__pyx_n_s_multi_mapped_reads_2,0};
     values[3] = __Pyx_Arg_NewRef_FASTCALL(((PyObject *)((PyObject*)__pyx_n_u_sense)));
 
-    /* "tidesurf/main.py":24
+    /* "tidesurf/main.py":91
  *     output: str,
  *     orientation: Literal["sense", "antisense"] = "sense",
  *     filter_cells: bool = False,             # <<<<<<<<<<<<<<
@@ -6037,7 +6759,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
  */
     values[4] = __Pyx_Arg_NewRef_FASTCALL(((PyObject *)((PyObject *)Py_False)));
 
-    /* "tidesurf/main.py":25
+    /* "tidesurf/main.py":92
  *     orientation: Literal["sense", "antisense"] = "sense",
  *     filter_cells: bool = False,
  *     whitelist: Optional[str] = None,             # <<<<<<<<<<<<<<
@@ -6046,7 +6768,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
  */
     values[5] = __Pyx_Arg_NewRef_FASTCALL(((PyObject *)Py_None));
 
-    /* "tidesurf/main.py":26
+    /* "tidesurf/main.py":93
  *     filter_cells: bool = False,
  *     whitelist: Optional[str] = None,
  *     num_umis: Optional[int] = None,             # <<<<<<<<<<<<<<
@@ -6056,7 +6778,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
     values[6] = __Pyx_Arg_NewRef_FASTCALL(((PyObject *)Py_None));
     values[7] = __Pyx_Arg_NewRef_FASTCALL(((PyObject *)((PyObject *)__pyx_int_5)));
 
-    /* "tidesurf/main.py":28
+    /* "tidesurf/main.py":95
  *     num_umis: Optional[int] = None,
  *     min_intron_overlap: int = 5,
  *     multi_mapped_reads: bool = False,             # <<<<<<<<<<<<<<
@@ -6095,7 +6817,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
           (void)__Pyx_Arg_NewRef_FASTCALL(values[0]);
           kw_args--;
         }
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 19, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 86, __pyx_L3_error)
         else goto __pyx_L5_argtuple_error;
         CYTHON_FALLTHROUGH;
         case  1:
@@ -6103,66 +6825,66 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
           (void)__Pyx_Arg_NewRef_FASTCALL(values[1]);
           kw_args--;
         }
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 19, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 86, __pyx_L3_error)
         else {
-          __Pyx_RaiseArgtupleInvalid("run", 0, 3, 9, 1); __PYX_ERR(0, 19, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("run", 0, 3, 9, 1); __PYX_ERR(0, 86, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
-        if (likely((values[2] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_output)) != 0)) {
+        if (likely((values[2] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_output_2)) != 0)) {
           (void)__Pyx_Arg_NewRef_FASTCALL(values[2]);
           kw_args--;
         }
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 19, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 86, __pyx_L3_error)
         else {
-          __Pyx_RaiseArgtupleInvalid("run", 0, 3, 9, 2); __PYX_ERR(0, 19, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("run", 0, 3, 9, 2); __PYX_ERR(0, 86, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  3:
         if (kw_args > 0) {
-          PyObject* value = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_orientation);
+          PyObject* value = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_orientation_2);
           if (value) { values[3] = __Pyx_Arg_NewRef_FASTCALL(value); kw_args--; }
-          else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 19, __pyx_L3_error)
+          else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 86, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  4:
         if (kw_args > 0) {
           PyObject* value = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_filter_cells);
           if (value) { values[4] = __Pyx_Arg_NewRef_FASTCALL(value); kw_args--; }
-          else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 19, __pyx_L3_error)
+          else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 86, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  5:
         if (kw_args > 0) {
-          PyObject* value = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_whitelist);
+          PyObject* value = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_whitelist_2);
           if (value) { values[5] = __Pyx_Arg_NewRef_FASTCALL(value); kw_args--; }
-          else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 19, __pyx_L3_error)
+          else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 86, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  6:
         if (kw_args > 0) {
-          PyObject* value = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_num_umis);
+          PyObject* value = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_num_umis_2);
           if (value) { values[6] = __Pyx_Arg_NewRef_FASTCALL(value); kw_args--; }
-          else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 19, __pyx_L3_error)
+          else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 86, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  7:
         if (kw_args > 0) {
-          PyObject* value = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_min_intron_overlap);
+          PyObject* value = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_min_intron_overlap_2);
           if (value) { values[7] = __Pyx_Arg_NewRef_FASTCALL(value); kw_args--; }
-          else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 19, __pyx_L3_error)
+          else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 86, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  8:
         if (kw_args > 0) {
-          PyObject* value = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_multi_mapped_reads);
+          PyObject* value = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_multi_mapped_reads_2);
           if (value) { values[8] = __Pyx_Arg_NewRef_FASTCALL(value); kw_args--; }
-          else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 19, __pyx_L3_error)
+          else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 86, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t kwd_pos_args = __pyx_nargs;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "run") < 0)) __PYX_ERR(0, 19, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "run") < 0)) __PYX_ERR(0, 86, __pyx_L3_error)
       }
     } else {
       switch (__pyx_nargs) {
@@ -6197,7 +6919,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("run", 0, 3, 9, __pyx_nargs); __PYX_ERR(0, 19, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("run", 0, 3, 9, __pyx_nargs); __PYX_ERR(0, 86, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -6211,9 +6933,9 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_8tidesurf_4main_run(__pyx_self, __pyx_v_sample_dir, __pyx_v_gtf_file, __pyx_v_output, __pyx_v_orientation, __pyx_v_filter_cells, __pyx_v_whitelist, __pyx_v_num_umis, __pyx_v_min_intron_overlap, __pyx_v_multi_mapped_reads);
+  __pyx_r = __pyx_pf_8tidesurf_4main_2run(__pyx_self, __pyx_v_sample_dir, __pyx_v_gtf_file, __pyx_v_output, __pyx_v_orientation, __pyx_v_filter_cells, __pyx_v_whitelist, __pyx_v_num_umis, __pyx_v_min_intron_overlap, __pyx_v_multi_mapped_reads);
 
-  /* "tidesurf/main.py":19
+  /* "tidesurf/main.py":86
  * 
  * 
  * def run(             # <<<<<<<<<<<<<<
@@ -6232,7 +6954,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_sample_dir, PyObject *__pyx_v_gtf_file, PyObject *__pyx_v_output, PyObject *__pyx_v_orientation, PyObject *__pyx_v_filter_cells, PyObject *__pyx_v_whitelist, PyObject *__pyx_v_num_umis, PyObject *__pyx_v_min_intron_overlap, PyObject *__pyx_v_multi_mapped_reads) {
+static PyObject *__pyx_pf_8tidesurf_4main_2run(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_sample_dir, PyObject *__pyx_v_gtf_file, PyObject *__pyx_v_output, PyObject *__pyx_v_orientation, PyObject *__pyx_v_filter_cells, PyObject *__pyx_v_whitelist, PyObject *__pyx_v_num_umis, PyObject *__pyx_v_min_intron_overlap, PyObject *__pyx_v_multi_mapped_reads) {
   struct __pyx_obj_8tidesurf_10transcript_TranscriptIndex *__pyx_v_t_idx = NULL;
   PyObject *__pyx_v_cr_pipeline = NULL;
   PyObject *__pyx_v_bam_files = NULL;
@@ -6274,16 +6996,16 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
   __Pyx_RefNannySetupContext("run", 0);
   __Pyx_INCREF(__pyx_v_num_umis);
 
-  /* "tidesurf/main.py":48
+  /* "tidesurf/main.py":115
  *     :return:
  *     """
  *     log.info("Building transcript index.")             # <<<<<<<<<<<<<<
  *     t_idx = TranscriptIndex(gtf_file)
  *     cr_pipeline = "count"
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_log); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 48, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_log); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 115, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_info); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 48, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_info); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 115, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_t_2 = NULL;
@@ -6304,25 +7026,25 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
     PyObject *__pyx_callargs[2] = {__pyx_t_2, __pyx_kp_u_Building_transcript_index};
     __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_3, __pyx_callargs+1-__pyx_t_4, 1+__pyx_t_4);
     __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 48, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 115, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "tidesurf/main.py":49
+  /* "tidesurf/main.py":116
  *     """
  *     log.info("Building transcript index.")
  *     t_idx = TranscriptIndex(gtf_file)             # <<<<<<<<<<<<<<
  *     cr_pipeline = "count"
  *     # Try cellranger count output
  */
-  __pyx_t_1 = __Pyx_PyObject_CallOneArg(((PyObject *)__pyx_ptype_8tidesurf_10transcript_TranscriptIndex), __pyx_v_gtf_file); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 49, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_CallOneArg(((PyObject *)__pyx_ptype_8tidesurf_10transcript_TranscriptIndex), __pyx_v_gtf_file); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 116, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_t_idx = ((struct __pyx_obj_8tidesurf_10transcript_TranscriptIndex *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "tidesurf/main.py":50
+  /* "tidesurf/main.py":117
  *     log.info("Building transcript index.")
  *     t_idx = TranscriptIndex(gtf_file)
  *     cr_pipeline = "count"             # <<<<<<<<<<<<<<
@@ -6332,19 +7054,19 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
   __Pyx_INCREF(__pyx_n_u_count);
   __pyx_v_cr_pipeline = __pyx_n_u_count;
 
-  /* "tidesurf/main.py":52
+  /* "tidesurf/main.py":119
  *     cr_pipeline = "count"
  *     # Try cellranger count output
  *     bam_files = [os.path.join(sample_dir, "outs/possorted_genome_bam.bam")]             # <<<<<<<<<<<<<<
  *     sample_ids = [""]
  *     if not os.path.isfile(bam_files[0]):
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_os); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 52, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_os); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 119, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_path); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 52, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_path); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 119, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_join); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 52, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_join); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 119, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_t_2 = NULL;
@@ -6365,49 +7087,49 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
     PyObject *__pyx_callargs[3] = {__pyx_t_2, __pyx_v_sample_dir, __pyx_kp_u_outs_possorted_genome_bam_bam};
     __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_3, __pyx_callargs+1-__pyx_t_4, 2+__pyx_t_4);
     __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 52, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 119, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   }
-  __pyx_t_3 = PyList_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 52, __pyx_L1_error)
+  __pyx_t_3 = PyList_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 119, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_GIVEREF(__pyx_t_1);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_t_1)) __PYX_ERR(0, 52, __pyx_L1_error);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_t_1)) __PYX_ERR(0, 119, __pyx_L1_error);
   __pyx_t_1 = 0;
   __pyx_v_bam_files = __pyx_t_3;
   __pyx_t_3 = 0;
 
-  /* "tidesurf/main.py":53
+  /* "tidesurf/main.py":120
  *     # Try cellranger count output
  *     bam_files = [os.path.join(sample_dir, "outs/possorted_genome_bam.bam")]
  *     sample_ids = [""]             # <<<<<<<<<<<<<<
  *     if not os.path.isfile(bam_files[0]):
  *         cr_pipeline = "multi"
  */
-  __pyx_t_3 = PyList_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 53, __pyx_L1_error)
+  __pyx_t_3 = PyList_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 120, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_INCREF(__pyx_kp_u_);
-  __Pyx_GIVEREF(__pyx_kp_u_);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_kp_u_)) __PYX_ERR(0, 53, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_kp_u__11);
+  __Pyx_GIVEREF(__pyx_kp_u__11);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_kp_u__11)) __PYX_ERR(0, 120, __pyx_L1_error);
   __pyx_v_sample_ids = ((PyObject*)__pyx_t_3);
   __pyx_t_3 = 0;
 
-  /* "tidesurf/main.py":54
+  /* "tidesurf/main.py":121
  *     bam_files = [os.path.join(sample_dir, "outs/possorted_genome_bam.bam")]
  *     sample_ids = [""]
  *     if not os.path.isfile(bam_files[0]):             # <<<<<<<<<<<<<<
  *         cr_pipeline = "multi"
  *         # Try cellranger multi output
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_os); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 54, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_os); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 121, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_path); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 54, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_path); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 121, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_isfile); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 54, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_isfile); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 121, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_GetItemInt(__pyx_v_bam_files, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 54, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_GetItemInt(__pyx_v_bam_files, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 121, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_5 = NULL;
   __pyx_t_4 = 0;
@@ -6428,16 +7150,16 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
     __pyx_t_3 = __Pyx_PyObject_FastCall(__pyx_t_1, __pyx_callargs+1-__pyx_t_4, 1+__pyx_t_4);
     __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 54, __pyx_L1_error)
+    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 121, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   }
-  __pyx_t_6 = __Pyx_PyObject_IsTrue(__pyx_t_3); if (unlikely((__pyx_t_6 < 0))) __PYX_ERR(0, 54, __pyx_L1_error)
+  __pyx_t_6 = __Pyx_PyObject_IsTrue(__pyx_t_3); if (unlikely((__pyx_t_6 < 0))) __PYX_ERR(0, 121, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __pyx_t_7 = (!__pyx_t_6);
   if (__pyx_t_7) {
 
-    /* "tidesurf/main.py":55
+    /* "tidesurf/main.py":122
  *     sample_ids = [""]
  *     if not os.path.isfile(bam_files[0]):
  *         cr_pipeline = "multi"             # <<<<<<<<<<<<<<
@@ -6447,36 +7169,36 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
     __Pyx_INCREF(__pyx_n_u_multi);
     __Pyx_DECREF_SET(__pyx_v_cr_pipeline, __pyx_n_u_multi);
 
-    /* "tidesurf/main.py":57
+    /* "tidesurf/main.py":124
  *         cr_pipeline = "multi"
  *         # Try cellranger multi output
  *         bam_files = glob.glob(             # <<<<<<<<<<<<<<
  *             os.path.join(
  *                 sample_dir, "outs/per_sample_outs/[inserted by cython to avoid comment start]*[inserted by cython to avoid comment closer]/count/sample_alignments.bam"
  */
-    __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_glob); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 57, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_glob); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 124, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_glob); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 57, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_glob); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 124, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-    /* "tidesurf/main.py":58
+    /* "tidesurf/main.py":125
  *         # Try cellranger multi output
  *         bam_files = glob.glob(
  *             os.path.join(             # <<<<<<<<<<<<<<
  *                 sample_dir, "outs/per_sample_outs/[inserted by cython to avoid comment start]*[inserted by cython to avoid comment closer]/count/sample_alignments.bam"
  *             )
  */
-    __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_os); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 58, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_os); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 125, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_8 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_path); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 58, __pyx_L1_error)
+    __pyx_t_8 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_path); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 125, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_8);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_8, __pyx_n_s_join); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 58, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_8, __pyx_n_s_join); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 125, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
 
-    /* "tidesurf/main.py":59
+    /* "tidesurf/main.py":126
  *         bam_files = glob.glob(
  *             os.path.join(
  *                 sample_dir, "outs/per_sample_outs/[inserted by cython to avoid comment start]*[inserted by cython to avoid comment closer]/count/sample_alignments.bam"             # <<<<<<<<<<<<<<
@@ -6501,7 +7223,7 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
       PyObject *__pyx_callargs[3] = {__pyx_t_8, __pyx_v_sample_dir, __pyx_kp_u_outs_per_sample_outs_count_sampl};
       __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_5, __pyx_callargs+1-__pyx_t_4, 2+__pyx_t_4);
       __Pyx_XDECREF(__pyx_t_8); __pyx_t_8 = 0;
-      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 58, __pyx_L1_error)
+      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 125, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     }
@@ -6524,37 +7246,37 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
       __pyx_t_3 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_4, 1+__pyx_t_4);
       __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-      if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 57, __pyx_L1_error)
+      if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 124, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     }
     __Pyx_DECREF_SET(__pyx_v_bam_files, __pyx_t_3);
     __pyx_t_3 = 0;
 
-    /* "tidesurf/main.py":62
+    /* "tidesurf/main.py":129
  *             )
  *         )
  *         if not bam_files:             # <<<<<<<<<<<<<<
  *             log.error(f"No Cell Ranger BAM files found in directory {sample_dir}.")
  *             raise FileNotFoundError(
  */
-    __pyx_t_7 = __Pyx_PyObject_IsTrue(__pyx_v_bam_files); if (unlikely((__pyx_t_7 < 0))) __PYX_ERR(0, 62, __pyx_L1_error)
+    __pyx_t_7 = __Pyx_PyObject_IsTrue(__pyx_v_bam_files); if (unlikely((__pyx_t_7 < 0))) __PYX_ERR(0, 129, __pyx_L1_error)
     __pyx_t_6 = (!__pyx_t_7);
     if (unlikely(__pyx_t_6)) {
 
-      /* "tidesurf/main.py":63
+      /* "tidesurf/main.py":130
  *         )
  *         if not bam_files:
  *             log.error(f"No Cell Ranger BAM files found in directory {sample_dir}.")             # <<<<<<<<<<<<<<
  *             raise FileNotFoundError(
  *                 f"No Cell Ranger BAM files found in directory {sample_dir}."
  */
-      __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_log); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 63, __pyx_L1_error)
+      __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_log); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 130, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_error); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 63, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_error); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 130, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-      __pyx_t_2 = PyTuple_New(3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 63, __pyx_L1_error)
+      __pyx_t_2 = PyTuple_New(3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 130, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
       __pyx_t_9 = 0;
       __pyx_t_10 = 127;
@@ -6562,18 +7284,18 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
       __pyx_t_9 += 44;
       __Pyx_GIVEREF(__pyx_kp_u_No_Cell_Ranger_BAM_files_found_i);
       PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_kp_u_No_Cell_Ranger_BAM_files_found_i);
-      __pyx_t_5 = __Pyx_PyObject_FormatSimple(__pyx_v_sample_dir, __pyx_empty_unicode); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 63, __pyx_L1_error)
+      __pyx_t_5 = __Pyx_PyObject_FormatSimple(__pyx_v_sample_dir, __pyx_empty_unicode); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 130, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
       __pyx_t_10 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5) > __pyx_t_10) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5) : __pyx_t_10;
       __pyx_t_9 += __Pyx_PyUnicode_GET_LENGTH(__pyx_t_5);
       __Pyx_GIVEREF(__pyx_t_5);
       PyTuple_SET_ITEM(__pyx_t_2, 1, __pyx_t_5);
       __pyx_t_5 = 0;
-      __Pyx_INCREF(__pyx_kp_u__2);
+      __Pyx_INCREF(__pyx_kp_u__12);
       __pyx_t_9 += 1;
-      __Pyx_GIVEREF(__pyx_kp_u__2);
-      PyTuple_SET_ITEM(__pyx_t_2, 2, __pyx_kp_u__2);
-      __pyx_t_5 = __Pyx_PyUnicode_Join(__pyx_t_2, 3, __pyx_t_9, __pyx_t_10); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 63, __pyx_L1_error)
+      __Pyx_GIVEREF(__pyx_kp_u__12);
+      PyTuple_SET_ITEM(__pyx_t_2, 2, __pyx_kp_u__12);
+      __pyx_t_5 = __Pyx_PyUnicode_Join(__pyx_t_2, 3, __pyx_t_9, __pyx_t_10); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 130, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
       __pyx_t_2 = NULL;
@@ -6595,30 +7317,30 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
         __pyx_t_3 = __Pyx_PyObject_FastCall(__pyx_t_1, __pyx_callargs+1-__pyx_t_4, 1+__pyx_t_4);
         __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
         __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-        if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 63, __pyx_L1_error)
+        if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 130, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_3);
         __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
       }
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-      /* "tidesurf/main.py":64
+      /* "tidesurf/main.py":131
  *         if not bam_files:
  *             log.error(f"No Cell Ranger BAM files found in directory {sample_dir}.")
  *             raise FileNotFoundError(             # <<<<<<<<<<<<<<
  *                 f"No Cell Ranger BAM files found in directory {sample_dir}."
  *             )
  */
-      __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_FileNotFoundError); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 64, __pyx_L1_error)
+      __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_FileNotFoundError); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 131, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
 
-      /* "tidesurf/main.py":65
+      /* "tidesurf/main.py":132
  *             log.error(f"No Cell Ranger BAM files found in directory {sample_dir}.")
  *             raise FileNotFoundError(
  *                 f"No Cell Ranger BAM files found in directory {sample_dir}."             # <<<<<<<<<<<<<<
  *             )
  *         sample_ids = [
  */
-      __pyx_t_1 = PyTuple_New(3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 65, __pyx_L1_error)
+      __pyx_t_1 = PyTuple_New(3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 132, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __pyx_t_9 = 0;
       __pyx_t_10 = 127;
@@ -6626,37 +7348,37 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
       __pyx_t_9 += 44;
       __Pyx_GIVEREF(__pyx_kp_u_No_Cell_Ranger_BAM_files_found_i);
       PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_kp_u_No_Cell_Ranger_BAM_files_found_i);
-      __pyx_t_5 = __Pyx_PyObject_FormatSimple(__pyx_v_sample_dir, __pyx_empty_unicode); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 65, __pyx_L1_error)
+      __pyx_t_5 = __Pyx_PyObject_FormatSimple(__pyx_v_sample_dir, __pyx_empty_unicode); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 132, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
       __pyx_t_10 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5) > __pyx_t_10) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5) : __pyx_t_10;
       __pyx_t_9 += __Pyx_PyUnicode_GET_LENGTH(__pyx_t_5);
       __Pyx_GIVEREF(__pyx_t_5);
       PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_t_5);
       __pyx_t_5 = 0;
-      __Pyx_INCREF(__pyx_kp_u__2);
+      __Pyx_INCREF(__pyx_kp_u__12);
       __pyx_t_9 += 1;
-      __Pyx_GIVEREF(__pyx_kp_u__2);
-      PyTuple_SET_ITEM(__pyx_t_1, 2, __pyx_kp_u__2);
-      __pyx_t_5 = __Pyx_PyUnicode_Join(__pyx_t_1, 3, __pyx_t_9, __pyx_t_10); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 65, __pyx_L1_error)
+      __Pyx_GIVEREF(__pyx_kp_u__12);
+      PyTuple_SET_ITEM(__pyx_t_1, 2, __pyx_kp_u__12);
+      __pyx_t_5 = __Pyx_PyUnicode_Join(__pyx_t_1, 3, __pyx_t_9, __pyx_t_10); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 132, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-      /* "tidesurf/main.py":64
+      /* "tidesurf/main.py":131
  *         if not bam_files:
  *             log.error(f"No Cell Ranger BAM files found in directory {sample_dir}.")
  *             raise FileNotFoundError(             # <<<<<<<<<<<<<<
  *                 f"No Cell Ranger BAM files found in directory {sample_dir}."
  *             )
  */
-      __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 64, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 131, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
       __Pyx_Raise(__pyx_t_1, 0, 0, 0);
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-      __PYX_ERR(0, 64, __pyx_L1_error)
+      __PYX_ERR(0, 131, __pyx_L1_error)
 
-      /* "tidesurf/main.py":62
+      /* "tidesurf/main.py":129
  *             )
  *         )
  *         if not bam_files:             # <<<<<<<<<<<<<<
@@ -6665,7 +7387,7 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
  */
     }
 
-    /* "tidesurf/main.py":67
+    /* "tidesurf/main.py":134
  *                 f"No Cell Ranger BAM files found in directory {sample_dir}."
  *             )
  *         sample_ids = [             # <<<<<<<<<<<<<<
@@ -6673,10 +7395,10 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
  *         ]
  */
     { /* enter inner scope */
-      __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 67, __pyx_L7_error)
+      __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 134, __pyx_L7_error)
       __Pyx_GOTREF(__pyx_t_1);
 
-      /* "tidesurf/main.py":68
+      /* "tidesurf/main.py":135
  *             )
  *         sample_ids = [
  *             re.search(r"outs/per_sample_outs/(.*)/count", f).group(1) for f in bam_files             # <<<<<<<<<<<<<<
@@ -6688,9 +7410,9 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
         __pyx_t_9 = 0;
         __pyx_t_11 = NULL;
       } else {
-        __pyx_t_9 = -1; __pyx_t_5 = PyObject_GetIter(__pyx_v_bam_files); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 68, __pyx_L7_error)
+        __pyx_t_9 = -1; __pyx_t_5 = PyObject_GetIter(__pyx_v_bam_files); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 135, __pyx_L7_error)
         __Pyx_GOTREF(__pyx_t_5);
-        __pyx_t_11 = __Pyx_PyObject_GetIterNextFunc(__pyx_t_5); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 68, __pyx_L7_error)
+        __pyx_t_11 = __Pyx_PyObject_GetIterNextFunc(__pyx_t_5); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 135, __pyx_L7_error)
       }
       for (;;) {
         if (likely(!__pyx_t_11)) {
@@ -6698,28 +7420,28 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
             {
               Py_ssize_t __pyx_temp = __Pyx_PyList_GET_SIZE(__pyx_t_5);
               #if !CYTHON_ASSUME_SAFE_MACROS
-              if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 68, __pyx_L7_error)
+              if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 135, __pyx_L7_error)
               #endif
               if (__pyx_t_9 >= __pyx_temp) break;
             }
             #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-            __pyx_t_3 = PyList_GET_ITEM(__pyx_t_5, __pyx_t_9); __Pyx_INCREF(__pyx_t_3); __pyx_t_9++; if (unlikely((0 < 0))) __PYX_ERR(0, 68, __pyx_L7_error)
+            __pyx_t_3 = PyList_GET_ITEM(__pyx_t_5, __pyx_t_9); __Pyx_INCREF(__pyx_t_3); __pyx_t_9++; if (unlikely((0 < 0))) __PYX_ERR(0, 135, __pyx_L7_error)
             #else
-            __pyx_t_3 = __Pyx_PySequence_ITEM(__pyx_t_5, __pyx_t_9); __pyx_t_9++; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 68, __pyx_L7_error)
+            __pyx_t_3 = __Pyx_PySequence_ITEM(__pyx_t_5, __pyx_t_9); __pyx_t_9++; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 135, __pyx_L7_error)
             __Pyx_GOTREF(__pyx_t_3);
             #endif
           } else {
             {
               Py_ssize_t __pyx_temp = __Pyx_PyTuple_GET_SIZE(__pyx_t_5);
               #if !CYTHON_ASSUME_SAFE_MACROS
-              if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 68, __pyx_L7_error)
+              if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 135, __pyx_L7_error)
               #endif
               if (__pyx_t_9 >= __pyx_temp) break;
             }
             #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-            __pyx_t_3 = PyTuple_GET_ITEM(__pyx_t_5, __pyx_t_9); __Pyx_INCREF(__pyx_t_3); __pyx_t_9++; if (unlikely((0 < 0))) __PYX_ERR(0, 68, __pyx_L7_error)
+            __pyx_t_3 = PyTuple_GET_ITEM(__pyx_t_5, __pyx_t_9); __Pyx_INCREF(__pyx_t_3); __pyx_t_9++; if (unlikely((0 < 0))) __PYX_ERR(0, 135, __pyx_L7_error)
             #else
-            __pyx_t_3 = __Pyx_PySequence_ITEM(__pyx_t_5, __pyx_t_9); __pyx_t_9++; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 68, __pyx_L7_error)
+            __pyx_t_3 = __Pyx_PySequence_ITEM(__pyx_t_5, __pyx_t_9); __pyx_t_9++; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 135, __pyx_L7_error)
             __Pyx_GOTREF(__pyx_t_3);
             #endif
           }
@@ -6729,7 +7451,7 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
             PyObject* exc_type = PyErr_Occurred();
             if (exc_type) {
               if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-              else __PYX_ERR(0, 68, __pyx_L7_error)
+              else __PYX_ERR(0, 135, __pyx_L7_error)
             }
             break;
           }
@@ -6737,9 +7459,9 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
         }
         __Pyx_XDECREF_SET(__pyx_7genexpr__pyx_v_f, __pyx_t_3);
         __pyx_t_3 = 0;
-        __Pyx_GetModuleGlobalName(__pyx_t_8, __pyx_n_s_re); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 68, __pyx_L7_error)
+        __Pyx_GetModuleGlobalName(__pyx_t_8, __pyx_n_s_re); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 135, __pyx_L7_error)
         __Pyx_GOTREF(__pyx_t_8);
-        __pyx_t_12 = __Pyx_PyObject_GetAttrStr(__pyx_t_8, __pyx_n_s_search); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 68, __pyx_L7_error)
+        __pyx_t_12 = __Pyx_PyObject_GetAttrStr(__pyx_t_8, __pyx_n_s_search); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 135, __pyx_L7_error)
         __Pyx_GOTREF(__pyx_t_12);
         __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
         __pyx_t_8 = NULL;
@@ -6760,11 +7482,11 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
           PyObject *__pyx_callargs[3] = {__pyx_t_8, __pyx_kp_u_outs_per_sample_outs_count, __pyx_7genexpr__pyx_v_f};
           __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_12, __pyx_callargs+1-__pyx_t_4, 2+__pyx_t_4);
           __Pyx_XDECREF(__pyx_t_8); __pyx_t_8 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 68, __pyx_L7_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 135, __pyx_L7_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
         }
-        __pyx_t_12 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_group); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 68, __pyx_L7_error)
+        __pyx_t_12 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_group); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 135, __pyx_L7_error)
         __Pyx_GOTREF(__pyx_t_12);
         __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
         __pyx_t_2 = NULL;
@@ -6785,11 +7507,11 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
           PyObject *__pyx_callargs[2] = {__pyx_t_2, __pyx_int_1};
           __pyx_t_3 = __Pyx_PyObject_FastCall(__pyx_t_12, __pyx_callargs+1-__pyx_t_4, 1+__pyx_t_4);
           __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
-          if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 68, __pyx_L7_error)
+          if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 135, __pyx_L7_error)
           __Pyx_GOTREF(__pyx_t_3);
           __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
         }
-        if (unlikely(__Pyx_ListComp_Append(__pyx_t_1, (PyObject*)__pyx_t_3))) __PYX_ERR(0, 67, __pyx_L7_error)
+        if (unlikely(__Pyx_ListComp_Append(__pyx_t_1, (PyObject*)__pyx_t_3))) __PYX_ERR(0, 134, __pyx_L7_error)
         __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
       }
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
@@ -6803,7 +7525,7 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
     __Pyx_DECREF_SET(__pyx_v_sample_ids, ((PyObject*)__pyx_t_1));
     __pyx_t_1 = 0;
 
-    /* "tidesurf/main.py":54
+    /* "tidesurf/main.py":121
  *     bam_files = [os.path.join(sample_dir, "outs/possorted_genome_bam.bam")]
  *     sample_ids = [""]
  *     if not os.path.isfile(bam_files[0]):             # <<<<<<<<<<<<<<
@@ -6812,78 +7534,78 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
  */
   }
 
-  /* "tidesurf/main.py":72
+  /* "tidesurf/main.py":139
  * 
  *     counter = UMICounter(
  *         transcript_index=t_idx,             # <<<<<<<<<<<<<<
  *         orientation=orientation,
  *         min_intron_overlap=min_intron_overlap,
  */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 72, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 139, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_transcript_index, ((PyObject *)__pyx_v_t_idx)) < 0) __PYX_ERR(0, 72, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_transcript_index, ((PyObject *)__pyx_v_t_idx)) < 0) __PYX_ERR(0, 139, __pyx_L1_error)
 
-  /* "tidesurf/main.py":73
+  /* "tidesurf/main.py":140
  *     counter = UMICounter(
  *         transcript_index=t_idx,
  *         orientation=orientation,             # <<<<<<<<<<<<<<
  *         min_intron_overlap=min_intron_overlap,
  *         multi_mapped_reads=multi_mapped_reads,
  */
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_orientation, __pyx_v_orientation) < 0) __PYX_ERR(0, 72, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_orientation_2, __pyx_v_orientation) < 0) __PYX_ERR(0, 139, __pyx_L1_error)
 
-  /* "tidesurf/main.py":74
+  /* "tidesurf/main.py":141
  *         transcript_index=t_idx,
  *         orientation=orientation,
  *         min_intron_overlap=min_intron_overlap,             # <<<<<<<<<<<<<<
  *         multi_mapped_reads=multi_mapped_reads,
  *     )
  */
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_min_intron_overlap, __pyx_v_min_intron_overlap) < 0) __PYX_ERR(0, 72, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_min_intron_overlap_2, __pyx_v_min_intron_overlap) < 0) __PYX_ERR(0, 139, __pyx_L1_error)
 
-  /* "tidesurf/main.py":75
+  /* "tidesurf/main.py":142
  *         orientation=orientation,
  *         min_intron_overlap=min_intron_overlap,
  *         multi_mapped_reads=multi_mapped_reads,             # <<<<<<<<<<<<<<
  *     )
  *     log.info(
  */
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_multi_mapped_reads, __pyx_v_multi_mapped_reads) < 0) __PYX_ERR(0, 72, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_multi_mapped_reads_2, __pyx_v_multi_mapped_reads) < 0) __PYX_ERR(0, 139, __pyx_L1_error)
 
-  /* "tidesurf/main.py":71
+  /* "tidesurf/main.py":138
  *         ]
  * 
  *     counter = UMICounter(             # <<<<<<<<<<<<<<
  *         transcript_index=t_idx,
  *         orientation=orientation,
  */
-  __pyx_t_5 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_8tidesurf_7counter_UMICounter), __pyx_empty_tuple, __pyx_t_1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 71, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_8tidesurf_7counter_UMICounter), __pyx_empty_tuple, __pyx_t_1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 138, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_v_counter = ((struct __pyx_obj_8tidesurf_7counter_UMICounter *)__pyx_t_5);
   __pyx_t_5 = 0;
 
-  /* "tidesurf/main.py":77
+  /* "tidesurf/main.py":144
  *         multi_mapped_reads=multi_mapped_reads,
  *     )
  *     log.info(             # <<<<<<<<<<<<<<
  *         f"Counting reads mapped to transcripts in {counter.orientation} orientation."
  *     )
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_log); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 77, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_log); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 144, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_info); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 77, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_info); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 144, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "tidesurf/main.py":78
+  /* "tidesurf/main.py":145
  *     )
  *     log.info(
  *         f"Counting reads mapped to transcripts in {counter.orientation} orientation."             # <<<<<<<<<<<<<<
  *     )
  * 
  */
-  __pyx_t_1 = PyTuple_New(3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 78, __pyx_L1_error)
+  __pyx_t_1 = PyTuple_New(3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 145, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_9 = 0;
   __pyx_t_10 = 127;
@@ -6891,18 +7613,18 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
   __pyx_t_9 += 40;
   __Pyx_GIVEREF(__pyx_kp_u_Counting_reads_mapped_to_transcr);
   PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_kp_u_Counting_reads_mapped_to_transcr);
-  __pyx_t_12 = __Pyx_PyUnicode_Unicode(__pyx_v_counter->orientation); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 78, __pyx_L1_error)
+  __pyx_t_12 = __Pyx_PyUnicode_Unicode(__pyx_v_counter->orientation); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 145, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_12);
   __pyx_t_10 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_12) > __pyx_t_10) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_12) : __pyx_t_10;
   __pyx_t_9 += __Pyx_PyUnicode_GET_LENGTH(__pyx_t_12);
   __Pyx_GIVEREF(__pyx_t_12);
   PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_t_12);
   __pyx_t_12 = 0;
-  __Pyx_INCREF(__pyx_kp_u_orientation_2);
+  __Pyx_INCREF(__pyx_kp_u_orientation_3);
   __pyx_t_9 += 13;
-  __Pyx_GIVEREF(__pyx_kp_u_orientation_2);
-  PyTuple_SET_ITEM(__pyx_t_1, 2, __pyx_kp_u_orientation_2);
-  __pyx_t_12 = __Pyx_PyUnicode_Join(__pyx_t_1, 3, __pyx_t_9, __pyx_t_10); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 78, __pyx_L1_error)
+  __Pyx_GIVEREF(__pyx_kp_u_orientation_3);
+  PyTuple_SET_ITEM(__pyx_t_1, 2, __pyx_kp_u_orientation_3);
+  __pyx_t_12 = __Pyx_PyUnicode_Join(__pyx_t_1, 3, __pyx_t_9, __pyx_t_10); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 145, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_12);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_t_1 = NULL;
@@ -6924,55 +7646,55 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
     __pyx_t_5 = __Pyx_PyObject_FastCall(__pyx_t_3, __pyx_callargs+1-__pyx_t_4, 1+__pyx_t_4);
     __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
     __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
-    if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 77, __pyx_L1_error)
+    if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 144, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   }
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-  /* "tidesurf/main.py":81
+  /* "tidesurf/main.py":148
  *     )
  * 
  *     os.makedirs(output, exist_ok=True)             # <<<<<<<<<<<<<<
  * 
  *     for bam_file, sample_id in zip(bam_files, sample_ids):
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_os); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 81, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_os); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 148, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_makedirs); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 81, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_makedirs); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 148, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = PyTuple_New(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 81, __pyx_L1_error)
+  __pyx_t_5 = PyTuple_New(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 148, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_INCREF(__pyx_v_output);
   __Pyx_GIVEREF(__pyx_v_output);
-  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_v_output)) __PYX_ERR(0, 81, __pyx_L1_error);
-  __pyx_t_12 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 81, __pyx_L1_error)
+  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_v_output)) __PYX_ERR(0, 148, __pyx_L1_error);
+  __pyx_t_12 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 148, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_12);
-  if (PyDict_SetItem(__pyx_t_12, __pyx_n_s_exist_ok, Py_True) < 0) __PYX_ERR(0, 81, __pyx_L1_error)
-  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_5, __pyx_t_12); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 81, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_12, __pyx_n_s_exist_ok, Py_True) < 0) __PYX_ERR(0, 148, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_5, __pyx_t_12); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 148, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "tidesurf/main.py":83
+  /* "tidesurf/main.py":150
  *     os.makedirs(output, exist_ok=True)
  * 
  *     for bam_file, sample_id in zip(bam_files, sample_ids):             # <<<<<<<<<<<<<<
  *         log.info(f"Processing {bam_file}.")
  *         if whitelist == "cellranger":
  */
-  __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 83, __pyx_L1_error)
+  __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 150, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_INCREF(__pyx_v_bam_files);
   __Pyx_GIVEREF(__pyx_v_bam_files);
-  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_v_bam_files)) __PYX_ERR(0, 83, __pyx_L1_error);
+  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_v_bam_files)) __PYX_ERR(0, 150, __pyx_L1_error);
   __Pyx_INCREF(__pyx_v_sample_ids);
   __Pyx_GIVEREF(__pyx_v_sample_ids);
-  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_v_sample_ids)) __PYX_ERR(0, 83, __pyx_L1_error);
-  __pyx_t_12 = __Pyx_PyObject_Call(__pyx_builtin_zip, __pyx_t_1, NULL); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 83, __pyx_L1_error)
+  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_v_sample_ids)) __PYX_ERR(0, 150, __pyx_L1_error);
+  __pyx_t_12 = __Pyx_PyObject_Call(__pyx_builtin_zip, __pyx_t_1, NULL); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 150, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_12);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   if (likely(PyList_CheckExact(__pyx_t_12)) || PyTuple_CheckExact(__pyx_t_12)) {
@@ -6980,9 +7702,9 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
     __pyx_t_9 = 0;
     __pyx_t_11 = NULL;
   } else {
-    __pyx_t_9 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_t_12); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 83, __pyx_L1_error)
+    __pyx_t_9 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_t_12); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 150, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_11 = __Pyx_PyObject_GetIterNextFunc(__pyx_t_1); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 83, __pyx_L1_error)
+    __pyx_t_11 = __Pyx_PyObject_GetIterNextFunc(__pyx_t_1); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 150, __pyx_L1_error)
   }
   __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
   for (;;) {
@@ -6991,28 +7713,28 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
         {
           Py_ssize_t __pyx_temp = __Pyx_PyList_GET_SIZE(__pyx_t_1);
           #if !CYTHON_ASSUME_SAFE_MACROS
-          if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 83, __pyx_L1_error)
+          if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 150, __pyx_L1_error)
           #endif
           if (__pyx_t_9 >= __pyx_temp) break;
         }
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_12 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_9); __Pyx_INCREF(__pyx_t_12); __pyx_t_9++; if (unlikely((0 < 0))) __PYX_ERR(0, 83, __pyx_L1_error)
+        __pyx_t_12 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_9); __Pyx_INCREF(__pyx_t_12); __pyx_t_9++; if (unlikely((0 < 0))) __PYX_ERR(0, 150, __pyx_L1_error)
         #else
-        __pyx_t_12 = __Pyx_PySequence_ITEM(__pyx_t_1, __pyx_t_9); __pyx_t_9++; if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 83, __pyx_L1_error)
+        __pyx_t_12 = __Pyx_PySequence_ITEM(__pyx_t_1, __pyx_t_9); __pyx_t_9++; if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 150, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_12);
         #endif
       } else {
         {
           Py_ssize_t __pyx_temp = __Pyx_PyTuple_GET_SIZE(__pyx_t_1);
           #if !CYTHON_ASSUME_SAFE_MACROS
-          if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 83, __pyx_L1_error)
+          if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 150, __pyx_L1_error)
           #endif
           if (__pyx_t_9 >= __pyx_temp) break;
         }
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_12 = PyTuple_GET_ITEM(__pyx_t_1, __pyx_t_9); __Pyx_INCREF(__pyx_t_12); __pyx_t_9++; if (unlikely((0 < 0))) __PYX_ERR(0, 83, __pyx_L1_error)
+        __pyx_t_12 = PyTuple_GET_ITEM(__pyx_t_1, __pyx_t_9); __Pyx_INCREF(__pyx_t_12); __pyx_t_9++; if (unlikely((0 < 0))) __PYX_ERR(0, 150, __pyx_L1_error)
         #else
-        __pyx_t_12 = __Pyx_PySequence_ITEM(__pyx_t_1, __pyx_t_9); __pyx_t_9++; if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 83, __pyx_L1_error)
+        __pyx_t_12 = __Pyx_PySequence_ITEM(__pyx_t_1, __pyx_t_9); __pyx_t_9++; if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 150, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_12);
         #endif
       }
@@ -7022,7 +7744,7 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
         PyObject* exc_type = PyErr_Occurred();
         if (exc_type) {
           if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-          else __PYX_ERR(0, 83, __pyx_L1_error)
+          else __PYX_ERR(0, 150, __pyx_L1_error)
         }
         break;
       }
@@ -7034,7 +7756,7 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
       if (unlikely(size != 2)) {
         if (size > 2) __Pyx_RaiseTooManyValuesError(2);
         else if (size >= 0) __Pyx_RaiseNeedMoreValuesError(size);
-        __PYX_ERR(0, 83, __pyx_L1_error)
+        __PYX_ERR(0, 150, __pyx_L1_error)
       }
       #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
       if (likely(PyTuple_CheckExact(sequence))) {
@@ -7047,15 +7769,15 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
       __Pyx_INCREF(__pyx_t_5);
       __Pyx_INCREF(__pyx_t_3);
       #else
-      __pyx_t_5 = PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 83, __pyx_L1_error)
+      __pyx_t_5 = PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 150, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
-      __pyx_t_3 = PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 83, __pyx_L1_error)
+      __pyx_t_3 = PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 150, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
       #endif
       __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
     } else {
       Py_ssize_t index = -1;
-      __pyx_t_2 = PyObject_GetIter(__pyx_t_12); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 83, __pyx_L1_error)
+      __pyx_t_2 = PyObject_GetIter(__pyx_t_12); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 150, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
       __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
       __pyx_t_13 = __Pyx_PyObject_GetIterNextFunc(__pyx_t_2);
@@ -7063,7 +7785,7 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
       __Pyx_GOTREF(__pyx_t_5);
       index = 1; __pyx_t_3 = __pyx_t_13(__pyx_t_2); if (unlikely(!__pyx_t_3)) goto __pyx_L14_unpacking_failed;
       __Pyx_GOTREF(__pyx_t_3);
-      if (__Pyx_IternextUnpackEndCheck(__pyx_t_13(__pyx_t_2), 2) < 0) __PYX_ERR(0, 83, __pyx_L1_error)
+      if (__Pyx_IternextUnpackEndCheck(__pyx_t_13(__pyx_t_2), 2) < 0) __PYX_ERR(0, 150, __pyx_L1_error)
       __pyx_t_13 = NULL;
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
       goto __pyx_L15_unpacking_done;
@@ -7071,7 +7793,7 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
       __pyx_t_13 = NULL;
       if (__Pyx_IterFinish() == 0) __Pyx_RaiseNeedMoreValuesError(index);
-      __PYX_ERR(0, 83, __pyx_L1_error)
+      __PYX_ERR(0, 150, __pyx_L1_error)
       __pyx_L15_unpacking_done:;
     }
     __Pyx_XDECREF_SET(__pyx_v_bam_file, __pyx_t_5);
@@ -7079,19 +7801,19 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
     __Pyx_XDECREF_SET(__pyx_v_sample_id, __pyx_t_3);
     __pyx_t_3 = 0;
 
-    /* "tidesurf/main.py":84
+    /* "tidesurf/main.py":151
  * 
  *     for bam_file, sample_id in zip(bam_files, sample_ids):
  *         log.info(f"Processing {bam_file}.")             # <<<<<<<<<<<<<<
  *         if whitelist == "cellranger":
  *             if cr_pipeline == "count":
  */
-    __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_log); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 84, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_log); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 151, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_info); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 84, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_info); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 151, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __pyx_t_3 = PyTuple_New(3); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 84, __pyx_L1_error)
+    __pyx_t_3 = PyTuple_New(3); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 151, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __pyx_t_14 = 0;
     __pyx_t_10 = 127;
@@ -7099,18 +7821,18 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
     __pyx_t_14 += 11;
     __Pyx_GIVEREF(__pyx_kp_u_Processing);
     PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_kp_u_Processing);
-    __pyx_t_2 = __Pyx_PyObject_FormatSimple(__pyx_v_bam_file, __pyx_empty_unicode); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 84, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_FormatSimple(__pyx_v_bam_file, __pyx_empty_unicode); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 151, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __pyx_t_10 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_2) > __pyx_t_10) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_2) : __pyx_t_10;
     __pyx_t_14 += __Pyx_PyUnicode_GET_LENGTH(__pyx_t_2);
     __Pyx_GIVEREF(__pyx_t_2);
     PyTuple_SET_ITEM(__pyx_t_3, 1, __pyx_t_2);
     __pyx_t_2 = 0;
-    __Pyx_INCREF(__pyx_kp_u__2);
+    __Pyx_INCREF(__pyx_kp_u__12);
     __pyx_t_14 += 1;
-    __Pyx_GIVEREF(__pyx_kp_u__2);
-    PyTuple_SET_ITEM(__pyx_t_3, 2, __pyx_kp_u__2);
-    __pyx_t_2 = __Pyx_PyUnicode_Join(__pyx_t_3, 3, __pyx_t_14, __pyx_t_10); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 84, __pyx_L1_error)
+    __Pyx_GIVEREF(__pyx_kp_u__12);
+    PyTuple_SET_ITEM(__pyx_t_3, 2, __pyx_kp_u__12);
+    __pyx_t_2 = __Pyx_PyUnicode_Join(__pyx_t_3, 3, __pyx_t_14, __pyx_t_10); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 151, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __pyx_t_3 = NULL;
@@ -7132,55 +7854,55 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
       __pyx_t_12 = __Pyx_PyObject_FastCall(__pyx_t_5, __pyx_callargs+1-__pyx_t_4, 1+__pyx_t_4);
       __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-      if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 84, __pyx_L1_error)
+      if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 151, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_12);
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     }
     __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
 
-    /* "tidesurf/main.py":85
+    /* "tidesurf/main.py":152
  *     for bam_file, sample_id in zip(bam_files, sample_ids):
  *         log.info(f"Processing {bam_file}.")
  *         if whitelist == "cellranger":             # <<<<<<<<<<<<<<
  *             if cr_pipeline == "count":
  *                 wl = glob.glob(
  */
-    __pyx_t_6 = (__Pyx_PyUnicode_Equals(__pyx_v_whitelist, __pyx_n_u_cellranger, Py_EQ)); if (unlikely((__pyx_t_6 < 0))) __PYX_ERR(0, 85, __pyx_L1_error)
+    __pyx_t_6 = (__Pyx_PyUnicode_Equals(__pyx_v_whitelist, __pyx_n_u_cellranger, Py_EQ)); if (unlikely((__pyx_t_6 < 0))) __PYX_ERR(0, 152, __pyx_L1_error)
     if (__pyx_t_6) {
 
-      /* "tidesurf/main.py":86
+      /* "tidesurf/main.py":153
  *         log.info(f"Processing {bam_file}.")
  *         if whitelist == "cellranger":
  *             if cr_pipeline == "count":             # <<<<<<<<<<<<<<
  *                 wl = glob.glob(
  *                     f"{sample_dir}/outs/filtered_feature_bc_matrix/barcodes.*"
  */
-      __pyx_t_6 = (__Pyx_PyUnicode_Equals(__pyx_v_cr_pipeline, __pyx_n_u_count, Py_EQ)); if (unlikely((__pyx_t_6 < 0))) __PYX_ERR(0, 86, __pyx_L1_error)
+      __pyx_t_6 = (__Pyx_PyUnicode_Equals(__pyx_v_cr_pipeline, __pyx_n_u_count, Py_EQ)); if (unlikely((__pyx_t_6 < 0))) __PYX_ERR(0, 153, __pyx_L1_error)
       if (__pyx_t_6) {
 
-        /* "tidesurf/main.py":87
+        /* "tidesurf/main.py":154
  *         if whitelist == "cellranger":
  *             if cr_pipeline == "count":
  *                 wl = glob.glob(             # <<<<<<<<<<<<<<
  *                     f"{sample_dir}/outs/filtered_feature_bc_matrix/barcodes.*"
  *                 )
  */
-        __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_glob); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 87, __pyx_L1_error)
+        __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_glob); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 154, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_5);
-        __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_glob); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 87, __pyx_L1_error)
+        __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_glob); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 154, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_2);
         __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-        /* "tidesurf/main.py":88
+        /* "tidesurf/main.py":155
  *             if cr_pipeline == "count":
  *                 wl = glob.glob(
  *                     f"{sample_dir}/outs/filtered_feature_bc_matrix/barcodes.*"             # <<<<<<<<<<<<<<
  *                 )
  *             else:
  */
-        __pyx_t_5 = __Pyx_PyObject_FormatSimple(__pyx_v_sample_dir, __pyx_empty_unicode); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 88, __pyx_L1_error)
+        __pyx_t_5 = __Pyx_PyObject_FormatSimple(__pyx_v_sample_dir, __pyx_empty_unicode); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 155, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_5);
-        __pyx_t_3 = __Pyx_PyUnicode_ConcatInPlace(__pyx_t_5, __pyx_kp_u_outs_filtered_feature_bc_matrix); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 88, __pyx_L1_error)
+        __pyx_t_3 = __Pyx_PyUnicode_ConcatInPlace(__pyx_t_5, __pyx_kp_u_outs_filtered_feature_bc_matrix); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 155, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_3);
         __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
         __pyx_t_5 = NULL;
@@ -7202,14 +7924,14 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
           __pyx_t_12 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_4, 1+__pyx_t_4);
           __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-          if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 87, __pyx_L1_error)
+          if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 154, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_12);
           __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
         }
         __Pyx_XDECREF_SET(__pyx_v_wl, __pyx_t_12);
         __pyx_t_12 = 0;
 
-        /* "tidesurf/main.py":86
+        /* "tidesurf/main.py":153
  *         log.info(f"Processing {bam_file}.")
  *         if whitelist == "cellranger":
  *             if cr_pipeline == "count":             # <<<<<<<<<<<<<<
@@ -7219,7 +7941,7 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
         goto __pyx_L17;
       }
 
-      /* "tidesurf/main.py":91
+      /* "tidesurf/main.py":158
  *                 )
  *             else:
  *                 wl = glob.glob(             # <<<<<<<<<<<<<<
@@ -7227,24 +7949,24 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
  *                 )
  */
       /*else*/ {
-        __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_glob); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 91, __pyx_L1_error)
+        __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_glob); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 158, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_2);
-        __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_glob); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 91, __pyx_L1_error)
+        __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_glob); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 158, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_3);
         __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-        /* "tidesurf/main.py":92
+        /* "tidesurf/main.py":159
  *             else:
  *                 wl = glob.glob(
  *                     f"{sample_dir}/outs/per_sample_outs/{sample_id}/count/sample_filtered_feature_bc_matrix/barcodes.*"             # <<<<<<<<<<<<<<
  *                 )
  *             if not wl:
  */
-        __pyx_t_2 = PyTuple_New(4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 92, __pyx_L1_error)
+        __pyx_t_2 = PyTuple_New(4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 159, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_2);
         __pyx_t_14 = 0;
         __pyx_t_10 = 127;
-        __pyx_t_5 = __Pyx_PyObject_FormatSimple(__pyx_v_sample_dir, __pyx_empty_unicode); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 92, __pyx_L1_error)
+        __pyx_t_5 = __Pyx_PyObject_FormatSimple(__pyx_v_sample_dir, __pyx_empty_unicode); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 159, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_5);
         __pyx_t_10 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5) > __pyx_t_10) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5) : __pyx_t_10;
         __pyx_t_14 += __Pyx_PyUnicode_GET_LENGTH(__pyx_t_5);
@@ -7255,7 +7977,7 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
         __pyx_t_14 += 22;
         __Pyx_GIVEREF(__pyx_kp_u_outs_per_sample_outs);
         PyTuple_SET_ITEM(__pyx_t_2, 1, __pyx_kp_u_outs_per_sample_outs);
-        __pyx_t_5 = __Pyx_PyObject_FormatSimple(__pyx_v_sample_id, __pyx_empty_unicode); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 92, __pyx_L1_error)
+        __pyx_t_5 = __Pyx_PyObject_FormatSimple(__pyx_v_sample_id, __pyx_empty_unicode); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 159, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_5);
         __pyx_t_10 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5) > __pyx_t_10) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5) : __pyx_t_10;
         __pyx_t_14 += __Pyx_PyUnicode_GET_LENGTH(__pyx_t_5);
@@ -7266,7 +7988,7 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
         __pyx_t_14 += 51;
         __Pyx_GIVEREF(__pyx_kp_u_count_sample_filtered_feature_b);
         PyTuple_SET_ITEM(__pyx_t_2, 3, __pyx_kp_u_count_sample_filtered_feature_b);
-        __pyx_t_5 = __Pyx_PyUnicode_Join(__pyx_t_2, 4, __pyx_t_14, __pyx_t_10); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 92, __pyx_L1_error)
+        __pyx_t_5 = __Pyx_PyUnicode_Join(__pyx_t_2, 4, __pyx_t_14, __pyx_t_10); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 159, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_5);
         __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
         __pyx_t_2 = NULL;
@@ -7288,7 +8010,7 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
           __pyx_t_12 = __Pyx_PyObject_FastCall(__pyx_t_3, __pyx_callargs+1-__pyx_t_4, 1+__pyx_t_4);
           __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
           __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-          if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 91, __pyx_L1_error)
+          if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 158, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_12);
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
         }
@@ -7297,27 +8019,27 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
       }
       __pyx_L17:;
 
-      /* "tidesurf/main.py":94
+      /* "tidesurf/main.py":161
  *                     f"{sample_dir}/outs/per_sample_outs/{sample_id}/count/sample_filtered_feature_bc_matrix/barcodes.*"
  *                 )
  *             if not wl:             # <<<<<<<<<<<<<<
  *                 log.error("No whitelist found in Cell Ranger output.")
  *                 return
  */
-      __pyx_t_6 = __Pyx_PyObject_IsTrue(__pyx_v_wl); if (unlikely((__pyx_t_6 < 0))) __PYX_ERR(0, 94, __pyx_L1_error)
+      __pyx_t_6 = __Pyx_PyObject_IsTrue(__pyx_v_wl); if (unlikely((__pyx_t_6 < 0))) __PYX_ERR(0, 161, __pyx_L1_error)
       __pyx_t_7 = (!__pyx_t_6);
       if (__pyx_t_7) {
 
-        /* "tidesurf/main.py":95
+        /* "tidesurf/main.py":162
  *                 )
  *             if not wl:
  *                 log.error("No whitelist found in Cell Ranger output.")             # <<<<<<<<<<<<<<
  *                 return
  *             else:
  */
-        __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_log); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 95, __pyx_L1_error)
+        __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_log); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 162, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_3);
-        __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_error); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 95, __pyx_L1_error)
+        __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_error); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 162, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_5);
         __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
         __pyx_t_3 = NULL;
@@ -7338,13 +8060,13 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
           PyObject *__pyx_callargs[2] = {__pyx_t_3, __pyx_kp_u_No_whitelist_found_in_Cell_Range};
           __pyx_t_12 = __Pyx_PyObject_FastCall(__pyx_t_5, __pyx_callargs+1-__pyx_t_4, 1+__pyx_t_4);
           __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-          if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 95, __pyx_L1_error)
+          if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 162, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_12);
           __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
         }
         __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
 
-        /* "tidesurf/main.py":96
+        /* "tidesurf/main.py":163
  *             if not wl:
  *                 log.error("No whitelist found in Cell Ranger output.")
  *                 return             # <<<<<<<<<<<<<<
@@ -7356,7 +8078,7 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
         __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
         goto __pyx_L0;
 
-        /* "tidesurf/main.py":94
+        /* "tidesurf/main.py":161
  *                     f"{sample_dir}/outs/per_sample_outs/{sample_id}/count/sample_filtered_feature_bc_matrix/barcodes.*"
  *                 )
  *             if not wl:             # <<<<<<<<<<<<<<
@@ -7365,7 +8087,7 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
  */
       }
 
-      /* "tidesurf/main.py":98
+      /* "tidesurf/main.py":165
  *                 return
  *             else:
  *                 wl = wl[0]             # <<<<<<<<<<<<<<
@@ -7373,13 +8095,13 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
  *             wl = whitelist
  */
       /*else*/ {
-        __pyx_t_12 = __Pyx_GetItemInt(__pyx_v_wl, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 98, __pyx_L1_error)
+        __pyx_t_12 = __Pyx_GetItemInt(__pyx_v_wl, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 165, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_12);
         __Pyx_DECREF_SET(__pyx_v_wl, __pyx_t_12);
         __pyx_t_12 = 0;
       }
 
-      /* "tidesurf/main.py":85
+      /* "tidesurf/main.py":152
  *     for bam_file, sample_id in zip(bam_files, sample_ids):
  *         log.info(f"Processing {bam_file}.")
  *         if whitelist == "cellranger":             # <<<<<<<<<<<<<<
@@ -7389,7 +8111,7 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
       goto __pyx_L16;
     }
 
-    /* "tidesurf/main.py":100
+    /* "tidesurf/main.py":167
  *                 wl = wl[0]
  *         else:
  *             wl = whitelist             # <<<<<<<<<<<<<<
@@ -7402,7 +8124,7 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
     }
     __pyx_L16:;
 
-    /* "tidesurf/main.py":101
+    /* "tidesurf/main.py":168
  *         else:
  *             wl = whitelist
  *         if num_umis is None:             # <<<<<<<<<<<<<<
@@ -7412,7 +8134,7 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
     __pyx_t_7 = (__pyx_v_num_umis == Py_None);
     if (__pyx_t_7) {
 
-      /* "tidesurf/main.py":102
+      /* "tidesurf/main.py":169
  *             wl = whitelist
  *         if num_umis is None:
  *             num_umis = -1             # <<<<<<<<<<<<<<
@@ -7422,7 +8144,7 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
       __Pyx_INCREF(__pyx_int_neg_1);
       __Pyx_DECREF_SET(__pyx_v_num_umis, __pyx_int_neg_1);
 
-      /* "tidesurf/main.py":101
+      /* "tidesurf/main.py":168
  *         else:
  *             wl = whitelist
  *         if num_umis is None:             # <<<<<<<<<<<<<<
@@ -7431,43 +8153,43 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
  */
     }
 
-    /* "tidesurf/main.py":104
+    /* "tidesurf/main.py":171
  *             num_umis = -1
  *         cells, genes, counts = counter.count(
  *             bam_file=bam_file,             # <<<<<<<<<<<<<<
  *             filter_cells=filter_cells,
  *             whitelist=wl,
  */
-    if (!(likely(PyUnicode_CheckExact(__pyx_v_bam_file))||((__pyx_v_bam_file) == Py_None) || __Pyx_RaiseUnexpectedTypeError("unicode", __pyx_v_bam_file))) __PYX_ERR(0, 104, __pyx_L1_error)
+    if (!(likely(PyUnicode_CheckExact(__pyx_v_bam_file))||((__pyx_v_bam_file) == Py_None) || __Pyx_RaiseUnexpectedTypeError("unicode", __pyx_v_bam_file))) __PYX_ERR(0, 171, __pyx_L1_error)
 
-    /* "tidesurf/main.py":105
+    /* "tidesurf/main.py":172
  *         cells, genes, counts = counter.count(
  *             bam_file=bam_file,
  *             filter_cells=filter_cells,             # <<<<<<<<<<<<<<
  *             whitelist=wl,
  *             num_umis=num_umis,
  */
-    __pyx_t_7 = __Pyx_PyObject_IsTrue(__pyx_v_filter_cells); if (unlikely((__pyx_t_7 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 105, __pyx_L1_error)
+    __pyx_t_7 = __Pyx_PyObject_IsTrue(__pyx_v_filter_cells); if (unlikely((__pyx_t_7 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 172, __pyx_L1_error)
 
-    /* "tidesurf/main.py":106
+    /* "tidesurf/main.py":173
  *             bam_file=bam_file,
  *             filter_cells=filter_cells,
  *             whitelist=wl,             # <<<<<<<<<<<<<<
  *             num_umis=num_umis,
  *         )
  */
-    if (!(likely(PyUnicode_CheckExact(__pyx_v_wl))||((__pyx_v_wl) == Py_None) || __Pyx_RaiseUnexpectedTypeError("unicode", __pyx_v_wl))) __PYX_ERR(0, 106, __pyx_L1_error)
+    if (!(likely(PyUnicode_CheckExact(__pyx_v_wl))||((__pyx_v_wl) == Py_None) || __Pyx_RaiseUnexpectedTypeError("unicode", __pyx_v_wl))) __PYX_ERR(0, 173, __pyx_L1_error)
 
-    /* "tidesurf/main.py":107
+    /* "tidesurf/main.py":174
  *             filter_cells=filter_cells,
  *             whitelist=wl,
  *             num_umis=num_umis,             # <<<<<<<<<<<<<<
  *         )
  *         log.info("Writing output.")
  */
-    __pyx_t_15 = __Pyx_PyInt_As_int(__pyx_v_num_umis); if (unlikely((__pyx_t_15 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 107, __pyx_L1_error)
+    __pyx_t_15 = __Pyx_PyInt_As_int(__pyx_v_num_umis); if (unlikely((__pyx_t_15 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 174, __pyx_L1_error)
 
-    /* "tidesurf/main.py":103
+    /* "tidesurf/main.py":170
  *         if num_umis is None:
  *             num_umis = -1
  *         cells, genes, counts = counter.count(             # <<<<<<<<<<<<<<
@@ -7478,7 +8200,7 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
     __pyx_t_16.filter_cells = __pyx_t_7;
     __pyx_t_16.whitelist = ((PyObject*)__pyx_v_wl);
     __pyx_t_16.num_umis = __pyx_t_15;
-    __pyx_t_12 = ((struct __pyx_vtabstruct_8tidesurf_7counter_UMICounter *)__pyx_v_counter->__pyx_vtab)->count(__pyx_v_counter, ((PyObject*)__pyx_v_bam_file), 0, &__pyx_t_16); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 103, __pyx_L1_error)
+    __pyx_t_12 = ((struct __pyx_vtabstruct_8tidesurf_7counter_UMICounter *)__pyx_v_counter->__pyx_vtab)->count(__pyx_v_counter, ((PyObject*)__pyx_v_bam_file), 0, &__pyx_t_16); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 170, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_12);
     if (likely(__pyx_t_12 != Py_None)) {
       PyObject* sequence = __pyx_t_12;
@@ -7486,7 +8208,7 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
       if (unlikely(size != 3)) {
         if (size > 3) __Pyx_RaiseTooManyValuesError(3);
         else if (size >= 0) __Pyx_RaiseNeedMoreValuesError(size);
-        __PYX_ERR(0, 103, __pyx_L1_error)
+        __PYX_ERR(0, 170, __pyx_L1_error)
       }
       #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
       __pyx_t_5 = PyTuple_GET_ITEM(sequence, 0); 
@@ -7496,16 +8218,16 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
       __Pyx_INCREF(__pyx_t_3);
       __Pyx_INCREF(__pyx_t_2);
       #else
-      __pyx_t_5 = PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 103, __pyx_L1_error)
+      __pyx_t_5 = PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 170, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
-      __pyx_t_3 = PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 103, __pyx_L1_error)
+      __pyx_t_3 = PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 170, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
-      __pyx_t_2 = PySequence_ITEM(sequence, 2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 103, __pyx_L1_error)
+      __pyx_t_2 = PySequence_ITEM(sequence, 2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 170, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
       #endif
       __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
     } else {
-      __Pyx_RaiseNoneNotIterableError(); __PYX_ERR(0, 103, __pyx_L1_error)
+      __Pyx_RaiseNoneNotIterableError(); __PYX_ERR(0, 170, __pyx_L1_error)
     }
     __Pyx_XDECREF_SET(__pyx_v_cells, __pyx_t_5);
     __pyx_t_5 = 0;
@@ -7514,16 +8236,16 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
     __Pyx_XDECREF_SET(__pyx_v_counts, __pyx_t_2);
     __pyx_t_2 = 0;
 
-    /* "tidesurf/main.py":109
+    /* "tidesurf/main.py":176
  *             num_umis=num_umis,
  *         )
  *         log.info("Writing output.")             # <<<<<<<<<<<<<<
  *         counts_matrix = counts["spliced"] + counts["unspliced"] + counts["ambiguous"]
  *         adata = ad.AnnData(X=counts_matrix, layers=counts)
  */
-    __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_log); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 109, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_log); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 176, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_info); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 109, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_info); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 176, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     __pyx_t_2 = NULL;
@@ -7544,99 +8266,99 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
       PyObject *__pyx_callargs[2] = {__pyx_t_2, __pyx_kp_u_Writing_output};
       __pyx_t_12 = __Pyx_PyObject_FastCall(__pyx_t_3, __pyx_callargs+1-__pyx_t_4, 1+__pyx_t_4);
       __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
-      if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 109, __pyx_L1_error)
+      if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 176, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_12);
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     }
     __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
 
-    /* "tidesurf/main.py":110
+    /* "tidesurf/main.py":177
  *         )
  *         log.info("Writing output.")
  *         counts_matrix = counts["spliced"] + counts["unspliced"] + counts["ambiguous"]             # <<<<<<<<<<<<<<
  *         adata = ad.AnnData(X=counts_matrix, layers=counts)
  *         adata.obs_names = cells
  */
-    __pyx_t_12 = __Pyx_PyObject_Dict_GetItem(__pyx_v_counts, __pyx_n_u_spliced); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 110, __pyx_L1_error)
+    __pyx_t_12 = __Pyx_PyObject_Dict_GetItem(__pyx_v_counts, __pyx_n_u_spliced); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 177, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_12);
-    __pyx_t_3 = __Pyx_PyObject_Dict_GetItem(__pyx_v_counts, __pyx_n_u_unspliced); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 110, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_Dict_GetItem(__pyx_v_counts, __pyx_n_u_unspliced); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 177, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_2 = PyNumber_Add(__pyx_t_12, __pyx_t_3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 110, __pyx_L1_error)
+    __pyx_t_2 = PyNumber_Add(__pyx_t_12, __pyx_t_3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 177, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __pyx_t_3 = __Pyx_PyObject_Dict_GetItem(__pyx_v_counts, __pyx_n_u_ambiguous); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 110, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_Dict_GetItem(__pyx_v_counts, __pyx_n_u_ambiguous); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 177, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_12 = PyNumber_Add(__pyx_t_2, __pyx_t_3); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 110, __pyx_L1_error)
+    __pyx_t_12 = PyNumber_Add(__pyx_t_2, __pyx_t_3); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 177, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_12);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_XDECREF_SET(__pyx_v_counts_matrix, __pyx_t_12);
     __pyx_t_12 = 0;
 
-    /* "tidesurf/main.py":111
+    /* "tidesurf/main.py":178
  *         log.info("Writing output.")
  *         counts_matrix = counts["spliced"] + counts["unspliced"] + counts["ambiguous"]
  *         adata = ad.AnnData(X=counts_matrix, layers=counts)             # <<<<<<<<<<<<<<
  *         adata.obs_names = cells
  *         adata.var_names = genes
  */
-    __Pyx_GetModuleGlobalName(__pyx_t_12, __pyx_n_s_ad); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 111, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_12, __pyx_n_s_ad); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 178, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_12);
-    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_12, __pyx_n_s_AnnData); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 111, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_12, __pyx_n_s_AnnData); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 178, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
-    __pyx_t_12 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 111, __pyx_L1_error)
+    __pyx_t_12 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 178, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_12);
-    if (PyDict_SetItem(__pyx_t_12, __pyx_n_s_X, __pyx_v_counts_matrix) < 0) __PYX_ERR(0, 111, __pyx_L1_error)
-    if (PyDict_SetItem(__pyx_t_12, __pyx_n_s_layers, __pyx_v_counts) < 0) __PYX_ERR(0, 111, __pyx_L1_error)
-    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_empty_tuple, __pyx_t_12); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 111, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_12, __pyx_n_s_X, __pyx_v_counts_matrix) < 0) __PYX_ERR(0, 178, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_12, __pyx_n_s_layers, __pyx_v_counts) < 0) __PYX_ERR(0, 178, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_empty_tuple, __pyx_t_12); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 178, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
     __Pyx_XDECREF_SET(__pyx_v_adata, __pyx_t_2);
     __pyx_t_2 = 0;
 
-    /* "tidesurf/main.py":112
+    /* "tidesurf/main.py":179
  *         counts_matrix = counts["spliced"] + counts["unspliced"] + counts["ambiguous"]
  *         adata = ad.AnnData(X=counts_matrix, layers=counts)
  *         adata.obs_names = cells             # <<<<<<<<<<<<<<
  *         adata.var_names = genes
  *         f_name = "tidesurf.h5ad" if not sample_id else f"tidesurf_{sample_id}.h5ad"
  */
-    if (__Pyx_PyObject_SetAttrStr(__pyx_v_adata, __pyx_n_s_obs_names, __pyx_v_cells) < 0) __PYX_ERR(0, 112, __pyx_L1_error)
+    if (__Pyx_PyObject_SetAttrStr(__pyx_v_adata, __pyx_n_s_obs_names, __pyx_v_cells) < 0) __PYX_ERR(0, 179, __pyx_L1_error)
 
-    /* "tidesurf/main.py":113
+    /* "tidesurf/main.py":180
  *         adata = ad.AnnData(X=counts_matrix, layers=counts)
  *         adata.obs_names = cells
  *         adata.var_names = genes             # <<<<<<<<<<<<<<
  *         f_name = "tidesurf.h5ad" if not sample_id else f"tidesurf_{sample_id}.h5ad"
  *         adata.write_h5ad(Path(os.path.join(output, f_name)))
  */
-    if (__Pyx_PyObject_SetAttrStr(__pyx_v_adata, __pyx_n_s_var_names, __pyx_v_genes) < 0) __PYX_ERR(0, 113, __pyx_L1_error)
+    if (__Pyx_PyObject_SetAttrStr(__pyx_v_adata, __pyx_n_s_var_names, __pyx_v_genes) < 0) __PYX_ERR(0, 180, __pyx_L1_error)
 
-    /* "tidesurf/main.py":114
+    /* "tidesurf/main.py":181
  *         adata.obs_names = cells
  *         adata.var_names = genes
  *         f_name = "tidesurf.h5ad" if not sample_id else f"tidesurf_{sample_id}.h5ad"             # <<<<<<<<<<<<<<
  *         adata.write_h5ad(Path(os.path.join(output, f_name)))
  * 
  */
-    __pyx_t_7 = __Pyx_PyObject_IsTrue(__pyx_v_sample_id); if (unlikely((__pyx_t_7 < 0))) __PYX_ERR(0, 114, __pyx_L1_error)
+    __pyx_t_7 = __Pyx_PyObject_IsTrue(__pyx_v_sample_id); if (unlikely((__pyx_t_7 < 0))) __PYX_ERR(0, 181, __pyx_L1_error)
     __pyx_t_6 = (!__pyx_t_7);
     if (__pyx_t_6) {
       __Pyx_INCREF(__pyx_kp_u_tidesurf_h5ad);
       __pyx_t_2 = __pyx_kp_u_tidesurf_h5ad;
     } else {
-      __pyx_t_12 = PyTuple_New(3); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 114, __pyx_L1_error)
+      __pyx_t_12 = PyTuple_New(3); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 181, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_12);
       __pyx_t_14 = 0;
       __pyx_t_10 = 127;
-      __Pyx_INCREF(__pyx_n_u_tidesurf);
+      __Pyx_INCREF(__pyx_n_u_tidesurf_2);
       __pyx_t_14 += 9;
-      __Pyx_GIVEREF(__pyx_n_u_tidesurf);
-      PyTuple_SET_ITEM(__pyx_t_12, 0, __pyx_n_u_tidesurf);
-      __pyx_t_3 = __Pyx_PyObject_FormatSimple(__pyx_v_sample_id, __pyx_empty_unicode); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 114, __pyx_L1_error)
+      __Pyx_GIVEREF(__pyx_n_u_tidesurf_2);
+      PyTuple_SET_ITEM(__pyx_t_12, 0, __pyx_n_u_tidesurf_2);
+      __pyx_t_3 = __Pyx_PyObject_FormatSimple(__pyx_v_sample_id, __pyx_empty_unicode); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 181, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
       __pyx_t_10 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_3) > __pyx_t_10) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_3) : __pyx_t_10;
       __pyx_t_14 += __Pyx_PyUnicode_GET_LENGTH(__pyx_t_3);
@@ -7647,7 +8369,7 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
       __pyx_t_14 += 5;
       __Pyx_GIVEREF(__pyx_kp_u_h5ad);
       PyTuple_SET_ITEM(__pyx_t_12, 2, __pyx_kp_u_h5ad);
-      __pyx_t_3 = __Pyx_PyUnicode_Join(__pyx_t_12, 3, __pyx_t_14, __pyx_t_10); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 114, __pyx_L1_error)
+      __pyx_t_3 = __Pyx_PyUnicode_Join(__pyx_t_12, 3, __pyx_t_14, __pyx_t_10); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 181, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
       __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
       __pyx_t_2 = __pyx_t_3;
@@ -7656,23 +8378,23 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
     __Pyx_XDECREF_SET(__pyx_v_f_name, ((PyObject*)__pyx_t_2));
     __pyx_t_2 = 0;
 
-    /* "tidesurf/main.py":115
+    /* "tidesurf/main.py":182
  *         adata.var_names = genes
  *         f_name = "tidesurf.h5ad" if not sample_id else f"tidesurf_{sample_id}.h5ad"
  *         adata.write_h5ad(Path(os.path.join(output, f_name)))             # <<<<<<<<<<<<<<
  * 
  * 
  */
-    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_adata, __pyx_n_s_write_h5ad); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 115, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_adata, __pyx_n_s_write_h5ad); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 182, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_Path); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 115, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_Path); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 182, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    __Pyx_GetModuleGlobalName(__pyx_t_17, __pyx_n_s_os); if (unlikely(!__pyx_t_17)) __PYX_ERR(0, 115, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_17, __pyx_n_s_os); if (unlikely(!__pyx_t_17)) __PYX_ERR(0, 182, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_17);
-    __pyx_t_18 = __Pyx_PyObject_GetAttrStr(__pyx_t_17, __pyx_n_s_path); if (unlikely(!__pyx_t_18)) __PYX_ERR(0, 115, __pyx_L1_error)
+    __pyx_t_18 = __Pyx_PyObject_GetAttrStr(__pyx_t_17, __pyx_n_s_path); if (unlikely(!__pyx_t_18)) __PYX_ERR(0, 182, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_18);
     __Pyx_DECREF(__pyx_t_17); __pyx_t_17 = 0;
-    __pyx_t_17 = __Pyx_PyObject_GetAttrStr(__pyx_t_18, __pyx_n_s_join); if (unlikely(!__pyx_t_17)) __PYX_ERR(0, 115, __pyx_L1_error)
+    __pyx_t_17 = __Pyx_PyObject_GetAttrStr(__pyx_t_18, __pyx_n_s_join); if (unlikely(!__pyx_t_17)) __PYX_ERR(0, 182, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_17);
     __Pyx_DECREF(__pyx_t_18); __pyx_t_18 = 0;
     __pyx_t_18 = NULL;
@@ -7693,7 +8415,7 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
       PyObject *__pyx_callargs[3] = {__pyx_t_18, __pyx_v_output, __pyx_v_f_name};
       __pyx_t_8 = __Pyx_PyObject_FastCall(__pyx_t_17, __pyx_callargs+1-__pyx_t_4, 2+__pyx_t_4);
       __Pyx_XDECREF(__pyx_t_18); __pyx_t_18 = 0;
-      if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 115, __pyx_L1_error)
+      if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 182, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_8);
       __Pyx_DECREF(__pyx_t_17); __pyx_t_17 = 0;
     }
@@ -7716,7 +8438,7 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
       __pyx_t_12 = __Pyx_PyObject_FastCall(__pyx_t_5, __pyx_callargs+1-__pyx_t_4, 1+__pyx_t_4);
       __Pyx_XDECREF(__pyx_t_17); __pyx_t_17 = 0;
       __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-      if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 115, __pyx_L1_error)
+      if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 182, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_12);
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     }
@@ -7739,13 +8461,13 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
       __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_3, __pyx_callargs+1-__pyx_t_4, 1+__pyx_t_4);
       __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
       __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
-      if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 115, __pyx_L1_error)
+      if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 182, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     }
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-    /* "tidesurf/main.py":83
+    /* "tidesurf/main.py":150
  *     os.makedirs(output, exist_ok=True)
  * 
  *     for bam_file, sample_id in zip(bam_files, sample_ids):             # <<<<<<<<<<<<<<
@@ -7755,7 +8477,7 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "tidesurf/main.py":19
+  /* "tidesurf/main.py":86
  * 
  * 
  * def run(             # <<<<<<<<<<<<<<
@@ -7799,35 +8521,116 @@ static PyObject *__pyx_pf_8tidesurf_4main_run(CYTHON_UNUSED PyObject *__pyx_self
   return __pyx_r;
 }
 
-/* "tidesurf/main.py":118
+/* "tidesurf/main.py":185
  * 
  * 
- * def main() -> None:             # <<<<<<<<<<<<<<
+ * def main(arg_list: Optional[List[str]] = None) -> None:             # <<<<<<<<<<<<<<
  *     start_time = datetime.now()
- *     parser = argparse.ArgumentParser(
+ * 
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_8tidesurf_4main_3main(PyObject *__pyx_self, CYTHON_UNUSED PyObject *unused); /*proto*/
-PyDoc_STRVAR(__pyx_doc_8tidesurf_4main_2main, "main() -> None");
-static PyMethodDef __pyx_mdef_8tidesurf_4main_3main = {"main", (PyCFunction)__pyx_pw_8tidesurf_4main_3main, METH_NOARGS, __pyx_doc_8tidesurf_4main_2main};
-static PyObject *__pyx_pw_8tidesurf_4main_3main(PyObject *__pyx_self, CYTHON_UNUSED PyObject *unused) {
+static PyObject *__pyx_pw_8tidesurf_4main_5main(PyObject *__pyx_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+); /*proto*/
+PyDoc_STRVAR(__pyx_doc_8tidesurf_4main_4main, "main(arg_list: Optional[List[str]] = None) -> None");
+static PyMethodDef __pyx_mdef_8tidesurf_4main_5main = {"main", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_8tidesurf_4main_5main, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_8tidesurf_4main_4main};
+static PyObject *__pyx_pw_8tidesurf_4main_5main(PyObject *__pyx_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+) {
+  PyObject *__pyx_v_arg_list = 0;
+  #if !CYTHON_METH_FASTCALL
+  CYTHON_UNUSED Py_ssize_t __pyx_nargs;
+  #endif
   CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject* values[1] = {0};
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("main (wrapper)", 0);
-  __pyx_kwvalues = __Pyx_KwValues_VARARGS(__pyx_args, __pyx_nargs);
-  __pyx_r = __pyx_pf_8tidesurf_4main_2main(__pyx_self);
+  #if !CYTHON_METH_FASTCALL
+  #if CYTHON_ASSUME_SAFE_MACROS
+  __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
+  #else
+  __pyx_nargs = PyTuple_Size(__pyx_args); if (unlikely(__pyx_nargs < 0)) return NULL;
+  #endif
+  #endif
+  __pyx_kwvalues = __Pyx_KwValues_FASTCALL(__pyx_args, __pyx_nargs);
+  {
+    PyObject **__pyx_pyargnames[] = {&__pyx_n_s_arg_list,0};
+    values[0] = __Pyx_Arg_NewRef_FASTCALL(((PyObject *)Py_None));
+    if (__pyx_kwds) {
+      Py_ssize_t kw_args;
+      switch (__pyx_nargs) {
+        case  1: values[0] = __Pyx_Arg_FASTCALL(__pyx_args, 0);
+        CYTHON_FALLTHROUGH;
+        case  0: break;
+        default: goto __pyx_L5_argtuple_error;
+      }
+      kw_args = __Pyx_NumKwargs_FASTCALL(__pyx_kwds);
+      switch (__pyx_nargs) {
+        case  0:
+        if (kw_args > 0) {
+          PyObject* value = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_arg_list);
+          if (value) { values[0] = __Pyx_Arg_NewRef_FASTCALL(value); kw_args--; }
+          else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 185, __pyx_L3_error)
+        }
+      }
+      if (unlikely(kw_args > 0)) {
+        const Py_ssize_t kwd_pos_args = __pyx_nargs;
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "main") < 0)) __PYX_ERR(0, 185, __pyx_L3_error)
+      }
+    } else {
+      switch (__pyx_nargs) {
+        case  1: values[0] = __Pyx_Arg_FASTCALL(__pyx_args, 0);
+        CYTHON_FALLTHROUGH;
+        case  0: break;
+        default: goto __pyx_L5_argtuple_error;
+      }
+    }
+    __pyx_v_arg_list = values[0];
+  }
+  goto __pyx_L6_skip;
+  __pyx_L5_argtuple_error:;
+  __Pyx_RaiseArgtupleInvalid("main", 0, 0, 1, __pyx_nargs); __PYX_ERR(0, 185, __pyx_L3_error)
+  __pyx_L6_skip:;
+  goto __pyx_L4_argument_unpacking_done;
+  __pyx_L3_error:;
+  {
+    Py_ssize_t __pyx_temp;
+    for (__pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+      __Pyx_Arg_XDECREF_FASTCALL(values[__pyx_temp]);
+    }
+  }
+  __Pyx_AddTraceback("tidesurf.main.main", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_RefNannyFinishContext();
+  return NULL;
+  __pyx_L4_argument_unpacking_done:;
+  __pyx_r = __pyx_pf_8tidesurf_4main_4main(__pyx_self, __pyx_v_arg_list);
 
   /* function exit code */
+  {
+    Py_ssize_t __pyx_temp;
+    for (__pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+      __Pyx_Arg_XDECREF_FASTCALL(values[__pyx_temp]);
+    }
+  }
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_8tidesurf_4main_2main(CYTHON_UNUSED PyObject *__pyx_self) {
+static PyObject *__pyx_pf_8tidesurf_4main_4main(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_arg_list) {
   PyObject *__pyx_v_start_time = NULL;
-  PyObject *__pyx_v_parser = NULL;
-  PyObject *__pyx_v_arg_group = NULL;
   PyObject *__pyx_v_args = NULL;
   PyObject *__pyx_v_end_time = NULL;
   PyObject *__pyx_r = NULL;
@@ -7851,16 +8654,16 @@ static PyObject *__pyx_pf_8tidesurf_4main_2main(CYTHON_UNUSED PyObject *__pyx_se
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("main", 1);
 
-  /* "tidesurf/main.py":119
+  /* "tidesurf/main.py":186
  * 
- * def main() -> None:
+ * def main(arg_list: Optional[List[str]] = None) -> None:
  *     start_time = datetime.now()             # <<<<<<<<<<<<<<
- *     parser = argparse.ArgumentParser(
- *         description="Program: tidesurf (Tool for IDentification and "
+ * 
+ *     args = parse_args(arg_list)
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_datetime); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 119, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_datetime); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 186, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_now); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 119, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_now); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 186, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_t_2 = NULL;
@@ -7881,645 +8684,139 @@ static PyObject *__pyx_pf_8tidesurf_4main_2main(CYTHON_UNUSED PyObject *__pyx_se
     PyObject *__pyx_callargs[2] = {__pyx_t_2, NULL};
     __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_3, __pyx_callargs+1-__pyx_t_4, 0+__pyx_t_4);
     __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 119, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 186, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   }
   __pyx_v_start_time = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "tidesurf/main.py":120
- * def main() -> None:
+  /* "tidesurf/main.py":188
  *     start_time = datetime.now()
- *     parser = argparse.ArgumentParser(             # <<<<<<<<<<<<<<
- *         description="Program: tidesurf (Tool for IDentification and "
- *         "Enumeration of Spliced and Unspliced Read Fragments)\n"
- */
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_argparse); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 120, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_ArgumentParser); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 120, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-
-  /* "tidesurf/main.py":121
- *     start_time = datetime.now()
- *     parser = argparse.ArgumentParser(
- *         description="Program: tidesurf (Tool for IDentification and "             # <<<<<<<<<<<<<<
- *         "Enumeration of Spliced and Unspliced Read Fragments)\n"
- *         f"Version: {tidesurf.__version__}",
- */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 121, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-
-  /* "tidesurf/main.py":123
- *         description="Program: tidesurf (Tool for IDentification and "
- *         "Enumeration of Spliced and Unspliced Read Fragments)\n"
- *         f"Version: {tidesurf.__version__}",             # <<<<<<<<<<<<<<
- *         formatter_class=argparse.RawDescriptionHelpFormatter,
- *     )
- */
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_tidesurf_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 123, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_version); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 123, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyObject_FormatSimple(__pyx_t_5, __pyx_empty_unicode); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 123, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-
-  /* "tidesurf/main.py":121
- *     start_time = datetime.now()
- *     parser = argparse.ArgumentParser(
- *         description="Program: tidesurf (Tool for IDentification and "             # <<<<<<<<<<<<<<
- *         "Enumeration of Spliced and Unspliced Read Fragments)\n"
- *         f"Version: {tidesurf.__version__}",
- */
-  __pyx_t_5 = __Pyx_PyUnicode_Concat(__pyx_kp_u_Program_tidesurf_Tool_for_IDenti, __pyx_t_2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 121, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_description, __pyx_t_5) < 0) __PYX_ERR(0, 121, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-
-  /* "tidesurf/main.py":124
- *         "Enumeration of Spliced and Unspliced Read Fragments)\n"
- *         f"Version: {tidesurf.__version__}",
- *         formatter_class=argparse.RawDescriptionHelpFormatter,             # <<<<<<<<<<<<<<
- *     )
- *     parser.add_argument(
- */
-  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_argparse); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 124, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_RawDescriptionHelpFormatter); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 124, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_formatter_class, __pyx_t_2) < 0) __PYX_ERR(0, 121, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-
-  /* "tidesurf/main.py":120
- * def main() -> None:
- *     start_time = datetime.now()
- *     parser = argparse.ArgumentParser(             # <<<<<<<<<<<<<<
- *         description="Program: tidesurf (Tool for IDentification and "
- *         "Enumeration of Spliced and Unspliced Read Fragments)\n"
- */
-  __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_empty_tuple, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 120, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_v_parser = __pyx_t_2;
-  __pyx_t_2 = 0;
-
-  /* "tidesurf/main.py":126
- *         formatter_class=argparse.RawDescriptionHelpFormatter,
- *     )
- *     parser.add_argument(             # <<<<<<<<<<<<<<
- *         "-v",
- *         "--version",
- */
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_parser, __pyx_n_s_add_argument); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 126, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-
-  /* "tidesurf/main.py":129
- *         "-v",
- *         "--version",
- *         action="version",             # <<<<<<<<<<<<<<
- *         version=f"%(prog)s {tidesurf.__version__}",
- *     )
- */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 129, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_action, __pyx_n_u_version_3) < 0) __PYX_ERR(0, 129, __pyx_L1_error)
-
-  /* "tidesurf/main.py":130
- *         "--version",
- *         action="version",
- *         version=f"%(prog)s {tidesurf.__version__}",             # <<<<<<<<<<<<<<
- *     )
- *     parser.add_argument(
- */
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_tidesurf_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 130, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_version); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 130, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = __Pyx_PyObject_FormatSimple(__pyx_t_5, __pyx_empty_unicode); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 130, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_PyUnicode_Concat(__pyx_kp_u_prog_s, __pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 130, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_version_3, __pyx_t_5) < 0) __PYX_ERR(0, 129, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-
-  /* "tidesurf/main.py":126
- *         formatter_class=argparse.RawDescriptionHelpFormatter,
- *     )
- *     parser.add_argument(             # <<<<<<<<<<<<<<
- *         "-v",
- *         "--version",
- */
-  __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_tuple__3, __pyx_t_1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 126, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-
-  /* "tidesurf/main.py":132
- *         version=f"%(prog)s {tidesurf.__version__}",
- *     )
- *     parser.add_argument(             # <<<<<<<<<<<<<<
- *         "--orientation",
- *         type=str,
- */
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_parser, __pyx_n_s_add_argument); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 132, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-
-  /* "tidesurf/main.py":134
- *     parser.add_argument(
- *         "--orientation",
- *         type=str,             # <<<<<<<<<<<<<<
- *         default="sense",
- *         choices=["sense", "antisense"],
- */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 134, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_type, ((PyObject *)(&PyUnicode_Type))) < 0) __PYX_ERR(0, 134, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_default, __pyx_n_u_sense) < 0) __PYX_ERR(0, 134, __pyx_L1_error)
-
-  /* "tidesurf/main.py":136
- *         type=str,
- *         default="sense",
- *         choices=["sense", "antisense"],             # <<<<<<<<<<<<<<
- *         help="Orientation of reads with respect to transcripts. For 10x"
- *         " Genomics, use 'sense' for three prime and 'antisense' for "
- */
-  __pyx_t_2 = PyList_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 136, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_INCREF(__pyx_n_u_sense);
-  __Pyx_GIVEREF(__pyx_n_u_sense);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_2, 0, __pyx_n_u_sense)) __PYX_ERR(0, 136, __pyx_L1_error);
-  __Pyx_INCREF(__pyx_n_u_antisense);
-  __Pyx_GIVEREF(__pyx_n_u_antisense);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_2, 1, __pyx_n_u_antisense)) __PYX_ERR(0, 136, __pyx_L1_error);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_choices, __pyx_t_2) < 0) __PYX_ERR(0, 134, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_help, __pyx_kp_u_Orientation_of_reads_with_respec) < 0) __PYX_ERR(0, 134, __pyx_L1_error)
-
-  /* "tidesurf/main.py":132
- *         version=f"%(prog)s {tidesurf.__version__}",
- *     )
- *     parser.add_argument(             # <<<<<<<<<<<<<<
- *         "--orientation",
- *         type=str,
- */
-  __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_tuple__4, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 132, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-
-  /* "tidesurf/main.py":141
- *         "five prime.",
- *     )
- *     parser.add_argument(             # <<<<<<<<<<<<<<
- *         "-o", "--output", type=str, default="tidesurf_out", help="Output directory."
- *     )
- */
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_parser, __pyx_n_s_add_argument); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 141, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-
-  /* "tidesurf/main.py":142
- *     )
- *     parser.add_argument(
- *         "-o", "--output", type=str, default="tidesurf_out", help="Output directory."             # <<<<<<<<<<<<<<
- *     )
- *     parser.add_argument(
- */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 142, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_type, ((PyObject *)(&PyUnicode_Type))) < 0) __PYX_ERR(0, 142, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_default, __pyx_n_u_tidesurf_out) < 0) __PYX_ERR(0, 142, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_help, __pyx_kp_u_Output_directory) < 0) __PYX_ERR(0, 142, __pyx_L1_error)
-
-  /* "tidesurf/main.py":141
- *         "five prime.",
- *     )
- *     parser.add_argument(             # <<<<<<<<<<<<<<
- *         "-o", "--output", type=str, default="tidesurf_out", help="Output directory."
- *     )
- */
-  __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_tuple__5, __pyx_t_1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 141, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-
-  /* "tidesurf/main.py":144
- *         "-o", "--output", type=str, default="tidesurf_out", help="Output directory."
- *     )
- *     parser.add_argument(             # <<<<<<<<<<<<<<
- *         "--no_filter_cells",
- *         action="store_true",
- */
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_parser, __pyx_n_s_add_argument); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 144, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-
-  /* "tidesurf/main.py":146
- *     parser.add_argument(
- *         "--no_filter_cells",
- *         action="store_true",             # <<<<<<<<<<<<<<
- *         help="Do not filter cells.",
- *     )
- */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 146, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_action, __pyx_n_u_store_true) < 0) __PYX_ERR(0, 146, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_help, __pyx_kp_u_Do_not_filter_cells) < 0) __PYX_ERR(0, 146, __pyx_L1_error)
-
-  /* "tidesurf/main.py":144
- *         "-o", "--output", type=str, default="tidesurf_out", help="Output directory."
- *     )
- *     parser.add_argument(             # <<<<<<<<<<<<<<
- *         "--no_filter_cells",
- *         action="store_true",
- */
-  __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_tuple__6, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 144, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-
-  /* "tidesurf/main.py":149
- *         help="Do not filter cells.",
- *     )
- *     arg_group = parser.add_mutually_exclusive_group()             # <<<<<<<<<<<<<<
- *     arg_group.add_argument(
- *         "--whitelist",
- */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_parser, __pyx_n_s_add_mutually_exclusive_group); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 149, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_5 = NULL;
-  __pyx_t_4 = 0;
-  #if CYTHON_UNPACK_METHODS
-  if (likely(PyMethod_Check(__pyx_t_1))) {
-    __pyx_t_5 = PyMethod_GET_SELF(__pyx_t_1);
-    if (likely(__pyx_t_5)) {
-      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_1);
-      __Pyx_INCREF(__pyx_t_5);
-      __Pyx_INCREF(function);
-      __Pyx_DECREF_SET(__pyx_t_1, function);
-      __pyx_t_4 = 1;
-    }
-  }
-  #endif
-  {
-    PyObject *__pyx_callargs[2] = {__pyx_t_5, NULL};
-    __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_1, __pyx_callargs+1-__pyx_t_4, 0+__pyx_t_4);
-    __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 149, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
-    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  }
-  __pyx_v_arg_group = __pyx_t_2;
-  __pyx_t_2 = 0;
-
-  /* "tidesurf/main.py":150
- *     )
- *     arg_group = parser.add_mutually_exclusive_group()
- *     arg_group.add_argument(             # <<<<<<<<<<<<<<
- *         "--whitelist",
- *         type=str,
- */
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_arg_group, __pyx_n_s_add_argument); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 150, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-
-  /* "tidesurf/main.py":152
- *     arg_group.add_argument(
- *         "--whitelist",
- *         type=str,             # <<<<<<<<<<<<<<
- *         help="Whitelist for cell filtering. Set to 'cellranger' to use "
- *         "barcodes in the sample directory. Alternatively, provide a "
- */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 152, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_type, ((PyObject *)(&PyUnicode_Type))) < 0) __PYX_ERR(0, 152, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_help, __pyx_kp_u_Whitelist_for_cell_filtering_Set) < 0) __PYX_ERR(0, 152, __pyx_L1_error)
-
-  /* "tidesurf/main.py":150
- *     )
- *     arg_group = parser.add_mutually_exclusive_group()
- *     arg_group.add_argument(             # <<<<<<<<<<<<<<
- *         "--whitelist",
- *         type=str,
- */
-  __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_tuple__7, __pyx_t_1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 150, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-
-  /* "tidesurf/main.py":157
- *         "path to a whitelist.",
- *     )
- *     arg_group.add_argument(             # <<<<<<<<<<<<<<
- *         "--num_umis",
- *         type=int,
- */
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_arg_group, __pyx_n_s_add_argument); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 157, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-
-  /* "tidesurf/main.py":159
- *     arg_group.add_argument(
- *         "--num_umis",
- *         type=int,             # <<<<<<<<<<<<<<
- *         help="Minimum number of UMIs for filtering a cell.",
- *     )
- */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 159, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_type, ((PyObject *)(&PyInt_Type))) < 0) __PYX_ERR(0, 159, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_help, __pyx_kp_u_Minimum_number_of_UMIs_for_filte) < 0) __PYX_ERR(0, 159, __pyx_L1_error)
-
-  /* "tidesurf/main.py":157
- *         "path to a whitelist.",
- *     )
- *     arg_group.add_argument(             # <<<<<<<<<<<<<<
- *         "--num_umis",
- *         type=int,
- */
-  __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_tuple__8, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 157, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-
-  /* "tidesurf/main.py":162
- *         help="Minimum number of UMIs for filtering a cell.",
- *     )
- *     parser.add_argument(             # <<<<<<<<<<<<<<
- *         "--min_intron_overlap",
- *         type=int,
- */
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_parser, __pyx_n_s_add_argument); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 162, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-
-  /* "tidesurf/main.py":164
- *     parser.add_argument(
- *         "--min_intron_overlap",
- *         type=int,             # <<<<<<<<<<<<<<
- *         default=5,
- *         help="Minimum number of bases that a read must overlap with an "
- */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 164, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_type, ((PyObject *)(&PyInt_Type))) < 0) __PYX_ERR(0, 164, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_default, __pyx_int_5) < 0) __PYX_ERR(0, 164, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_help, __pyx_kp_u_Minimum_number_of_bases_that_a_r) < 0) __PYX_ERR(0, 164, __pyx_L1_error)
-
-  /* "tidesurf/main.py":162
- *         help="Minimum number of UMIs for filtering a cell.",
- *     )
- *     parser.add_argument(             # <<<<<<<<<<<<<<
- *         "--min_intron_overlap",
- *         type=int,
- */
-  __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_tuple__9, __pyx_t_1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 162, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-
-  /* "tidesurf/main.py":169
- *         "intron to be considered intronic.",
- *     )
- *     parser.add_argument(             # <<<<<<<<<<<<<<
- *         "--multi_mapped_reads",
- *         action="store_true",
- */
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_parser, __pyx_n_s_add_argument); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 169, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-
-  /* "tidesurf/main.py":171
- *     parser.add_argument(
- *         "--multi_mapped_reads",
- *         action="store_true",             # <<<<<<<<<<<<<<
- *         help="Take reads mapping to multiple genes into account "
- *         "(default: reads mapping to more than one gene are discarded).",
- */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 171, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_action, __pyx_n_u_store_true) < 0) __PYX_ERR(0, 171, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_help, __pyx_kp_u_Take_reads_mapping_to_multiple_g) < 0) __PYX_ERR(0, 171, __pyx_L1_error)
-
-  /* "tidesurf/main.py":169
- *         "intron to be considered intronic.",
- *     )
- *     parser.add_argument(             # <<<<<<<<<<<<<<
- *         "--multi_mapped_reads",
- *         action="store_true",
- */
-  __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_tuple__10, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 169, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-
-  /* "tidesurf/main.py":175
- *         "(default: reads mapping to more than one gene are discarded).",
- *     )
- *     parser.add_argument(             # <<<<<<<<<<<<<<
- *         "sample_dir",
- *         metavar="SAMPLE_DIR",
- */
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_parser, __pyx_n_s_add_argument); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 175, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-
-  /* "tidesurf/main.py":177
- *     parser.add_argument(
- *         "sample_dir",
- *         metavar="SAMPLE_DIR",             # <<<<<<<<<<<<<<
- *         help="Sample directory containing Cell Ranger output.",
- *     )
- */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 177, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_metavar, __pyx_n_u_SAMPLE_DIR) < 0) __PYX_ERR(0, 177, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_help, __pyx_kp_u_Sample_directory_containing_Cell) < 0) __PYX_ERR(0, 177, __pyx_L1_error)
-
-  /* "tidesurf/main.py":175
- *         "(default: reads mapping to more than one gene are discarded).",
- *     )
- *     parser.add_argument(             # <<<<<<<<<<<<<<
- *         "sample_dir",
- *         metavar="SAMPLE_DIR",
- */
-  __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_tuple__11, __pyx_t_1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 175, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-
-  /* "tidesurf/main.py":180
- *         help="Sample directory containing Cell Ranger output.",
- *     )
- *     parser.add_argument(             # <<<<<<<<<<<<<<
- *         "gtf_file", metavar="GTF_FILE", help="GTF file with transcript information."
- *     )
- */
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_parser, __pyx_n_s_add_argument); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 180, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-
-  /* "tidesurf/main.py":181
- *     )
- *     parser.add_argument(
- *         "gtf_file", metavar="GTF_FILE", help="GTF file with transcript information."             # <<<<<<<<<<<<<<
- *     )
- *     args = parser.parse_args()
- */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 181, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_metavar, __pyx_n_u_GTF_FILE) < 0) __PYX_ERR(0, 181, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_help, __pyx_kp_u_GTF_file_with_transcript_informa) < 0) __PYX_ERR(0, 181, __pyx_L1_error)
-
-  /* "tidesurf/main.py":180
- *         help="Sample directory containing Cell Ranger output.",
- *     )
- *     parser.add_argument(             # <<<<<<<<<<<<<<
- *         "gtf_file", metavar="GTF_FILE", help="GTF file with transcript information."
- *     )
- */
-  __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_tuple__12, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 180, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-
-  /* "tidesurf/main.py":183
- *         "gtf_file", metavar="GTF_FILE", help="GTF file with transcript information."
- *     )
- *     args = parser.parse_args()             # <<<<<<<<<<<<<<
+ * 
+ *     args = parse_args(arg_list)             # <<<<<<<<<<<<<<
  * 
  *     os.makedirs(args.output, exist_ok=True)
  */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_parser, __pyx_n_s_parse_args); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 183, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_5 = NULL;
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_parse_args); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 188, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_t_2 = NULL;
   __pyx_t_4 = 0;
   #if CYTHON_UNPACK_METHODS
-  if (likely(PyMethod_Check(__pyx_t_1))) {
-    __pyx_t_5 = PyMethod_GET_SELF(__pyx_t_1);
-    if (likely(__pyx_t_5)) {
-      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_1);
-      __Pyx_INCREF(__pyx_t_5);
+  if (unlikely(PyMethod_Check(__pyx_t_3))) {
+    __pyx_t_2 = PyMethod_GET_SELF(__pyx_t_3);
+    if (likely(__pyx_t_2)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_3);
+      __Pyx_INCREF(__pyx_t_2);
       __Pyx_INCREF(function);
-      __Pyx_DECREF_SET(__pyx_t_1, function);
+      __Pyx_DECREF_SET(__pyx_t_3, function);
       __pyx_t_4 = 1;
     }
   }
   #endif
   {
-    PyObject *__pyx_callargs[2] = {__pyx_t_5, NULL};
-    __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_1, __pyx_callargs+1-__pyx_t_4, 0+__pyx_t_4);
-    __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 183, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
-    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+    PyObject *__pyx_callargs[2] = {__pyx_t_2, __pyx_v_arg_list};
+    __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_3, __pyx_callargs+1-__pyx_t_4, 1+__pyx_t_4);
+    __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 188, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   }
-  __pyx_v_args = __pyx_t_2;
-  __pyx_t_2 = 0;
+  __pyx_v_args = __pyx_t_1;
+  __pyx_t_1 = 0;
 
-  /* "tidesurf/main.py":185
- *     args = parser.parse_args()
+  /* "tidesurf/main.py":190
+ *     args = parse_args(arg_list)
  * 
  *     os.makedirs(args.output, exist_ok=True)             # <<<<<<<<<<<<<<
  *     logging.basicConfig(
  *         level=logging.INFO,
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_os); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 185, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_makedirs); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 185, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_os); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 190, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_args, __pyx_n_s_output); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 185, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_5 = PyTuple_New(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 185, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_GIVEREF(__pyx_t_2);
-  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_2)) __PYX_ERR(0, 185, __pyx_L1_error);
-  __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 185, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_exist_ok, Py_True) < 0) __PYX_ERR(0, 185, __pyx_L1_error)
-  __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_5, __pyx_t_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 185, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_makedirs); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 190, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_args, __pyx_n_s_output_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 190, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_2 = PyTuple_New(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 190, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_GIVEREF(__pyx_t_1);
+  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_t_1)) __PYX_ERR(0, 190, __pyx_L1_error);
+  __pyx_t_1 = 0;
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 190, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_exist_ok, Py_True) < 0) __PYX_ERR(0, 190, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_2, __pyx_t_1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 190, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-  /* "tidesurf/main.py":186
+  /* "tidesurf/main.py":191
  * 
  *     os.makedirs(args.output, exist_ok=True)
  *     logging.basicConfig(             # <<<<<<<<<<<<<<
  *         level=logging.INFO,
  *         format="[%(asctime)s][%(module)s][%(levelname)s] - %(message)s",
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_logging); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 186, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_basicConfig); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 186, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_logging); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 191, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_5);
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_basicConfig); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 191, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-  /* "tidesurf/main.py":187
+  /* "tidesurf/main.py":192
  *     os.makedirs(args.output, exist_ok=True)
  *     logging.basicConfig(
  *         level=logging.INFO,             # <<<<<<<<<<<<<<
  *         format="[%(asctime)s][%(module)s][%(levelname)s] - %(message)s",
  *         datefmt="%Y-%m-%d %H:%M:%S",
  */
-  __pyx_t_3 = __Pyx_PyDict_NewPresized(4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 187, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_logging); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 187, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyDict_NewPresized(4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 192, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_INFO); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 187, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_level, __pyx_t_1) < 0) __PYX_ERR(0, 187, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_format, __pyx_kp_u_asctime_s_module_s_levelname_s) < 0) __PYX_ERR(0, 187, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_datefmt, __pyx_kp_u_Y_m_d_H_M_S) < 0) __PYX_ERR(0, 187, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_logging); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 192, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_INFO); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 192, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  if (PyDict_SetItem(__pyx_t_5, __pyx_n_s_level, __pyx_t_3) < 0) __PYX_ERR(0, 192, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  if (PyDict_SetItem(__pyx_t_5, __pyx_n_s_format, __pyx_kp_u_asctime_s_module_s_levelname_s) < 0) __PYX_ERR(0, 192, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_5, __pyx_n_s_datefmt, __pyx_kp_u_Y_m_d_H_M_S) < 0) __PYX_ERR(0, 192, __pyx_L1_error)
 
-  /* "tidesurf/main.py":191
+  /* "tidesurf/main.py":196
  *         datefmt="%Y-%m-%d %H:%M:%S",
  *         handlers=[
  *             logging.FileHandler(             # <<<<<<<<<<<<<<
  *                 filename=os.path.join(args.output, "tidesurf.log"),
  *                 mode="w",
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_logging); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 191, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_FileHandler); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 191, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_logging); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 196, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_FileHandler); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 196, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-  /* "tidesurf/main.py":192
+  /* "tidesurf/main.py":197
  *         handlers=[
  *             logging.FileHandler(
  *                 filename=os.path.join(args.output, "tidesurf.log"),             # <<<<<<<<<<<<<<
  *                 mode="w",
  *             ),
  */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 192, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_GetModuleGlobalName(__pyx_t_7, __pyx_n_s_os); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 192, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 197, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_GetModuleGlobalName(__pyx_t_7, __pyx_n_s_os); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 197, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
-  __pyx_t_8 = __Pyx_PyObject_GetAttrStr(__pyx_t_7, __pyx_n_s_path); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 192, __pyx_L1_error)
+  __pyx_t_8 = __Pyx_PyObject_GetAttrStr(__pyx_t_7, __pyx_n_s_path); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 197, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_8);
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-  __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_t_8, __pyx_n_s_join); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 192, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_t_8, __pyx_n_s_join); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 197, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
   __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-  __pyx_t_8 = __Pyx_PyObject_GetAttrStr(__pyx_v_args, __pyx_n_s_output); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 192, __pyx_L1_error)
+  __pyx_t_8 = __Pyx_PyObject_GetAttrStr(__pyx_v_args, __pyx_n_s_output_2); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 197, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_8);
   __pyx_t_9 = NULL;
   __pyx_t_4 = 0;
@@ -8540,46 +8837,46 @@ static PyObject *__pyx_pf_8tidesurf_4main_2main(CYTHON_UNUSED PyObject *__pyx_se
     __pyx_t_6 = __Pyx_PyObject_FastCall(__pyx_t_7, __pyx_callargs+1-__pyx_t_4, 2+__pyx_t_4);
     __Pyx_XDECREF(__pyx_t_9); __pyx_t_9 = 0;
     __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-    if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 192, __pyx_L1_error)
+    if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 197, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
   }
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_filename, __pyx_t_6) < 0) __PYX_ERR(0, 192, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_filename, __pyx_t_6) < 0) __PYX_ERR(0, 197, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_mode, __pyx_n_u_w) < 0) __PYX_ERR(0, 192, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_mode, __pyx_n_u_w) < 0) __PYX_ERR(0, 197, __pyx_L1_error)
 
-  /* "tidesurf/main.py":191
+  /* "tidesurf/main.py":196
  *         datefmt="%Y-%m-%d %H:%M:%S",
  *         handlers=[
  *             logging.FileHandler(             # <<<<<<<<<<<<<<
  *                 filename=os.path.join(args.output, "tidesurf.log"),
  *                 mode="w",
  */
-  __pyx_t_6 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_empty_tuple, __pyx_t_1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 191, __pyx_L1_error)
+  __pyx_t_6 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_empty_tuple, __pyx_t_3); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 196, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-  /* "tidesurf/main.py":195
+  /* "tidesurf/main.py":200
  *                 mode="w",
  *             ),
  *             logging.StreamHandler(),             # <<<<<<<<<<<<<<
  *         ],
  *     )
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_logging); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 195, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_StreamHandler); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 195, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_logging); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 200, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_StreamHandler); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 200, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = NULL;
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_2 = NULL;
   __pyx_t_4 = 0;
   #if CYTHON_UNPACK_METHODS
   if (unlikely(PyMethod_Check(__pyx_t_7))) {
-    __pyx_t_5 = PyMethod_GET_SELF(__pyx_t_7);
-    if (likely(__pyx_t_5)) {
+    __pyx_t_2 = PyMethod_GET_SELF(__pyx_t_7);
+    if (likely(__pyx_t_2)) {
       PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_7);
-      __Pyx_INCREF(__pyx_t_5);
+      __Pyx_INCREF(__pyx_t_2);
       __Pyx_INCREF(function);
       __Pyx_DECREF_SET(__pyx_t_7, function);
       __pyx_t_4 = 1;
@@ -8587,55 +8884,55 @@ static PyObject *__pyx_pf_8tidesurf_4main_2main(CYTHON_UNUSED PyObject *__pyx_se
   }
   #endif
   {
-    PyObject *__pyx_callargs[2] = {__pyx_t_5, NULL};
-    __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_7, __pyx_callargs+1-__pyx_t_4, 0+__pyx_t_4);
-    __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 195, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_1);
+    PyObject *__pyx_callargs[2] = {__pyx_t_2, NULL};
+    __pyx_t_3 = __Pyx_PyObject_FastCall(__pyx_t_7, __pyx_callargs+1-__pyx_t_4, 0+__pyx_t_4);
+    __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
+    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 200, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
   }
 
-  /* "tidesurf/main.py":190
+  /* "tidesurf/main.py":195
  *         format="[%(asctime)s][%(module)s][%(levelname)s] - %(message)s",
  *         datefmt="%Y-%m-%d %H:%M:%S",
  *         handlers=[             # <<<<<<<<<<<<<<
  *             logging.FileHandler(
  *                 filename=os.path.join(args.output, "tidesurf.log"),
  */
-  __pyx_t_7 = PyList_New(2); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 190, __pyx_L1_error)
+  __pyx_t_7 = PyList_New(2); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 195, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
   __Pyx_GIVEREF(__pyx_t_6);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_7, 0, __pyx_t_6)) __PYX_ERR(0, 190, __pyx_L1_error);
-  __Pyx_GIVEREF(__pyx_t_1);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_7, 1, __pyx_t_1)) __PYX_ERR(0, 190, __pyx_L1_error);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_7, 0, __pyx_t_6)) __PYX_ERR(0, 195, __pyx_L1_error);
+  __Pyx_GIVEREF(__pyx_t_3);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_7, 1, __pyx_t_3)) __PYX_ERR(0, 195, __pyx_L1_error);
   __pyx_t_6 = 0;
-  __pyx_t_1 = 0;
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_handlers, __pyx_t_7) < 0) __PYX_ERR(0, 187, __pyx_L1_error)
+  __pyx_t_3 = 0;
+  if (PyDict_SetItem(__pyx_t_5, __pyx_n_s_handlers, __pyx_t_7) < 0) __PYX_ERR(0, 192, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
 
-  /* "tidesurf/main.py":186
+  /* "tidesurf/main.py":191
  * 
  *     os.makedirs(args.output, exist_ok=True)
  *     logging.basicConfig(             # <<<<<<<<<<<<<<
  *         level=logging.INFO,
  *         format="[%(asctime)s][%(module)s][%(levelname)s] - %(message)s",
  */
-  __pyx_t_7 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_empty_tuple, __pyx_t_3); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 186, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_empty_tuple, __pyx_t_5); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 191, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
 
-  /* "tidesurf/main.py":200
+  /* "tidesurf/main.py":205
  * 
  *     # Default behavior for filtering: use cellranger whitelist
  *     if not args.no_filter_cells and not args.whitelist and not args.num_umis:             # <<<<<<<<<<<<<<
  *         args.whitelist = "cellranger"
  * 
  */
-  __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_v_args, __pyx_n_s_no_filter_cells_2); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 200, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_v_args, __pyx_n_s_no_filter_cells_2); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 205, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
-  __pyx_t_11 = __Pyx_PyObject_IsTrue(__pyx_t_7); if (unlikely((__pyx_t_11 < 0))) __PYX_ERR(0, 200, __pyx_L1_error)
+  __pyx_t_11 = __Pyx_PyObject_IsTrue(__pyx_t_7); if (unlikely((__pyx_t_11 < 0))) __PYX_ERR(0, 205, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
   __pyx_t_12 = (!__pyx_t_11);
   if (__pyx_t_12) {
@@ -8643,9 +8940,9 @@ static PyObject *__pyx_pf_8tidesurf_4main_2main(CYTHON_UNUSED PyObject *__pyx_se
     __pyx_t_10 = __pyx_t_12;
     goto __pyx_L4_bool_binop_done;
   }
-  __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_v_args, __pyx_n_s_whitelist); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 200, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_v_args, __pyx_n_s_whitelist_2); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 205, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
-  __pyx_t_12 = __Pyx_PyObject_IsTrue(__pyx_t_7); if (unlikely((__pyx_t_12 < 0))) __PYX_ERR(0, 200, __pyx_L1_error)
+  __pyx_t_12 = __Pyx_PyObject_IsTrue(__pyx_t_7); if (unlikely((__pyx_t_12 < 0))) __PYX_ERR(0, 205, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
   __pyx_t_11 = (!__pyx_t_12);
   if (__pyx_t_11) {
@@ -8653,25 +8950,25 @@ static PyObject *__pyx_pf_8tidesurf_4main_2main(CYTHON_UNUSED PyObject *__pyx_se
     __pyx_t_10 = __pyx_t_11;
     goto __pyx_L4_bool_binop_done;
   }
-  __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_v_args, __pyx_n_s_num_umis); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 200, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_v_args, __pyx_n_s_num_umis_2); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 205, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
-  __pyx_t_11 = __Pyx_PyObject_IsTrue(__pyx_t_7); if (unlikely((__pyx_t_11 < 0))) __PYX_ERR(0, 200, __pyx_L1_error)
+  __pyx_t_11 = __Pyx_PyObject_IsTrue(__pyx_t_7); if (unlikely((__pyx_t_11 < 0))) __PYX_ERR(0, 205, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
   __pyx_t_12 = (!__pyx_t_11);
   __pyx_t_10 = __pyx_t_12;
   __pyx_L4_bool_binop_done:;
   if (__pyx_t_10) {
 
-    /* "tidesurf/main.py":201
+    /* "tidesurf/main.py":206
  *     # Default behavior for filtering: use cellranger whitelist
  *     if not args.no_filter_cells and not args.whitelist and not args.num_umis:
  *         args.whitelist = "cellranger"             # <<<<<<<<<<<<<<
  * 
  *     log.info(f"Running tidesurf {tidesurf.__version__}.")
  */
-    if (__Pyx_PyObject_SetAttrStr(__pyx_v_args, __pyx_n_s_whitelist, __pyx_n_u_cellranger) < 0) __PYX_ERR(0, 201, __pyx_L1_error)
+    if (__Pyx_PyObject_SetAttrStr(__pyx_v_args, __pyx_n_s_whitelist_2, __pyx_n_u_cellranger) < 0) __PYX_ERR(0, 206, __pyx_L1_error)
 
-    /* "tidesurf/main.py":200
+    /* "tidesurf/main.py":205
  * 
  *     # Default behavior for filtering: use cellranger whitelist
  *     if not args.no_filter_cells and not args.whitelist and not args.num_umis:             # <<<<<<<<<<<<<<
@@ -8680,99 +8977,54 @@ static PyObject *__pyx_pf_8tidesurf_4main_2main(CYTHON_UNUSED PyObject *__pyx_se
  */
   }
 
-  /* "tidesurf/main.py":203
+  /* "tidesurf/main.py":208
  *         args.whitelist = "cellranger"
  * 
  *     log.info(f"Running tidesurf {tidesurf.__version__}.")             # <<<<<<<<<<<<<<
  *     log.info(f"Processing sample directory: {args.sample_dir}")
  *     run(
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_log); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 203, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_info); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 203, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = PyTuple_New(3); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 203, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_log); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 208, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_5);
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_info); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 208, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+  __pyx_t_5 = PyTuple_New(3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 208, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_5);
   __pyx_t_13 = 0;
   __pyx_t_14 = 127;
   __Pyx_INCREF(__pyx_kp_u_Running_tidesurf);
   __pyx_t_13 += 17;
   __Pyx_GIVEREF(__pyx_kp_u_Running_tidesurf);
-  PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_kp_u_Running_tidesurf);
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_tidesurf_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 203, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_version); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 203, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_6);
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyObject_FormatSimple(__pyx_t_6, __pyx_empty_unicode); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 203, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  __pyx_t_14 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_1) > __pyx_t_14) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_1) : __pyx_t_14;
-  __pyx_t_13 += __Pyx_PyUnicode_GET_LENGTH(__pyx_t_1);
-  __Pyx_GIVEREF(__pyx_t_1);
-  PyTuple_SET_ITEM(__pyx_t_3, 1, __pyx_t_1);
-  __pyx_t_1 = 0;
-  __Pyx_INCREF(__pyx_kp_u__2);
-  __pyx_t_13 += 1;
-  __Pyx_GIVEREF(__pyx_kp_u__2);
-  PyTuple_SET_ITEM(__pyx_t_3, 2, __pyx_kp_u__2);
-  __pyx_t_1 = __Pyx_PyUnicode_Join(__pyx_t_3, 3, __pyx_t_13, __pyx_t_14); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 203, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = NULL;
-  __pyx_t_4 = 0;
-  #if CYTHON_UNPACK_METHODS
-  if (unlikely(PyMethod_Check(__pyx_t_2))) {
-    __pyx_t_3 = PyMethod_GET_SELF(__pyx_t_2);
-    if (likely(__pyx_t_3)) {
-      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_2);
-      __Pyx_INCREF(__pyx_t_3);
-      __Pyx_INCREF(function);
-      __Pyx_DECREF_SET(__pyx_t_2, function);
-      __pyx_t_4 = 1;
-    }
-  }
-  #endif
-  {
-    PyObject *__pyx_callargs[2] = {__pyx_t_3, __pyx_t_1};
-    __pyx_t_7 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_4, 1+__pyx_t_4);
-    __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 203, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_7);
-    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  }
-  __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-
-  /* "tidesurf/main.py":204
- * 
- *     log.info(f"Running tidesurf {tidesurf.__version__}.")
- *     log.info(f"Processing sample directory: {args.sample_dir}")             # <<<<<<<<<<<<<<
- *     run(
- *         sample_dir=args.sample_dir,
- */
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_log); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 204, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_info); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 204, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_args, __pyx_n_s_sample_dir); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 204, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = __Pyx_PyObject_FormatSimple(__pyx_t_2, __pyx_empty_unicode); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 204, __pyx_L1_error)
+  PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_kp_u_Running_tidesurf);
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_tidesurf); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 208, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyUnicode_Concat(__pyx_kp_u_Processing_sample_directory, __pyx_t_3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 204, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_version); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 208, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_6);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = NULL;
+  __pyx_t_3 = __Pyx_PyObject_FormatSimple(__pyx_t_6, __pyx_empty_unicode); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 208, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+  __pyx_t_14 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_3) > __pyx_t_14) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_3) : __pyx_t_14;
+  __pyx_t_13 += __Pyx_PyUnicode_GET_LENGTH(__pyx_t_3);
+  __Pyx_GIVEREF(__pyx_t_3);
+  PyTuple_SET_ITEM(__pyx_t_5, 1, __pyx_t_3);
+  __pyx_t_3 = 0;
+  __Pyx_INCREF(__pyx_kp_u__12);
+  __pyx_t_13 += 1;
+  __Pyx_GIVEREF(__pyx_kp_u__12);
+  PyTuple_SET_ITEM(__pyx_t_5, 2, __pyx_kp_u__12);
+  __pyx_t_3 = __Pyx_PyUnicode_Join(__pyx_t_5, 3, __pyx_t_13, __pyx_t_14); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 208, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+  __pyx_t_5 = NULL;
   __pyx_t_4 = 0;
   #if CYTHON_UNPACK_METHODS
   if (unlikely(PyMethod_Check(__pyx_t_1))) {
-    __pyx_t_3 = PyMethod_GET_SELF(__pyx_t_1);
-    if (likely(__pyx_t_3)) {
+    __pyx_t_5 = PyMethod_GET_SELF(__pyx_t_1);
+    if (likely(__pyx_t_5)) {
       PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_1);
-      __Pyx_INCREF(__pyx_t_3);
+      __Pyx_INCREF(__pyx_t_5);
       __Pyx_INCREF(function);
       __Pyx_DECREF_SET(__pyx_t_1, function);
       __pyx_t_4 = 1;
@@ -8780,173 +9032,218 @@ static PyObject *__pyx_pf_8tidesurf_4main_2main(CYTHON_UNUSED PyObject *__pyx_se
   }
   #endif
   {
-    PyObject *__pyx_callargs[2] = {__pyx_t_3, __pyx_t_2};
+    PyObject *__pyx_callargs[2] = {__pyx_t_5, __pyx_t_3};
     __pyx_t_7 = __Pyx_PyObject_FastCall(__pyx_t_1, __pyx_callargs+1-__pyx_t_4, 1+__pyx_t_4);
-    __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 204, __pyx_L1_error)
+    __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 208, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_7);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   }
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
 
-  /* "tidesurf/main.py":205
+  /* "tidesurf/main.py":209
+ * 
+ *     log.info(f"Running tidesurf {tidesurf.__version__}.")
+ *     log.info(f"Processing sample directory: {args.sample_dir}")             # <<<<<<<<<<<<<<
+ *     run(
+ *         sample_dir=args.sample_dir,
+ */
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_log); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 209, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_info); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 209, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_args, __pyx_n_s_sample_dir); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 209, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_5 = __Pyx_PyObject_FormatSimple(__pyx_t_1, __pyx_empty_unicode); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 209, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_5);
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_t_1 = __Pyx_PyUnicode_Concat(__pyx_kp_u_Processing_sample_directory, __pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 209, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+  __pyx_t_5 = NULL;
+  __pyx_t_4 = 0;
+  #if CYTHON_UNPACK_METHODS
+  if (unlikely(PyMethod_Check(__pyx_t_3))) {
+    __pyx_t_5 = PyMethod_GET_SELF(__pyx_t_3);
+    if (likely(__pyx_t_5)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_3);
+      __Pyx_INCREF(__pyx_t_5);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_3, function);
+      __pyx_t_4 = 1;
+    }
+  }
+  #endif
+  {
+    PyObject *__pyx_callargs[2] = {__pyx_t_5, __pyx_t_1};
+    __pyx_t_7 = __Pyx_PyObject_FastCall(__pyx_t_3, __pyx_callargs+1-__pyx_t_4, 1+__pyx_t_4);
+    __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+    if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 209, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_7);
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  }
+  __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
+
+  /* "tidesurf/main.py":210
  *     log.info(f"Running tidesurf {tidesurf.__version__}.")
  *     log.info(f"Processing sample directory: {args.sample_dir}")
  *     run(             # <<<<<<<<<<<<<<
  *         sample_dir=args.sample_dir,
  *         gtf_file=args.gtf_file,
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_7, __pyx_n_s_run); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 205, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_7, __pyx_n_s_run); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 210, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
 
-  /* "tidesurf/main.py":206
+  /* "tidesurf/main.py":211
  *     log.info(f"Processing sample directory: {args.sample_dir}")
  *     run(
  *         sample_dir=args.sample_dir,             # <<<<<<<<<<<<<<
  *         gtf_file=args.gtf_file,
  *         output=args.output,
  */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(9); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 206, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(9); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 211, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_args, __pyx_n_s_sample_dir); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 211, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_args, __pyx_n_s_sample_dir); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 206, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_sample_dir, __pyx_t_2) < 0) __PYX_ERR(0, 206, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_sample_dir, __pyx_t_1) < 0) __PYX_ERR(0, 211, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "tidesurf/main.py":207
+  /* "tidesurf/main.py":212
  *     run(
  *         sample_dir=args.sample_dir,
  *         gtf_file=args.gtf_file,             # <<<<<<<<<<<<<<
  *         output=args.output,
  *         orientation=args.orientation,
  */
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_args, __pyx_n_s_gtf_file); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 207, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_gtf_file, __pyx_t_2) < 0) __PYX_ERR(0, 206, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_args, __pyx_n_s_gtf_file); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 212, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_gtf_file, __pyx_t_1) < 0) __PYX_ERR(0, 211, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "tidesurf/main.py":208
+  /* "tidesurf/main.py":213
  *         sample_dir=args.sample_dir,
  *         gtf_file=args.gtf_file,
  *         output=args.output,             # <<<<<<<<<<<<<<
  *         orientation=args.orientation,
  *         filter_cells=not args.no_filter_cells,
  */
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_args, __pyx_n_s_output); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 208, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_output, __pyx_t_2) < 0) __PYX_ERR(0, 206, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_args, __pyx_n_s_output_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 213, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_output_2, __pyx_t_1) < 0) __PYX_ERR(0, 211, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "tidesurf/main.py":209
+  /* "tidesurf/main.py":214
  *         gtf_file=args.gtf_file,
  *         output=args.output,
  *         orientation=args.orientation,             # <<<<<<<<<<<<<<
  *         filter_cells=not args.no_filter_cells,
  *         whitelist=args.whitelist,
  */
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_args, __pyx_n_s_orientation); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 209, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_orientation, __pyx_t_2) < 0) __PYX_ERR(0, 206, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_args, __pyx_n_s_orientation_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 214, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_orientation_2, __pyx_t_1) < 0) __PYX_ERR(0, 211, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "tidesurf/main.py":210
+  /* "tidesurf/main.py":215
  *         output=args.output,
  *         orientation=args.orientation,
  *         filter_cells=not args.no_filter_cells,             # <<<<<<<<<<<<<<
  *         whitelist=args.whitelist,
  *         num_umis=args.num_umis,
  */
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_args, __pyx_n_s_no_filter_cells_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 210, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_10 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely((__pyx_t_10 < 0))) __PYX_ERR(0, 210, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyBool_FromLong((!__pyx_t_10)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 210, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_filter_cells, __pyx_t_2) < 0) __PYX_ERR(0, 206, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_args, __pyx_n_s_no_filter_cells_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 215, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_10 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely((__pyx_t_10 < 0))) __PYX_ERR(0, 215, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_t_1 = __Pyx_PyBool_FromLong((!__pyx_t_10)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 215, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_filter_cells, __pyx_t_1) < 0) __PYX_ERR(0, 211, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "tidesurf/main.py":211
+  /* "tidesurf/main.py":216
  *         orientation=args.orientation,
  *         filter_cells=not args.no_filter_cells,
  *         whitelist=args.whitelist,             # <<<<<<<<<<<<<<
  *         num_umis=args.num_umis,
  *         min_intron_overlap=args.min_intron_overlap,
  */
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_args, __pyx_n_s_whitelist); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 211, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_whitelist, __pyx_t_2) < 0) __PYX_ERR(0, 206, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_args, __pyx_n_s_whitelist_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 216, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_whitelist_2, __pyx_t_1) < 0) __PYX_ERR(0, 211, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "tidesurf/main.py":212
+  /* "tidesurf/main.py":217
  *         filter_cells=not args.no_filter_cells,
  *         whitelist=args.whitelist,
  *         num_umis=args.num_umis,             # <<<<<<<<<<<<<<
  *         min_intron_overlap=args.min_intron_overlap,
  *         multi_mapped_reads=args.multi_mapped_reads,
  */
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_args, __pyx_n_s_num_umis); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 212, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_num_umis, __pyx_t_2) < 0) __PYX_ERR(0, 206, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_args, __pyx_n_s_num_umis_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 217, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_num_umis_2, __pyx_t_1) < 0) __PYX_ERR(0, 211, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "tidesurf/main.py":213
+  /* "tidesurf/main.py":218
  *         whitelist=args.whitelist,
  *         num_umis=args.num_umis,
  *         min_intron_overlap=args.min_intron_overlap,             # <<<<<<<<<<<<<<
  *         multi_mapped_reads=args.multi_mapped_reads,
  *     )
  */
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_args, __pyx_n_s_min_intron_overlap); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 213, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_min_intron_overlap, __pyx_t_2) < 0) __PYX_ERR(0, 206, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_args, __pyx_n_s_min_intron_overlap_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 218, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_min_intron_overlap_2, __pyx_t_1) < 0) __PYX_ERR(0, 211, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "tidesurf/main.py":214
+  /* "tidesurf/main.py":219
  *         num_umis=args.num_umis,
  *         min_intron_overlap=args.min_intron_overlap,
  *         multi_mapped_reads=args.multi_mapped_reads,             # <<<<<<<<<<<<<<
  *     )
  *     end_time = datetime.now()
  */
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_args, __pyx_n_s_multi_mapped_reads); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 214, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_multi_mapped_reads, __pyx_t_2) < 0) __PYX_ERR(0, 206, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_args, __pyx_n_s_multi_mapped_reads_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 219, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_multi_mapped_reads_2, __pyx_t_1) < 0) __PYX_ERR(0, 211, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "tidesurf/main.py":205
+  /* "tidesurf/main.py":210
  *     log.info(f"Running tidesurf {tidesurf.__version__}.")
  *     log.info(f"Processing sample directory: {args.sample_dir}")
  *     run(             # <<<<<<<<<<<<<<
  *         sample_dir=args.sample_dir,
  *         gtf_file=args.gtf_file,
  */
-  __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_7, __pyx_empty_tuple, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 205, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_7, __pyx_empty_tuple, __pyx_t_3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 210, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "tidesurf/main.py":216
+  /* "tidesurf/main.py":221
  *         multi_mapped_reads=args.multi_mapped_reads,
  *     )
  *     end_time = datetime.now()             # <<<<<<<<<<<<<<
  *     log.info(f"Finished in {end_time - start_time}.")
  * 
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_datetime); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 216, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_now); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 216, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_datetime); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 221, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_now); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 221, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = NULL;
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_t_3 = NULL;
   __pyx_t_4 = 0;
   #if CYTHON_UNPACK_METHODS
   if (unlikely(PyMethod_Check(__pyx_t_7))) {
-    __pyx_t_1 = PyMethod_GET_SELF(__pyx_t_7);
-    if (likely(__pyx_t_1)) {
+    __pyx_t_3 = PyMethod_GET_SELF(__pyx_t_7);
+    if (likely(__pyx_t_3)) {
       PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_7);
-      __Pyx_INCREF(__pyx_t_1);
+      __Pyx_INCREF(__pyx_t_3);
       __Pyx_INCREF(function);
       __Pyx_DECREF_SET(__pyx_t_7, function);
       __pyx_t_4 = 1;
@@ -8954,29 +9251,29 @@ static PyObject *__pyx_pf_8tidesurf_4main_2main(CYTHON_UNUSED PyObject *__pyx_se
   }
   #endif
   {
-    PyObject *__pyx_callargs[2] = {__pyx_t_1, NULL};
-    __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_7, __pyx_callargs+1-__pyx_t_4, 0+__pyx_t_4);
-    __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
-    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 216, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
+    PyObject *__pyx_callargs[2] = {__pyx_t_3, NULL};
+    __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_7, __pyx_callargs+1-__pyx_t_4, 0+__pyx_t_4);
+    __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 221, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
   }
-  __pyx_v_end_time = __pyx_t_2;
-  __pyx_t_2 = 0;
+  __pyx_v_end_time = __pyx_t_1;
+  __pyx_t_1 = 0;
 
-  /* "tidesurf/main.py":217
+  /* "tidesurf/main.py":222
  *     )
  *     end_time = datetime.now()
  *     log.info(f"Finished in {end_time - start_time}.")             # <<<<<<<<<<<<<<
  * 
  * 
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_7, __pyx_n_s_log); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 217, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_7, __pyx_n_s_log); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 222, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_7, __pyx_n_s_info); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 217, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_7, __pyx_n_s_info); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 222, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-  __pyx_t_7 = PyTuple_New(3); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 217, __pyx_L1_error)
+  __pyx_t_7 = PyTuple_New(3); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 222, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
   __pyx_t_13 = 0;
   __pyx_t_14 = 127;
@@ -8984,54 +9281,54 @@ static PyObject *__pyx_pf_8tidesurf_4main_2main(CYTHON_UNUSED PyObject *__pyx_se
   __pyx_t_13 += 12;
   __Pyx_GIVEREF(__pyx_kp_u_Finished_in);
   PyTuple_SET_ITEM(__pyx_t_7, 0, __pyx_kp_u_Finished_in);
-  __pyx_t_3 = PyNumber_Subtract(__pyx_v_end_time, __pyx_v_start_time); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 217, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_6 = __Pyx_PyObject_FormatSimple(__pyx_t_3, __pyx_empty_unicode); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 217, __pyx_L1_error)
+  __pyx_t_5 = PyNumber_Subtract(__pyx_v_end_time, __pyx_v_start_time); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 222, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_5);
+  __pyx_t_6 = __Pyx_PyObject_FormatSimple(__pyx_t_5, __pyx_empty_unicode); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 222, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __pyx_t_14 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_6) > __pyx_t_14) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_6) : __pyx_t_14;
   __pyx_t_13 += __Pyx_PyUnicode_GET_LENGTH(__pyx_t_6);
   __Pyx_GIVEREF(__pyx_t_6);
   PyTuple_SET_ITEM(__pyx_t_7, 1, __pyx_t_6);
   __pyx_t_6 = 0;
-  __Pyx_INCREF(__pyx_kp_u__2);
+  __Pyx_INCREF(__pyx_kp_u__12);
   __pyx_t_13 += 1;
-  __Pyx_GIVEREF(__pyx_kp_u__2);
-  PyTuple_SET_ITEM(__pyx_t_7, 2, __pyx_kp_u__2);
-  __pyx_t_6 = __Pyx_PyUnicode_Join(__pyx_t_7, 3, __pyx_t_13, __pyx_t_14); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 217, __pyx_L1_error)
+  __Pyx_GIVEREF(__pyx_kp_u__12);
+  PyTuple_SET_ITEM(__pyx_t_7, 2, __pyx_kp_u__12);
+  __pyx_t_6 = __Pyx_PyUnicode_Join(__pyx_t_7, 3, __pyx_t_13, __pyx_t_14); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 222, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
   __pyx_t_7 = NULL;
   __pyx_t_4 = 0;
   #if CYTHON_UNPACK_METHODS
-  if (unlikely(PyMethod_Check(__pyx_t_1))) {
-    __pyx_t_7 = PyMethod_GET_SELF(__pyx_t_1);
+  if (unlikely(PyMethod_Check(__pyx_t_3))) {
+    __pyx_t_7 = PyMethod_GET_SELF(__pyx_t_3);
     if (likely(__pyx_t_7)) {
-      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_1);
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_3);
       __Pyx_INCREF(__pyx_t_7);
       __Pyx_INCREF(function);
-      __Pyx_DECREF_SET(__pyx_t_1, function);
+      __Pyx_DECREF_SET(__pyx_t_3, function);
       __pyx_t_4 = 1;
     }
   }
   #endif
   {
     PyObject *__pyx_callargs[2] = {__pyx_t_7, __pyx_t_6};
-    __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_1, __pyx_callargs+1-__pyx_t_4, 1+__pyx_t_4);
+    __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_3, __pyx_callargs+1-__pyx_t_4, 1+__pyx_t_4);
     __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 217, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
-    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 222, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   }
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "tidesurf/main.py":118
+  /* "tidesurf/main.py":185
  * 
  * 
- * def main() -> None:             # <<<<<<<<<<<<<<
+ * def main(arg_list: Optional[List[str]] = None) -> None:             # <<<<<<<<<<<<<<
  *     start_time = datetime.now()
- *     parser = argparse.ArgumentParser(
+ * 
  */
 
   /* function exit code */
@@ -9050,8 +9347,6 @@ static PyObject *__pyx_pf_8tidesurf_4main_2main(CYTHON_UNUSED PyObject *__pyx_se
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XDECREF(__pyx_v_start_time);
-  __Pyx_XDECREF(__pyx_v_parser);
-  __Pyx_XDECREF(__pyx_v_arg_group);
   __Pyx_XDECREF(__pyx_v_args);
   __Pyx_XDECREF(__pyx_v_end_time);
   __Pyx_XGIVEREF(__pyx_r);
@@ -9075,7 +9370,6 @@ static PyMethodDef __pyx_methods[] = {
 
 static int __Pyx_CreateStringTabAndInitStrings(void) {
   __Pyx_StringTabEntry __pyx_string_tab[] = {
-    {&__pyx_kp_u_, __pyx_k_, sizeof(__pyx_k_), 0, 1, 0, 0},
     {&__pyx_n_s_AnnData, __pyx_k_AnnData, sizeof(__pyx_k_AnnData), 0, 0, 1, 1},
     {&__pyx_n_s_ArgumentParser, __pyx_k_ArgumentParser, sizeof(__pyx_k_ArgumentParser), 0, 0, 1, 1},
     {&__pyx_kp_u_Building_transcript_index, __pyx_k_Building_transcript_index, sizeof(__pyx_k_Building_transcript_index), 0, 1, 0, 0},
@@ -9087,6 +9381,7 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_n_u_GTF_FILE, __pyx_k_GTF_FILE, sizeof(__pyx_k_GTF_FILE), 0, 1, 0, 1},
     {&__pyx_kp_u_GTF_file_with_transcript_informa, __pyx_k_GTF_file_with_transcript_informa, sizeof(__pyx_k_GTF_file_with_transcript_informa), 0, 1, 0, 0},
     {&__pyx_n_s_INFO, __pyx_k_INFO, sizeof(__pyx_k_INFO), 0, 0, 1, 1},
+    {&__pyx_n_s_List, __pyx_k_List, sizeof(__pyx_k_List), 0, 0, 1, 1},
     {&__pyx_n_s_Literal, __pyx_k_Literal, sizeof(__pyx_k_Literal), 0, 0, 1, 1},
     {&__pyx_kp_s_Literal_sense_antisense, __pyx_k_Literal_sense_antisense, sizeof(__pyx_k_Literal_sense_antisense), 0, 0, 1, 0},
     {&__pyx_n_s_MemoryError, __pyx_k_MemoryError, sizeof(__pyx_k_MemoryError), 0, 0, 1, 1},
@@ -9097,6 +9392,7 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_n_s_None, __pyx_k_None, sizeof(__pyx_k_None), 0, 0, 1, 1},
     {&__pyx_kp_u_None, __pyx_k_None, sizeof(__pyx_k_None), 0, 1, 0, 0},
     {&__pyx_n_s_Optional, __pyx_k_Optional, sizeof(__pyx_k_Optional), 0, 0, 1, 1},
+    {&__pyx_kp_s_Optional_List_str, __pyx_k_Optional_List_str, sizeof(__pyx_k_Optional_List_str), 0, 0, 1, 0},
     {&__pyx_kp_s_Optional_int, __pyx_k_Optional_int, sizeof(__pyx_k_Optional_int), 0, 0, 1, 0},
     {&__pyx_kp_s_Optional_str, __pyx_k_Optional_str, sizeof(__pyx_k_Optional_str), 0, 0, 1, 0},
     {&__pyx_kp_u_Orientation_of_reads_with_respec, __pyx_k_Orientation_of_reads_with_respec, sizeof(__pyx_k_Orientation_of_reads_with_respec), 0, 1, 0, 0},
@@ -9115,9 +9411,10 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_kp_u_Writing_output, __pyx_k_Writing_output, sizeof(__pyx_k_Writing_output), 0, 1, 0, 0},
     {&__pyx_n_s_X, __pyx_k_X, sizeof(__pyx_k_X), 0, 0, 1, 1},
     {&__pyx_kp_u_Y_m_d_H_M_S, __pyx_k_Y_m_d_H_M_S, sizeof(__pyx_k_Y_m_d_H_M_S), 0, 1, 0, 0},
+    {&__pyx_kp_u__11, __pyx_k__11, sizeof(__pyx_k__11), 0, 1, 0, 0},
+    {&__pyx_kp_u__12, __pyx_k__12, sizeof(__pyx_k__12), 0, 1, 0, 0},
     {&__pyx_n_s__13, __pyx_k__13, sizeof(__pyx_k__13), 0, 0, 1, 1},
-    {&__pyx_n_s__19, __pyx_k__19, sizeof(__pyx_k__19), 0, 0, 1, 1},
-    {&__pyx_kp_u__2, __pyx_k__2, sizeof(__pyx_k__2), 0, 1, 0, 0},
+    {&__pyx_n_s__22, __pyx_k__22, sizeof(__pyx_k__22), 0, 0, 1, 1},
     {&__pyx_n_s_action, __pyx_k_action, sizeof(__pyx_k_action), 0, 0, 1, 1},
     {&__pyx_n_s_ad, __pyx_k_ad, sizeof(__pyx_k_ad), 0, 0, 1, 1},
     {&__pyx_n_s_adata, __pyx_k_adata, sizeof(__pyx_k_adata), 0, 0, 1, 1},
@@ -9127,7 +9424,9 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_n_s_anndata, __pyx_k_anndata, sizeof(__pyx_k_anndata), 0, 0, 1, 1},
     {&__pyx_n_u_antisense, __pyx_k_antisense, sizeof(__pyx_k_antisense), 0, 1, 0, 1},
     {&__pyx_n_s_arg_group, __pyx_k_arg_group, sizeof(__pyx_k_arg_group), 0, 0, 1, 1},
+    {&__pyx_n_s_arg_list, __pyx_k_arg_list, sizeof(__pyx_k_arg_list), 0, 0, 1, 1},
     {&__pyx_n_s_argparse, __pyx_k_argparse, sizeof(__pyx_k_argparse), 0, 0, 1, 1},
+    {&__pyx_kp_s_argparse_Namespace, __pyx_k_argparse_Namespace, sizeof(__pyx_k_argparse_Namespace), 0, 0, 1, 0},
     {&__pyx_n_s_args, __pyx_k_args, sizeof(__pyx_k_args), 0, 0, 1, 1},
     {&__pyx_kp_u_asctime_s_module_s_levelname_s, __pyx_k_asctime_s_module_s_levelname_s, sizeof(__pyx_k_asctime_s_module_s_levelname_s), 0, 1, 0, 0},
     {&__pyx_n_s_asyncio_coroutines, __pyx_k_asyncio_coroutines, sizeof(__pyx_k_asyncio_coroutines), 0, 0, 1, 1},
@@ -9183,26 +9482,26 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_n_s_main_2, __pyx_k_main_2, sizeof(__pyx_k_main_2), 0, 0, 1, 1},
     {&__pyx_n_s_makedirs, __pyx_k_makedirs, sizeof(__pyx_k_makedirs), 0, 0, 1, 1},
     {&__pyx_n_s_metavar, __pyx_k_metavar, sizeof(__pyx_k_metavar), 0, 0, 1, 1},
-    {&__pyx_n_s_min_intron_overlap, __pyx_k_min_intron_overlap, sizeof(__pyx_k_min_intron_overlap), 0, 0, 1, 1},
-    {&__pyx_kp_u_min_intron_overlap_2, __pyx_k_min_intron_overlap_2, sizeof(__pyx_k_min_intron_overlap_2), 0, 1, 0, 0},
+    {&__pyx_kp_u_min_intron_overlap, __pyx_k_min_intron_overlap, sizeof(__pyx_k_min_intron_overlap), 0, 1, 0, 0},
+    {&__pyx_n_s_min_intron_overlap_2, __pyx_k_min_intron_overlap_2, sizeof(__pyx_k_min_intron_overlap_2), 0, 0, 1, 1},
     {&__pyx_n_s_mode, __pyx_k_mode, sizeof(__pyx_k_mode), 0, 0, 1, 1},
     {&__pyx_n_u_multi, __pyx_k_multi, sizeof(__pyx_k_multi), 0, 1, 0, 1},
-    {&__pyx_n_s_multi_mapped_reads, __pyx_k_multi_mapped_reads, sizeof(__pyx_k_multi_mapped_reads), 0, 0, 1, 1},
-    {&__pyx_kp_u_multi_mapped_reads_2, __pyx_k_multi_mapped_reads_2, sizeof(__pyx_k_multi_mapped_reads_2), 0, 1, 0, 0},
+    {&__pyx_kp_u_multi_mapped_reads, __pyx_k_multi_mapped_reads, sizeof(__pyx_k_multi_mapped_reads), 0, 1, 0, 0},
+    {&__pyx_n_s_multi_mapped_reads_2, __pyx_k_multi_mapped_reads_2, sizeof(__pyx_k_multi_mapped_reads_2), 0, 0, 1, 1},
     {&__pyx_n_s_name, __pyx_k_name, sizeof(__pyx_k_name), 0, 0, 1, 1},
     {&__pyx_kp_u_no_filter_cells, __pyx_k_no_filter_cells, sizeof(__pyx_k_no_filter_cells), 0, 1, 0, 0},
     {&__pyx_n_s_no_filter_cells_2, __pyx_k_no_filter_cells_2, sizeof(__pyx_k_no_filter_cells_2), 0, 0, 1, 1},
     {&__pyx_n_s_now, __pyx_k_now, sizeof(__pyx_k_now), 0, 0, 1, 1},
-    {&__pyx_n_s_num_umis, __pyx_k_num_umis, sizeof(__pyx_k_num_umis), 0, 0, 1, 1},
-    {&__pyx_kp_u_num_umis_2, __pyx_k_num_umis_2, sizeof(__pyx_k_num_umis_2), 0, 1, 0, 0},
+    {&__pyx_kp_u_num_umis, __pyx_k_num_umis, sizeof(__pyx_k_num_umis), 0, 1, 0, 0},
+    {&__pyx_n_s_num_umis_2, __pyx_k_num_umis_2, sizeof(__pyx_k_num_umis_2), 0, 0, 1, 1},
     {&__pyx_kp_u_o, __pyx_k_o, sizeof(__pyx_k_o), 0, 1, 0, 0},
     {&__pyx_n_s_obs_names, __pyx_k_obs_names, sizeof(__pyx_k_obs_names), 0, 0, 1, 1},
-    {&__pyx_n_s_orientation, __pyx_k_orientation, sizeof(__pyx_k_orientation), 0, 0, 1, 1},
-    {&__pyx_kp_u_orientation_2, __pyx_k_orientation_2, sizeof(__pyx_k_orientation_2), 0, 1, 0, 0},
+    {&__pyx_kp_u_orientation, __pyx_k_orientation, sizeof(__pyx_k_orientation), 0, 1, 0, 0},
+    {&__pyx_n_s_orientation_2, __pyx_k_orientation_2, sizeof(__pyx_k_orientation_2), 0, 0, 1, 1},
     {&__pyx_kp_u_orientation_3, __pyx_k_orientation_3, sizeof(__pyx_k_orientation_3), 0, 1, 0, 0},
     {&__pyx_n_s_os, __pyx_k_os, sizeof(__pyx_k_os), 0, 0, 1, 1},
-    {&__pyx_n_s_output, __pyx_k_output, sizeof(__pyx_k_output), 0, 0, 1, 1},
-    {&__pyx_kp_u_output_2, __pyx_k_output_2, sizeof(__pyx_k_output_2), 0, 1, 0, 0},
+    {&__pyx_kp_u_output, __pyx_k_output, sizeof(__pyx_k_output), 0, 1, 0, 0},
+    {&__pyx_n_s_output_2, __pyx_k_output_2, sizeof(__pyx_k_output_2), 0, 0, 1, 1},
     {&__pyx_kp_u_outs_filtered_feature_bc_matrix, __pyx_k_outs_filtered_feature_bc_matrix, sizeof(__pyx_k_outs_filtered_feature_bc_matrix), 0, 1, 0, 0},
     {&__pyx_kp_u_outs_per_sample_outs, __pyx_k_outs_per_sample_outs, sizeof(__pyx_k_outs_per_sample_outs), 0, 1, 0, 0},
     {&__pyx_kp_u_outs_per_sample_outs_count, __pyx_k_outs_per_sample_outs_count, sizeof(__pyx_k_outs_per_sample_outs_count), 0, 1, 0, 0},
@@ -9230,8 +9529,8 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_n_s_str, __pyx_k_str, sizeof(__pyx_k_str), 0, 0, 1, 1},
     {&__pyx_n_s_t_idx, __pyx_k_t_idx, sizeof(__pyx_k_t_idx), 0, 0, 1, 1},
     {&__pyx_n_s_test, __pyx_k_test, sizeof(__pyx_k_test), 0, 0, 1, 1},
-    {&__pyx_n_u_tidesurf, __pyx_k_tidesurf, sizeof(__pyx_k_tidesurf), 0, 1, 0, 1},
-    {&__pyx_n_s_tidesurf_2, __pyx_k_tidesurf_2, sizeof(__pyx_k_tidesurf_2), 0, 0, 1, 1},
+    {&__pyx_n_s_tidesurf, __pyx_k_tidesurf, sizeof(__pyx_k_tidesurf), 0, 0, 1, 1},
+    {&__pyx_n_u_tidesurf_2, __pyx_k_tidesurf_2, sizeof(__pyx_k_tidesurf_2), 0, 1, 0, 1},
     {&__pyx_kp_u_tidesurf_h5ad, __pyx_k_tidesurf_h5ad, sizeof(__pyx_k_tidesurf_h5ad), 0, 1, 0, 0},
     {&__pyx_kp_u_tidesurf_log, __pyx_k_tidesurf_log, sizeof(__pyx_k_tidesurf_log), 0, 1, 0, 0},
     {&__pyx_n_s_tidesurf_main, __pyx_k_tidesurf_main, sizeof(__pyx_k_tidesurf_main), 0, 0, 1, 1},
@@ -9248,8 +9547,8 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_n_s_version_3, __pyx_k_version_3, sizeof(__pyx_k_version_3), 0, 0, 1, 1},
     {&__pyx_n_u_version_3, __pyx_k_version_3, sizeof(__pyx_k_version_3), 0, 1, 0, 1},
     {&__pyx_n_u_w, __pyx_k_w, sizeof(__pyx_k_w), 0, 1, 0, 1},
-    {&__pyx_n_s_whitelist, __pyx_k_whitelist, sizeof(__pyx_k_whitelist), 0, 0, 1, 1},
-    {&__pyx_kp_u_whitelist_2, __pyx_k_whitelist_2, sizeof(__pyx_k_whitelist_2), 0, 1, 0, 0},
+    {&__pyx_kp_u_whitelist, __pyx_k_whitelist, sizeof(__pyx_k_whitelist), 0, 1, 0, 0},
+    {&__pyx_n_s_whitelist_2, __pyx_k_whitelist_2, sizeof(__pyx_k_whitelist_2), 0, 0, 1, 1},
     {&__pyx_n_s_wl, __pyx_k_wl, sizeof(__pyx_k_wl), 0, 0, 1, 1},
     {&__pyx_n_s_write_h5ad, __pyx_k_write_h5ad, sizeof(__pyx_k_write_h5ad), 0, 0, 1, 1},
     {&__pyx_n_s_zip, __pyx_k_zip, sizeof(__pyx_k_zip), 0, 0, 1, 1},
@@ -9259,7 +9558,7 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
 }
 /* #### Code section: cached_builtins ### */
 static CYTHON_SMALL_CODE int __Pyx_InitCachedBuiltins(void) {
-  __pyx_builtin_zip = __Pyx_GetBuiltinName(__pyx_n_s_zip); if (!__pyx_builtin_zip) __PYX_ERR(0, 83, __pyx_L1_error)
+  __pyx_builtin_zip = __Pyx_GetBuiltinName(__pyx_n_s_zip); if (!__pyx_builtin_zip) __PYX_ERR(0, 150, __pyx_L1_error)
   __pyx_builtin_MemoryError = __Pyx_GetBuiltinName(__pyx_n_s_MemoryError); if (!__pyx_builtin_MemoryError) __PYX_ERR(2, 120, __pyx_L1_error)
   return 0;
   __pyx_L1_error:;
@@ -9271,142 +9570,157 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__Pyx_InitCachedConstants", 0);
 
-  /* "tidesurf/main.py":126
+  /* "tidesurf/main.py":26
  *         formatter_class=argparse.RawDescriptionHelpFormatter,
  *     )
  *     parser.add_argument(             # <<<<<<<<<<<<<<
  *         "-v",
  *         "--version",
  */
-  __pyx_tuple__3 = PyTuple_Pack(2, __pyx_kp_u_v, __pyx_kp_u_version_2); if (unlikely(!__pyx_tuple__3)) __PYX_ERR(0, 126, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__3);
-  __Pyx_GIVEREF(__pyx_tuple__3);
+  __pyx_tuple_ = PyTuple_Pack(2, __pyx_kp_u_v, __pyx_kp_u_version_2); if (unlikely(!__pyx_tuple_)) __PYX_ERR(0, 26, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple_);
+  __Pyx_GIVEREF(__pyx_tuple_);
 
-  /* "tidesurf/main.py":132
+  /* "tidesurf/main.py":32
  *         version=f"%(prog)s {tidesurf.__version__}",
  *     )
  *     parser.add_argument(             # <<<<<<<<<<<<<<
  *         "--orientation",
  *         type=str,
  */
-  __pyx_tuple__4 = PyTuple_Pack(1, __pyx_kp_u_orientation_3); if (unlikely(!__pyx_tuple__4)) __PYX_ERR(0, 132, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__4);
-  __Pyx_GIVEREF(__pyx_tuple__4);
+  __pyx_tuple__2 = PyTuple_Pack(1, __pyx_kp_u_orientation); if (unlikely(!__pyx_tuple__2)) __PYX_ERR(0, 32, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__2);
+  __Pyx_GIVEREF(__pyx_tuple__2);
 
-  /* "tidesurf/main.py":141
+  /* "tidesurf/main.py":41
  *         "five prime.",
  *     )
  *     parser.add_argument(             # <<<<<<<<<<<<<<
  *         "-o", "--output", type=str, default="tidesurf_out", help="Output directory."
  *     )
  */
-  __pyx_tuple__5 = PyTuple_Pack(2, __pyx_kp_u_o, __pyx_kp_u_output_2); if (unlikely(!__pyx_tuple__5)) __PYX_ERR(0, 141, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__5);
-  __Pyx_GIVEREF(__pyx_tuple__5);
+  __pyx_tuple__3 = PyTuple_Pack(2, __pyx_kp_u_o, __pyx_kp_u_output); if (unlikely(!__pyx_tuple__3)) __PYX_ERR(0, 41, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__3);
+  __Pyx_GIVEREF(__pyx_tuple__3);
 
-  /* "tidesurf/main.py":144
+  /* "tidesurf/main.py":44
  *         "-o", "--output", type=str, default="tidesurf_out", help="Output directory."
  *     )
  *     parser.add_argument(             # <<<<<<<<<<<<<<
  *         "--no_filter_cells",
  *         action="store_true",
  */
-  __pyx_tuple__6 = PyTuple_Pack(1, __pyx_kp_u_no_filter_cells); if (unlikely(!__pyx_tuple__6)) __PYX_ERR(0, 144, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__6);
-  __Pyx_GIVEREF(__pyx_tuple__6);
+  __pyx_tuple__4 = PyTuple_Pack(1, __pyx_kp_u_no_filter_cells); if (unlikely(!__pyx_tuple__4)) __PYX_ERR(0, 44, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__4);
+  __Pyx_GIVEREF(__pyx_tuple__4);
 
-  /* "tidesurf/main.py":150
+  /* "tidesurf/main.py":50
  *     )
  *     arg_group = parser.add_mutually_exclusive_group()
  *     arg_group.add_argument(             # <<<<<<<<<<<<<<
  *         "--whitelist",
  *         type=str,
  */
-  __pyx_tuple__7 = PyTuple_Pack(1, __pyx_kp_u_whitelist_2); if (unlikely(!__pyx_tuple__7)) __PYX_ERR(0, 150, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__7);
-  __Pyx_GIVEREF(__pyx_tuple__7);
+  __pyx_tuple__5 = PyTuple_Pack(1, __pyx_kp_u_whitelist); if (unlikely(!__pyx_tuple__5)) __PYX_ERR(0, 50, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__5);
+  __Pyx_GIVEREF(__pyx_tuple__5);
 
-  /* "tidesurf/main.py":157
+  /* "tidesurf/main.py":57
  *         "path to a whitelist.",
  *     )
  *     arg_group.add_argument(             # <<<<<<<<<<<<<<
  *         "--num_umis",
  *         type=int,
  */
-  __pyx_tuple__8 = PyTuple_Pack(1, __pyx_kp_u_num_umis_2); if (unlikely(!__pyx_tuple__8)) __PYX_ERR(0, 157, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__8);
-  __Pyx_GIVEREF(__pyx_tuple__8);
+  __pyx_tuple__6 = PyTuple_Pack(1, __pyx_kp_u_num_umis); if (unlikely(!__pyx_tuple__6)) __PYX_ERR(0, 57, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__6);
+  __Pyx_GIVEREF(__pyx_tuple__6);
 
-  /* "tidesurf/main.py":162
+  /* "tidesurf/main.py":62
  *         help="Minimum number of UMIs for filtering a cell.",
  *     )
  *     parser.add_argument(             # <<<<<<<<<<<<<<
  *         "--min_intron_overlap",
  *         type=int,
  */
-  __pyx_tuple__9 = PyTuple_Pack(1, __pyx_kp_u_min_intron_overlap_2); if (unlikely(!__pyx_tuple__9)) __PYX_ERR(0, 162, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__9);
-  __Pyx_GIVEREF(__pyx_tuple__9);
+  __pyx_tuple__7 = PyTuple_Pack(1, __pyx_kp_u_min_intron_overlap); if (unlikely(!__pyx_tuple__7)) __PYX_ERR(0, 62, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__7);
+  __Pyx_GIVEREF(__pyx_tuple__7);
 
-  /* "tidesurf/main.py":169
+  /* "tidesurf/main.py":69
  *         "intron to be considered intronic.",
  *     )
  *     parser.add_argument(             # <<<<<<<<<<<<<<
  *         "--multi_mapped_reads",
  *         action="store_true",
  */
-  __pyx_tuple__10 = PyTuple_Pack(1, __pyx_kp_u_multi_mapped_reads_2); if (unlikely(!__pyx_tuple__10)) __PYX_ERR(0, 169, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__10);
-  __Pyx_GIVEREF(__pyx_tuple__10);
+  __pyx_tuple__8 = PyTuple_Pack(1, __pyx_kp_u_multi_mapped_reads); if (unlikely(!__pyx_tuple__8)) __PYX_ERR(0, 69, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__8);
+  __Pyx_GIVEREF(__pyx_tuple__8);
 
-  /* "tidesurf/main.py":175
+  /* "tidesurf/main.py":75
  *         "(default: reads mapping to more than one gene are discarded).",
  *     )
  *     parser.add_argument(             # <<<<<<<<<<<<<<
  *         "sample_dir",
  *         metavar="SAMPLE_DIR",
  */
-  __pyx_tuple__11 = PyTuple_Pack(1, __pyx_n_u_sample_dir); if (unlikely(!__pyx_tuple__11)) __PYX_ERR(0, 175, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__11);
-  __Pyx_GIVEREF(__pyx_tuple__11);
+  __pyx_tuple__9 = PyTuple_Pack(1, __pyx_n_u_sample_dir); if (unlikely(!__pyx_tuple__9)) __PYX_ERR(0, 75, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__9);
+  __Pyx_GIVEREF(__pyx_tuple__9);
 
-  /* "tidesurf/main.py":180
+  /* "tidesurf/main.py":80
  *         help="Sample directory containing Cell Ranger output.",
  *     )
  *     parser.add_argument(             # <<<<<<<<<<<<<<
  *         "gtf_file", metavar="GTF_FILE", help="GTF file with transcript information."
  *     )
  */
-  __pyx_tuple__12 = PyTuple_Pack(1, __pyx_n_u_gtf_file); if (unlikely(!__pyx_tuple__12)) __PYX_ERR(0, 180, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__12);
-  __Pyx_GIVEREF(__pyx_tuple__12);
+  __pyx_tuple__10 = PyTuple_Pack(1, __pyx_n_u_gtf_file); if (unlikely(!__pyx_tuple__10)) __PYX_ERR(0, 80, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__10);
+  __Pyx_GIVEREF(__pyx_tuple__10);
 
   /* "tidesurf/main.py":19
+ * 
+ * 
+ * def parse_args(arg_list: Optional[List[str]] = None) -> argparse.Namespace:             # <<<<<<<<<<<<<<
+ *     parser = argparse.ArgumentParser(
+ *         description="Program: tidesurf (Tool for IDentification and "
+ */
+  __pyx_tuple__14 = PyTuple_Pack(3, __pyx_n_s_arg_list, __pyx_n_s_parser, __pyx_n_s_arg_group); if (unlikely(!__pyx_tuple__14)) __PYX_ERR(0, 19, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__14);
+  __Pyx_GIVEREF(__pyx_tuple__14);
+  __pyx_codeobj__15 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__14, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_tidesurf_main_py, __pyx_n_s_parse_args, 19, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__15)) __PYX_ERR(0, 19, __pyx_L1_error)
+  __pyx_tuple__16 = PyTuple_Pack(1, Py_None); if (unlikely(!__pyx_tuple__16)) __PYX_ERR(0, 19, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__16);
+  __Pyx_GIVEREF(__pyx_tuple__16);
+
+  /* "tidesurf/main.py":86
  * 
  * 
  * def run(             # <<<<<<<<<<<<<<
  *     sample_dir: str,
  *     gtf_file: str,
  */
-  __pyx_tuple__14 = PyTuple_Pack(24, __pyx_n_s_sample_dir, __pyx_n_s_gtf_file, __pyx_n_s_output, __pyx_n_s_orientation, __pyx_n_s_filter_cells, __pyx_n_s_whitelist, __pyx_n_s_num_umis, __pyx_n_s_min_intron_overlap, __pyx_n_s_multi_mapped_reads, __pyx_n_s_t_idx, __pyx_n_s_cr_pipeline, __pyx_n_s_bam_files, __pyx_n_s_sample_ids, __pyx_n_s_counter, __pyx_n_s_bam_file, __pyx_n_s_sample_id, __pyx_n_s_wl, __pyx_n_s_cells, __pyx_n_s_genes, __pyx_n_s_counts, __pyx_n_s_counts_matrix, __pyx_n_s_adata, __pyx_n_s_f_name, __pyx_n_s_f); if (unlikely(!__pyx_tuple__14)) __PYX_ERR(0, 19, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__14);
-  __Pyx_GIVEREF(__pyx_tuple__14);
-  __pyx_codeobj__15 = (PyObject*)__Pyx_PyCode_New(9, 0, 0, 24, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__14, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_tidesurf_main_py, __pyx_n_s_run, 19, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__15)) __PYX_ERR(0, 19, __pyx_L1_error)
-  __pyx_tuple__16 = PyTuple_Pack(6, ((PyObject*)__pyx_n_u_sense), ((PyObject *)Py_False), Py_None, Py_None, ((PyObject *)__pyx_int_5), ((PyObject *)Py_False)); if (unlikely(!__pyx_tuple__16)) __PYX_ERR(0, 19, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__16);
-  __Pyx_GIVEREF(__pyx_tuple__16);
-
-  /* "tidesurf/main.py":118
- * 
- * 
- * def main() -> None:             # <<<<<<<<<<<<<<
- *     start_time = datetime.now()
- *     parser = argparse.ArgumentParser(
- */
-  __pyx_tuple__17 = PyTuple_Pack(5, __pyx_n_s_start_time, __pyx_n_s_parser, __pyx_n_s_arg_group, __pyx_n_s_args, __pyx_n_s_end_time); if (unlikely(!__pyx_tuple__17)) __PYX_ERR(0, 118, __pyx_L1_error)
+  __pyx_tuple__17 = PyTuple_Pack(24, __pyx_n_s_sample_dir, __pyx_n_s_gtf_file, __pyx_n_s_output_2, __pyx_n_s_orientation_2, __pyx_n_s_filter_cells, __pyx_n_s_whitelist_2, __pyx_n_s_num_umis_2, __pyx_n_s_min_intron_overlap_2, __pyx_n_s_multi_mapped_reads_2, __pyx_n_s_t_idx, __pyx_n_s_cr_pipeline, __pyx_n_s_bam_files, __pyx_n_s_sample_ids, __pyx_n_s_counter, __pyx_n_s_bam_file, __pyx_n_s_sample_id, __pyx_n_s_wl, __pyx_n_s_cells, __pyx_n_s_genes, __pyx_n_s_counts, __pyx_n_s_counts_matrix, __pyx_n_s_adata, __pyx_n_s_f_name, __pyx_n_s_f); if (unlikely(!__pyx_tuple__17)) __PYX_ERR(0, 86, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__17);
   __Pyx_GIVEREF(__pyx_tuple__17);
-  __pyx_codeobj__18 = (PyObject*)__Pyx_PyCode_New(0, 0, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__17, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_tidesurf_main_py, __pyx_n_s_main_2, 118, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__18)) __PYX_ERR(0, 118, __pyx_L1_error)
+  __pyx_codeobj__18 = (PyObject*)__Pyx_PyCode_New(9, 0, 0, 24, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__17, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_tidesurf_main_py, __pyx_n_s_run, 86, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__18)) __PYX_ERR(0, 86, __pyx_L1_error)
+  __pyx_tuple__19 = PyTuple_Pack(6, ((PyObject*)__pyx_n_u_sense), ((PyObject *)Py_False), Py_None, Py_None, ((PyObject *)__pyx_int_5), ((PyObject *)Py_False)); if (unlikely(!__pyx_tuple__19)) __PYX_ERR(0, 86, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__19);
+  __Pyx_GIVEREF(__pyx_tuple__19);
+
+  /* "tidesurf/main.py":185
+ * 
+ * 
+ * def main(arg_list: Optional[List[str]] = None) -> None:             # <<<<<<<<<<<<<<
+ *     start_time = datetime.now()
+ * 
+ */
+  __pyx_tuple__20 = PyTuple_Pack(4, __pyx_n_s_arg_list, __pyx_n_s_start_time, __pyx_n_s_args, __pyx_n_s_end_time); if (unlikely(!__pyx_tuple__20)) __PYX_ERR(0, 185, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__20);
+  __Pyx_GIVEREF(__pyx_tuple__20);
+  __pyx_codeobj__21 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__20, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_tidesurf_main_py, __pyx_n_s_main_2, 185, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__21)) __PYX_ERR(0, 185, __pyx_L1_error)
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
@@ -9941,7 +10255,7 @@ if (!__Pyx_RefNanny) {
  * import re
  * from datetime import datetime             # <<<<<<<<<<<<<<
  * from pathlib import Path
- * from typing import Literal, Optional
+ * from typing import List, Literal, Optional
  */
   __pyx_t_2 = PyList_New(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 6, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
@@ -9961,7 +10275,7 @@ if (!__Pyx_RefNanny) {
  * import re
  * from datetime import datetime
  * from pathlib import Path             # <<<<<<<<<<<<<<
- * from typing import Literal, Optional
+ * from typing import List, Literal, Optional
  * 
  */
   __pyx_t_3 = PyList_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 7, __pyx_L1_error)
@@ -9981,20 +10295,27 @@ if (!__Pyx_RefNanny) {
   /* "tidesurf/main.py":8
  * from datetime import datetime
  * from pathlib import Path
- * from typing import Literal, Optional             # <<<<<<<<<<<<<<
+ * from typing import List, Literal, Optional             # <<<<<<<<<<<<<<
  * 
  * import anndata as ad
  */
-  __pyx_t_2 = PyList_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 8, __pyx_L1_error)
+  __pyx_t_2 = PyList_New(3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 8, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_INCREF(__pyx_n_s_List);
+  __Pyx_GIVEREF(__pyx_n_s_List);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_2, 0, __pyx_n_s_List)) __PYX_ERR(0, 8, __pyx_L1_error);
   __Pyx_INCREF(__pyx_n_s_Literal);
   __Pyx_GIVEREF(__pyx_n_s_Literal);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_2, 0, __pyx_n_s_Literal)) __PYX_ERR(0, 8, __pyx_L1_error);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_2, 1, __pyx_n_s_Literal)) __PYX_ERR(0, 8, __pyx_L1_error);
   __Pyx_INCREF(__pyx_n_s_Optional);
   __Pyx_GIVEREF(__pyx_n_s_Optional);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_2, 1, __pyx_n_s_Optional)) __PYX_ERR(0, 8, __pyx_L1_error);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_2, 2, __pyx_n_s_Optional)) __PYX_ERR(0, 8, __pyx_L1_error);
   __pyx_t_3 = __Pyx_Import(__pyx_n_s_typing, __pyx_t_2, 0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 8, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_2 = __Pyx_ImportFrom(__pyx_t_3, __pyx_n_s_List); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 8, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_List, __pyx_t_2) < 0) __PYX_ERR(0, 8, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_t_2 = __Pyx_ImportFrom(__pyx_t_3, __pyx_n_s_Literal); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 8, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
@@ -10007,7 +10328,7 @@ if (!__Pyx_RefNanny) {
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
   /* "tidesurf/main.py":10
- * from typing import Literal, Optional
+ * from typing import List, Literal, Optional
  * 
  * import anndata as ad             # <<<<<<<<<<<<<<
  * from cython.cimports.tidesurf.counter import UMICounter
@@ -10025,9 +10346,9 @@ if (!__Pyx_RefNanny) {
  * 
  * log = logging.getLogger(__name__)
  */
-  __pyx_t_3 = __Pyx_ImportDottedModule(__pyx_n_s_tidesurf_2, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 14, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_ImportDottedModule(__pyx_n_s_tidesurf, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 14, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_tidesurf_2, __pyx_t_3) < 0) __PYX_ERR(0, 14, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_tidesurf, __pyx_t_3) < 0) __PYX_ERR(0, 14, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
   /* "tidesurf/main.py":16
@@ -10054,72 +10375,93 @@ if (!__Pyx_RefNanny) {
   /* "tidesurf/main.py":19
  * 
  * 
- * def run(             # <<<<<<<<<<<<<<
- *     sample_dir: str,
- *     gtf_file: str,
+ * def parse_args(arg_list: Optional[List[str]] = None) -> argparse.Namespace:             # <<<<<<<<<<<<<<
+ *     parser = argparse.ArgumentParser(
+ *         description="Program: tidesurf (Tool for IDentification and "
  */
-  __pyx_t_4 = __Pyx_PyDict_NewPresized(10); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 19, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 19, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_sample_dir, __pyx_n_s_str) < 0) __PYX_ERR(0, 19, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_gtf_file, __pyx_n_s_str) < 0) __PYX_ERR(0, 19, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_output, __pyx_n_s_str) < 0) __PYX_ERR(0, 19, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_orientation, __pyx_kp_s_Literal_sense_antisense) < 0) __PYX_ERR(0, 19, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_filter_cells, __pyx_n_s_bool) < 0) __PYX_ERR(0, 19, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_whitelist, __pyx_kp_s_Optional_str) < 0) __PYX_ERR(0, 19, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_num_umis, __pyx_kp_s_Optional_int) < 0) __PYX_ERR(0, 19, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_min_intron_overlap, __pyx_n_s_int) < 0) __PYX_ERR(0, 19, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_multi_mapped_reads, __pyx_n_s_bool) < 0) __PYX_ERR(0, 19, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_return, __pyx_n_s_None) < 0) __PYX_ERR(0, 19, __pyx_L1_error)
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_8tidesurf_4main_1run, 0, __pyx_n_s_run, NULL, __pyx_n_s_tidesurf_main, __pyx_d, ((PyObject *)__pyx_codeobj__15)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 19, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_arg_list, __pyx_kp_s_Optional_List_str) < 0) __PYX_ERR(0, 19, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_return, __pyx_kp_s_argparse_Namespace) < 0) __PYX_ERR(0, 19, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_8tidesurf_4main_1parse_args, 0, __pyx_n_s_parse_args, NULL, __pyx_n_s_tidesurf_main, __pyx_d, ((PyObject *)__pyx_codeobj__15)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 19, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_CyFunction_SetDefaultsTuple(__pyx_t_3, __pyx_tuple__16);
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_3, __pyx_t_4);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_run, __pyx_t_3) < 0) __PYX_ERR(0, 19, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_parse_args, __pyx_t_3) < 0) __PYX_ERR(0, 19, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-  /* "tidesurf/main.py":118
+  /* "tidesurf/main.py":86
  * 
  * 
- * def main() -> None:             # <<<<<<<<<<<<<<
- *     start_time = datetime.now()
- *     parser = argparse.ArgumentParser(
+ * def run(             # <<<<<<<<<<<<<<
+ *     sample_dir: str,
+ *     gtf_file: str,
  */
-  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 118, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(10); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 86, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_return, __pyx_n_s_None) < 0) __PYX_ERR(0, 118, __pyx_L1_error)
-  __pyx_t_4 = __Pyx_CyFunction_New(&__pyx_mdef_8tidesurf_4main_3main, 0, __pyx_n_s_main_2, NULL, __pyx_n_s_tidesurf_main, __pyx_d, ((PyObject *)__pyx_codeobj__18)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 118, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_sample_dir, __pyx_n_s_str) < 0) __PYX_ERR(0, 86, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_gtf_file, __pyx_n_s_str) < 0) __PYX_ERR(0, 86, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_output_2, __pyx_n_s_str) < 0) __PYX_ERR(0, 86, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_orientation_2, __pyx_kp_s_Literal_sense_antisense) < 0) __PYX_ERR(0, 86, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_filter_cells, __pyx_n_s_bool) < 0) __PYX_ERR(0, 86, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_whitelist_2, __pyx_kp_s_Optional_str) < 0) __PYX_ERR(0, 86, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_num_umis_2, __pyx_kp_s_Optional_int) < 0) __PYX_ERR(0, 86, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_min_intron_overlap_2, __pyx_n_s_int) < 0) __PYX_ERR(0, 86, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_multi_mapped_reads_2, __pyx_n_s_bool) < 0) __PYX_ERR(0, 86, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_return, __pyx_n_s_None) < 0) __PYX_ERR(0, 86, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_CyFunction_New(&__pyx_mdef_8tidesurf_4main_3run, 0, __pyx_n_s_run, NULL, __pyx_n_s_tidesurf_main, __pyx_d, ((PyObject *)__pyx_codeobj__18)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 86, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
+  __Pyx_CyFunction_SetDefaultsTuple(__pyx_t_4, __pyx_tuple__19);
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_4, __pyx_t_3);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_main_2, __pyx_t_4) < 0) __PYX_ERR(0, 118, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_run, __pyx_t_4) < 0) __PYX_ERR(0, 86, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-  /* "tidesurf/main.py":220
+  /* "tidesurf/main.py":185
+ * 
+ * 
+ * def main(arg_list: Optional[List[str]] = None) -> None:             # <<<<<<<<<<<<<<
+ *     start_time = datetime.now()
+ * 
+ */
+  __pyx_t_4 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 185, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_arg_list, __pyx_kp_s_Optional_List_str) < 0) __PYX_ERR(0, 185, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_return, __pyx_n_s_None) < 0) __PYX_ERR(0, 185, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_8tidesurf_4main_5main, 0, __pyx_n_s_main_2, NULL, __pyx_n_s_tidesurf_main, __pyx_d, ((PyObject *)__pyx_codeobj__21)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 185, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_CyFunction_SetDefaultsTuple(__pyx_t_3, __pyx_tuple__16);
+  __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_3, __pyx_t_4);
+  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_main_2, __pyx_t_3) < 0) __PYX_ERR(0, 185, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "tidesurf/main.py":225
  * 
  * 
  * if __name__ == "__main__":             # <<<<<<<<<<<<<<
  *     main()
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_name); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 220, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = (__Pyx_PyUnicode_Equals(__pyx_t_4, __pyx_n_u_main, Py_EQ)); if (unlikely((__pyx_t_5 < 0))) __PYX_ERR(0, 220, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_name); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 225, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_t_5 = (__Pyx_PyUnicode_Equals(__pyx_t_3, __pyx_n_u_main, Py_EQ)); if (unlikely((__pyx_t_5 < 0))) __PYX_ERR(0, 225, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   if (__pyx_t_5) {
 
-    /* "tidesurf/main.py":221
+    /* "tidesurf/main.py":226
  * 
  * if __name__ == "__main__":
  *     main()             # <<<<<<<<<<<<<<
  */
-    __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_main_2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 221, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_3 = __Pyx_PyObject_CallNoArg(__pyx_t_4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 221, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_main_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 226, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+    __pyx_t_4 = __Pyx_PyObject_CallNoArg(__pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 226, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-    /* "tidesurf/main.py":220
+    /* "tidesurf/main.py":225
  * 
  * 
  * if __name__ == "__main__":             # <<<<<<<<<<<<<<
@@ -10132,10 +10474,10 @@ if (!__Pyx_RefNanny) {
  * import glob
  * import logging
  */
-  __pyx_t_3 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_test, __pyx_t_3) < 0) __PYX_ERR(0, 1, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_t_4 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_test, __pyx_t_4) < 0) __PYX_ERR(0, 1, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
   /*--- Wrapped vars code ---*/
 
@@ -10591,32 +10933,6 @@ bad:
 #endif
 #endif
 
-/* RaiseArgTupleInvalid */
-static void __Pyx_RaiseArgtupleInvalid(
-    const char* func_name,
-    int exact,
-    Py_ssize_t num_min,
-    Py_ssize_t num_max,
-    Py_ssize_t num_found)
-{
-    Py_ssize_t num_expected;
-    const char *more_or_less;
-    if (num_found < num_min) {
-        num_expected = num_min;
-        more_or_less = "at least";
-    } else {
-        num_expected = num_max;
-        more_or_less = "at most";
-    }
-    if (exact) {
-        more_or_less = "exactly";
-    }
-    PyErr_Format(PyExc_TypeError,
-                 "%.200s() takes %.8s %" CYTHON_FORMAT_SSIZE_T "d positional argument%.1s (%" CYTHON_FORMAT_SSIZE_T "d given)",
-                 func_name, more_or_less, num_expected,
-                 (num_expected == 1) ? "" : "s", num_found);
-}
-
 /* RaiseDoubleKeywords */
 static void __Pyx_RaiseDoubleKeywordsError(
     const char* func_name,
@@ -10787,6 +11103,32 @@ bad:
     return -1;
 }
 
+/* RaiseArgTupleInvalid */
+static void __Pyx_RaiseArgtupleInvalid(
+    const char* func_name,
+    int exact,
+    Py_ssize_t num_min,
+    Py_ssize_t num_max,
+    Py_ssize_t num_found)
+{
+    Py_ssize_t num_expected;
+    const char *more_or_less;
+    if (num_found < num_min) {
+        num_expected = num_min;
+        more_or_less = "at least";
+    } else {
+        num_expected = num_max;
+        more_or_less = "at most";
+    }
+    if (exact) {
+        more_or_less = "exactly";
+    }
+    PyErr_Format(PyExc_TypeError,
+                 "%.200s() takes %.8s %" CYTHON_FORMAT_SSIZE_T "d positional argument%.1s (%" CYTHON_FORMAT_SSIZE_T "d given)",
+                 func_name, more_or_less, num_expected,
+                 (num_expected == 1) ? "" : "s", num_found);
+}
+
 /* PyDictVersioning */
 #if CYTHON_USE_DICT_VERSIONS && CYTHON_USE_TYPE_SLOTS
 static CYTHON_INLINE PY_UINT64_T __Pyx_get_tp_dict_version(PyObject *obj) {
@@ -10855,6 +11197,31 @@ static CYTHON_INLINE PyObject *__Pyx__GetModuleGlobalName(PyObject *name)
 #endif
     return __Pyx_GetBuiltinName(name);
 }
+
+/* PyObjectCall */
+#if CYTHON_COMPILING_IN_CPYTHON
+static CYTHON_INLINE PyObject* __Pyx_PyObject_Call(PyObject *func, PyObject *arg, PyObject *kw) {
+    PyObject *result;
+    ternaryfunc call = Py_TYPE(func)->tp_call;
+    if (unlikely(!call))
+        return PyObject_Call(func, arg, kw);
+    #if PY_MAJOR_VERSION < 3
+    if (unlikely(Py_EnterRecursiveCall((char*)" while calling a Python object")))
+        return NULL;
+    #else
+    if (unlikely(Py_EnterRecursiveCall(" while calling a Python object")))
+        return NULL;
+    #endif
+    result = (*call)(func, arg, kw);
+    Py_LeaveRecursiveCall();
+    if (unlikely(!result) && unlikely(!PyErr_Occurred())) {
+        PyErr_SetString(
+            PyExc_SystemError,
+            "NULL result without error in PyObject_Call");
+    }
+    return result;
+}
+#endif
 
 /* PyFunctionFastCall */
 #if CYTHON_FAST_PYCALL && !CYTHON_VECTORCALL
@@ -10975,31 +11342,6 @@ static PyObject *__Pyx_PyFunction_FastCallDict(PyObject *func, PyObject **args, 
     Py_XDECREF(kwtuple);
 done:
     Py_LeaveRecursiveCall();
-    return result;
-}
-#endif
-
-/* PyObjectCall */
-#if CYTHON_COMPILING_IN_CPYTHON
-static CYTHON_INLINE PyObject* __Pyx_PyObject_Call(PyObject *func, PyObject *arg, PyObject *kw) {
-    PyObject *result;
-    ternaryfunc call = Py_TYPE(func)->tp_call;
-    if (unlikely(!call))
-        return PyObject_Call(func, arg, kw);
-    #if PY_MAJOR_VERSION < 3
-    if (unlikely(Py_EnterRecursiveCall((char*)" while calling a Python object")))
-        return NULL;
-    #else
-    if (unlikely(Py_EnterRecursiveCall(" while calling a Python object")))
-        return NULL;
-    #endif
-    result = (*call)(func, arg, kw);
-    Py_LeaveRecursiveCall();
-    if (unlikely(!result) && unlikely(!PyErr_Occurred())) {
-        PyErr_SetString(
-            PyExc_SystemError,
-            "NULL result without error in PyObject_Call");
-    }
     return result;
 }
 #endif
@@ -11900,7 +12242,7 @@ static PyObject* __Pyx_ImportFrom(PyObject* module, PyObject* name) {
         if (unlikely(!module_name_str)) { goto modbad; }
         module_name = PyUnicode_FromString(module_name_str);
         if (unlikely(!module_name)) { goto modbad; }
-        module_dot = PyUnicode_Concat(module_name, __pyx_kp_u__2);
+        module_dot = PyUnicode_Concat(module_name, __pyx_kp_u__12);
         if (unlikely(!module_dot)) { goto modbad; }
         full_name = PyUnicode_Concat(module_dot, name);
         if (unlikely(!full_name)) { goto modbad; }
@@ -13876,7 +14218,7 @@ __Pyx_PyType_GetName(PyTypeObject* tp)
     if (unlikely(name == NULL) || unlikely(!PyUnicode_Check(name))) {
         PyErr_Clear();
         Py_XDECREF(name);
-        name = __Pyx_NewRef(__pyx_n_s__19);
+        name = __Pyx_NewRef(__pyx_n_s__22);
     }
     return name;
 }
