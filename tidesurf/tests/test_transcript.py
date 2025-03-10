@@ -5,6 +5,7 @@ from tidesurf.transcript import (
     Exon,
     GenomicFeature,
     Intron,
+    Strand,
     Transcript,
     TranscriptIndex,
 )
