@@ -14,15 +14,15 @@ tidesurf.transcript.GTFLine
    .. autosummary::
       :toctree: .
    
-      ~GTFLine.chromosome
-      ~GTFLine.source
-      ~GTFLine.feature
-      ~GTFLine.start
-      ~GTFLine.end
-      ~GTFLine.score
-      ~GTFLine.strand
-      ~GTFLine.frame
       ~GTFLine.attributes
+      ~GTFLine.chromosome
+      ~GTFLine.end
+      ~GTFLine.feature
+      ~GTFLine.frame
+      ~GTFLine.score
+      ~GTFLine.source
+      ~GTFLine.start
+      ~GTFLine.strand
    
    
 

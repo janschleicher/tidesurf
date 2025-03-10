@@ -14,11 +14,11 @@ tidesurf.transcript.Transcript
    .. autosummary::
       :toctree: .
    
-      ~Transcript.regions
       ~Transcript.chromosome
       ~Transcript.end
       ~Transcript.gene_id
       ~Transcript.gene_name
+      ~Transcript.regions
       ~Transcript.start
       ~Transcript.strand
       ~Transcript.transcript_id

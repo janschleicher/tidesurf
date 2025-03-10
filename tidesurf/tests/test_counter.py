@@ -9,23 +9,23 @@ from tidesurf import TranscriptIndex, UMICounter
 @pytest.mark.parametrize(
     "filter_cells, whitelist, num_umis, five_prime",
     [
-        (False, None, None, True),
+        (False, None, -1, True),
         (
             True,
             "test_data/test_dir_count/outs/filtered_feature_bc_matrix/barcodes.tsv.gz",
-            None,
+            -1,
             True,
         ),
-        (True, "test_data/whitelist.tsv", None, True),
+        (True, "test_data/whitelist.tsv", -1, True),
         (True, None, 10, True),
-        (False, None, None, False),
+        (False, None, -1, False),
         (
             True,
             "test_data/test_dir_count_3p/outs/filtered_feature_bc_matrix/barcodes.tsv.gz",
-            None,
+            -1,
             False,
         ),
-        (True, "test_data/whitelist_3p.tsv", None, False),
+        (True, "test_data/whitelist_3p.tsv", -1, False),
         (True, None, 10, False),
     ],
 )
@@ -96,5 +96,5 @@ def test_counter_exceptions():
             bam_file="test_data/test_dir_count/outs/possorted_genome_bam.bam",
             filter_cells=True,
             whitelist=None,
-            num_umis=None,
+            num_umis=-1,
         )

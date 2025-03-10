@@ -14,14 +14,14 @@ tidesurf.transcript.Intron
    .. autosummary::
       :toctree: .
    
+      ~Intron.chromosome
+      ~Intron.end
       ~Intron.gene_id
       ~Intron.gene_name
+      ~Intron.start
+      ~Intron.strand
       ~Intron.transcript_id
       ~Intron.transcript_name
-      ~Intron.chromosome
-      ~Intron.strand
-      ~Intron.start
-      ~Intron.end
    
    
 

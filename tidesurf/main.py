@@ -5,15 +5,82 @@ import os
 import re
 from datetime import datetime
 from pathlib import Path
-from typing import Literal, Optional
+from typing import List, Literal, Optional
 
 import anndata as ad
+from cython.cimports.tidesurf.counter import UMICounter
+from cython.cimports.tidesurf.transcript import TranscriptIndex
 
 import tidesurf
-from tidesurf.counter import UMICounter
-from tidesurf.transcript import TranscriptIndex
 
 log = logging.getLogger(__name__)
+
+
+def parse_args(arg_list: Optional[List[str]] = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Program: tidesurf (Tool for IDentification and "
+        "Enumeration of Spliced and Unspliced Read Fragments)\n"
+        f"Version: {tidesurf.__version__}",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument(
+        "-v",
+        "--version",
+        action="version",
+        version=f"%(prog)s {tidesurf.__version__}",
+    )
+    parser.add_argument(
+        "--orientation",
+        type=str,
+        default="sense",
+        choices=["sense", "antisense"],
+        help="Orientation of reads with respect to transcripts. For 10x"
+        " Genomics, use 'sense' for three prime and 'antisense' for "
+        "five prime.",
+    )
+    parser.add_argument(
+        "-o", "--output", type=str, default="tidesurf_out", help="Output directory."
+    )
+    parser.add_argument(
+        "--no_filter_cells",
+        action="store_true",
+        help="Do not filter cells.",
+    )
+    arg_group = parser.add_mutually_exclusive_group()
+    arg_group.add_argument(
+        "--whitelist",
+        type=str,
+        help="Whitelist for cell filtering. Set to 'cellranger' to use "
+        "barcodes in the sample directory. Alternatively, provide a "
+        "path to a whitelist.",
+    )
+    arg_group.add_argument(
+        "--num_umis",
+        type=int,
+        help="Minimum number of UMIs for filtering a cell.",
+    )
+    parser.add_argument(
+        "--min_intron_overlap",
+        type=int,
+        default=5,
+        help="Minimum number of bases that a read must overlap with an "
+        "intron to be considered intronic.",
+    )
+    parser.add_argument(
+        "--multi_mapped_reads",
+        action="store_true",
+        help="Take reads mapping to multiple genes into account "
+        "(default: reads mapping to more than one gene are discarded).",
+    )
+    parser.add_argument(
+        "sample_dir",
+        metavar="SAMPLE_DIR",
+        help="Sample directory containing Cell Ranger output.",
+    )
+    parser.add_argument(
+        "gtf_file", metavar="GTF_FILE", help="GTF file with transcript information."
+    )
+    return parser.parse_args(arg_list)
 
 
 def run(
@@ -98,6 +165,8 @@ def run(
                 wl = wl[0]
         else:
             wl = whitelist
+        if num_umis is None:
+            num_umis = -1
         cells, genes, counts = counter.count(
             bam_file=bam_file,
             filter_cells=filter_cells,
@@ -113,72 +182,10 @@ def run(
         adata.write_h5ad(Path(os.path.join(output, f_name)))
 
 
-def main() -> None:
+def main(arg_list: Optional[List[str]] = None) -> None:
     start_time = datetime.now()
-    parser = argparse.ArgumentParser(
-        description="Program: tidesurf (Tool for IDentification and "
-        "Enumeration of Spliced and Unspliced Read Fragments)\n"
-        f"Version: {tidesurf.__version__}",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-    )
-    parser.add_argument(
-        "-v",
-        "--version",
-        action="version",
-        version=f"%(prog)s {tidesurf.__version__}",
-    )
-    parser.add_argument(
-        "--orientation",
-        type=str,
-        default="sense",
-        choices=["sense", "antisense"],
-        help="Orientation of reads with respect to transcripts. For 10x"
-        " Genomics, use 'sense' for three prime and 'antisense' for "
-        "five prime.",
-    )
-    parser.add_argument(
-        "-o", "--output", type=str, default="tidesurf_out", help="Output directory."
-    )
-    parser.add_argument(
-        "--no_filter_cells",
-        action="store_true",
-        help="Do not filter cells.",
-    )
-    arg_group = parser.add_mutually_exclusive_group()
-    arg_group.add_argument(
-        "--whitelist",
-        type=str,
-        help="Whitelist for cell filtering. Set to 'cellranger' to use "
-        "barcodes in the sample directory. Alternatively, provide a "
-        "path to a whitelist.",
-    )
-    arg_group.add_argument(
-        "--num_umis",
-        type=int,
-        help="Minimum number of UMIs for filtering a cell.",
-    )
-    parser.add_argument(
-        "--min_intron_overlap",
-        type=int,
-        default=5,
-        help="Minimum number of bases that a read must overlap with an "
-        "intron to be considered intronic.",
-    )
-    parser.add_argument(
-        "--multi_mapped_reads",
-        action="store_true",
-        help="Take reads mapping to multiple genes into account "
-        "(default: reads mapping to more than one gene are discarded).",
-    )
-    parser.add_argument(
-        "sample_dir",
-        metavar="SAMPLE_DIR",
-        help="Sample directory containing Cell Ranger output.",
-    )
-    parser.add_argument(
-        "gtf_file", metavar="GTF_FILE", help="GTF file with transcript information."
-    )
-    args = parser.parse_args()
+
+    args = parse_args(arg_list)
 
     os.makedirs(args.output, exist_ok=True)
     logging.basicConfig(

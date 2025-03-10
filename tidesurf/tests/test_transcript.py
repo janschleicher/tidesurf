@@ -1,10 +1,10 @@
 import pytest
 
+from tidesurf.enums import Strand, antisense
 from tidesurf.transcript import (
     Exon,
     GenomicFeature,
     Intron,
-    Strand,
     Transcript,
     TranscriptIndex,
 )
@@ -13,13 +13,11 @@ TEST_GTF_FILE = "test_data/genes.gtf"
 
 
 def test_strand():
-    strand_1 = Strand("+")
-    assert str(strand_1) == "+"
-    assert strand_1.antisense() == Strand("-")
+    strand_1 = Strand.PLUS
+    assert antisense(strand_1) == Strand.MINUS
 
-    strand_2 = Strand("-")
-    assert str(strand_2) == "-"
-    assert strand_2.antisense() == Strand("+")
+    strand_2 = Strand.MINUS
+    assert antisense(strand_2) == Strand.PLUS
 
     assert strand_1 < strand_2
     assert strand_2 > strand_1
@@ -32,7 +30,7 @@ def test_genomic_feature():
         "",
         "",
         "chr1",
-        "+",
+        Strand.PLUS,
         9_000_000,
         9_001_000,
     )
@@ -42,7 +40,7 @@ def test_genomic_feature():
         "",
         "",
         "chr1",
-        "+",
+        Strand.PLUS,
         9_000_500,
         9_001_000,
     )
@@ -52,7 +50,7 @@ def test_genomic_feature():
         "",
         "",
         "chr1",
-        "+",
+        Strand.PLUS,
         9_000_000,
         9_001_500,
     )
@@ -62,7 +60,7 @@ def test_genomic_feature():
         "",
         "",
         "chr2",
-        "+",
+        Strand.PLUS,
         9_000_000,
         9_001_500,
     )
@@ -80,26 +78,26 @@ def test_genomic_feature():
         gen_feat_4 > gen_feat_1
 
     assert str(gen_feat_1).startswith(
-        "<GenomicFeature chr1:9,000,000-9,001,000 on '+' strand at 0x"
+        "<GenomicFeature chr1:9,000,000-9,001,000 on '0' strand at 0x"
     )
 
     start, end = 8_999_900, 9_000_100
     assert gen_feat_1.overlaps(
-        "chr1", "+", start, end
+        "chr1", Strand.PLUS, start, end
     ), f"Genomic feature {gen_feat_1} should overlap region chr1+ {start:,}-{end:,}."
     assert not gen_feat_2.overlaps(
-        "chr1", "+", start, end
+        "chr1", Strand.PLUS, start, end
     ), f"Genomic feature {gen_feat_2} should not overlap region chr1+ {start:,}-{end:,}."
     assert not gen_feat_1.overlaps(
-        "chr2", "+", start, end
+        "chr2", Strand.PLUS, start, end
     ), f"Genomic feature {gen_feat_1} should not overlap region chr2+ {start:,}-{end:,}."
     assert not gen_feat_1.overlaps(
-        "chr1", "-", start, end
+        "chr1", Strand.MINUS, start, end
     ), f"Genomic feature {gen_feat_1} should not overlap region chr1- {start:,}-{end:,}."
 
     # Vary the min_overlap parameter
     end = 9_000_000
-    chrom, strand = "chr1", "+"
+    chrom, strand = "chr1", Strand.PLUS
     assert gen_feat_1.overlaps(
         chrom, strand, start, end
     ), f"Genomic feature {gen_feat_1} should overlap region {chrom}{strand} {start:,}-{end:,} by >= 1 base."
@@ -151,7 +149,7 @@ def test_transcript():
         "ENSMUST00000144177",
         "Adhfe1-203",
         "chr1",
-        "+",
+        Strand.PLUS,
         9_547_948,
         9_548_151,
         "ENSMUSE00000754750",
@@ -159,7 +157,7 @@ def test_transcript():
     )
     assert str(exon_1).startswith(
         "<Exon ENSMUSE00000754750, No. 1 for transcript "
-        "ENSMUST00000144177 chr1:9,547,948-9,548,151 on '+' strand at 0x"
+        "ENSMUST00000144177 chr1:9,547,948-9,548,151 on '0' strand at 0x"
     )
     exon_2 = Exon(
         "ENSMUSG00000025911",
@@ -167,7 +165,7 @@ def test_transcript():
         "ENSMUST00000144177",
         "Adhfe1-203",
         "chr1",
-        "+",
+        Strand.PLUS,
         9_549_907,
         9_549_944,
         "ENSMUSE00001146417",
@@ -179,7 +177,7 @@ def test_transcript():
         "ENSMUST00000144177",
         "Adhfe1-203",
         "chr1",
-        "+",
+        Strand.PLUS,
         9_548_152,
         9_549_906,
     )
@@ -190,13 +188,13 @@ def test_transcript():
         "ENSMUST00000144177",
         "Adhfe1-203",
         "chr1",
-        "+",
+        Strand.PLUS,
         9_547_948,
         9_577_970,
         [],
     )
     assert str(transcript_1).startswith(
-        "<Transcript ENSMUST00000144177 chr1:9,547,948-9,577,970 on '+' strand at 0x"
+        "<Transcript ENSMUST00000144177 chr1:9,547,948-9,577,970 on '0' strand at 0x"
     )
     assert transcript_1.regions == [], "Exons should be empty list."
     # Test adding exons
@@ -230,7 +228,7 @@ def test_transcript():
         "ENSMUST00000144177",
         "Adhfe1-203",
         "chr1",
-        "+",
+        Strand.PLUS,
         9_547_948,
         9_577_970,
         [exon_1, exon_2],
@@ -268,13 +266,13 @@ def test_transcript_index():
 
     # Test that no transcripts are returned when the chromosome/strand
     # is not in the index
-    chromosome, strand, start, end = "chr22", "+", 1_234_567, 1_234_667
+    chromosome, strand, start, end = "chr22", Strand.PLUS, 1_234_567, 1_234_667
     assert not transcript_idx.get_overlapping_transcripts(
         chromosome=chromosome, strand=strand, start=start, end=end
     )
 
     # Test that no transcripts are returned when there is no overlap
-    chromosome, strand, start, end = "chr1", "+", 8_000_000, 8_000_150
+    chromosome, strand, start, end = "chr1", Strand.PLUS, 8_000_000, 8_000_150
     assert not transcript_idx.get_overlapping_transcripts(
         chromosome=chromosome, strand=strand, start=start, end=end
     )

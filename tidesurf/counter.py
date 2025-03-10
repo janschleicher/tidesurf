@@ -2,91 +2,56 @@
 
 import logging
 from bisect import bisect
-from enum import Enum
-from typing import Dict, List, Literal, Optional, Tuple
+from typing import Dict, List, Literal, Optional, Set, Tuple
 
+import cython
 import numpy as np
 import polars as pl
-import pysam
+from cython.cimports.tidesurf.enums import ReadType, SpliceType, Strand, antisense
+from cython.cimports.tidesurf.transcript import (
+    Exon,
+    GenomicFeature,
+    Intron,
+    TranscriptIndex,
+)
+from pysam.libcalignedsegment import CINS, CSOFT_CLIP, AlignedSegment
+from pysam.libcalignmentfile import AlignmentFile
 from scipy.sparse import csr_matrix, lil_matrix
 from tqdm import tqdm
 from tqdm.contrib.logging import logging_redirect_tqdm
 
-from tidesurf.transcript import Exon, Intron, Strand, TranscriptIndex
-
 log = logging.getLogger(__name__)
 
 
-class SpliceType(Enum):
-    """
-    Enum for read/UMI splice types.
-    """
-
-    UNSPLICED = 0
-    """Unspliced type."""
-    AMBIGUOUS = 1
-    """Ambiguous type."""
-    SPLICED = 2
-    """Spliced type."""
-
-    def __int__(self):
-        return self.value
+@cython.ccall
+def _get_splice_type(read_type: int) -> int:
+    """Return the corresponding SpliceType for a ReadType."""
+    if read_type == ReadType.INTRON:
+        return int(SpliceType.UNSPLICED)
+    elif read_type == ReadType.EXON_EXON or read_type == ReadType.EXON:
+        return int(SpliceType.SPLICED)
+    else:
+        return int(SpliceType.AMBIGUOUS)
 
 
-class ReadType(Enum):
-    """
-    Enum for read alignment types.
-    """
-
-    INTRON = 0
-    """Intronic read."""
-    EXON_EXON = 1
-    """Exon-exon junction read."""
-    AMBIGUOUS = 2
-    """Ambiguous read."""
-    EXON = 3
-    """Exonic read."""
-
-    def __int__(self):
-        return self.value
-
-    def get_splice_type(self) -> SpliceType:
-        """Return the corresponding SpliceType."""
-        if self == ReadType.INTRON:
-            return SpliceType.UNSPLICED
-        elif self == ReadType.EXON_EXON or self == ReadType.EXON:
-            return SpliceType.SPLICED
-        else:
-            return SpliceType.AMBIGUOUS
-
-
+@cython.cclass
 class UMICounter:
     """
     Counter for unique molecular identifiers (UMIs) with reads mapping
     to transcripts in single-cell RNA-seq data.
 
-    :param transcript_index: Transcript index.
-    :param orientation: Orientation in which reads map to transcripts.
-        Either "sense" or "antisense".
-    :param min_intron_overlap: Minimum overlap of reads with introns
-        required to consider them intronic.
-    :param multi_mapped_reads: Whether to count multi-mapped reads.
-    """
-
-    __slots__ = [
-        "transcript_index",
-        "orientation",
-        "MIN_INTRON_OVERLAP",
-        "multi_mapped_reads",
-    ]
+    Parameters
+    ----------
     transcript_index: TranscriptIndex
-    """Transcript index for extraction of overlapping transcripts."""
-    orientation: Literal["sense", "antisense"]
-    """Orientation in which reads map to transcripts."""
-    MIN_INTRON_OVERLAP: int
-    """Minimum overlap of reads with introns required to consider them intronic."""
+        Transcript index.
+    orientation: Literal['sense', 'antisense']
+        Orientation in which reads map to transcripts.
+    min_intron_overlap: int
+        Minimum overlap of reads with introns required to consider them
+        intronic (default: `5`).
     multi_mapped_reads: bool
-    """Whether to count multi-mapped reads."""
+        Whether to count multi-mapped reads (default: `False`).
+    """
 
     def __init__(
         self,
@@ -100,43 +65,60 @@ class UMICounter:
         self.MIN_INTRON_OVERLAP = min_intron_overlap
         self.multi_mapped_reads = multi_mapped_reads
 
+    @cython.embedsignature(False)
     def count(
         self,
         bam_file: str,
         filter_cells: bool = False,
         whitelist: Optional[str] = None,
-        num_umis: Optional[int] = None,
+        num_umis: int = -1,
     ) -> Tuple[np.ndarray, np.ndarray, Dict[str, csr_matrix]]:
         """
+        count(bam_file: str, filter_cells: bool = False, whitelist: Optional[str] = None, num_umis: int = -1) -> Tuple[np.ndarray, np.ndarray, Dict[str, csr_matrix]]
+
         Count UMIs with reads mapping to transcripts.
 
-        :param bam_file: Path to BAM file.
-        :param filter_cells: Whether to filter cells.
-        :param whitelist: If `filter_cells` is True: path to cell
-            barcode whitelist file. Mutually exclusive with `num_umis`.
-        :param num_umis: If `filter_cells` is True: set to an integer to
-            only keep cells with at least that many UMIs. Mutually
-            exclusive with `whitelist`.
-        :return: cells (array of shape (n_cells,)), genes (array of
-            shape (n_genes,)), counts (sparse matrix of shape
-            (n_cells, n_genes)).
+        Parameters
+        ----------
+        bam_file
+            Path to BAM file.
+        filter_cells
+            Whether to filter cells (default: `False`).
+        whitelist
+            If `filter_cells` is True: path to cell barcode whitelist
+            file. Mutually exclusive with `num_umis` (default: `None`).
+        num_umis
+            If `filter_cells` is True: set to an integer to only keep
+            cells with at least that many UMIs. Mutually exclusive with
+            `whitelist` (default: `-1`; corresponds to not filtering based
+            on number of UMIs).
+
+        Returns
+        -------
+        Tuple[np.ndarray, np.ndarray, Dict[str, csr_matrix]]
+            Cells (array of shape `(n_cells,)`), genes (array of shape
+            `(n_genes,)`), counts (dictionary with sparse matrices of shape
+            `(n_cells, n_genes)` for spliced, unspliced, and ambiguous).
         """
+        wl: Set
         if filter_cells:
-            if not whitelist and not num_umis:
+            if not whitelist and num_umis == -1:
                 raise ValueError(
                     "Either whitelist or num_umis must be provided when filter_cells==True."
                 )
-            elif whitelist and num_umis:
+            elif whitelist and num_umis != -1:
                 raise ValueError(
                     "Whitelist and num_umis are mutually exclusive arguments."
                 )
+            elif num_umis < -1:
+                raise ValueError("Positive integer expected for num_umis.")
             elif whitelist:
                 log.info(f"Reading whitelist from {whitelist}.")
-                whitelist = set(
+                wl = set(
                     pl.read_csv(whitelist, has_header=False)[:, 0].str.strip_chars()
                 )
 
-        aln_file = pysam.AlignmentFile(bam_file, mode="r")
+        aln_file = AlignmentFile(bam_file, mode="r")
         total_reads = 0
         for idx_stats in aln_file.get_index_statistics():
             total_reads += idx_stats.total
@@ -160,11 +142,11 @@ class UMICounter:
                     skipped_reads["unmapped"] += 1
                     continue
                 if filter_cells and whitelist:
-                    if bam_read.get_tag("CB") not in whitelist:
+                    if bam_read.get_tag("CB") not in wl:
                         skipped_reads["whitelist"] += 1
                         continue
                 res = self._process_read(bam_read)
-                if res is not None:
+                if res:
                     cbc, results_list = res
                     if cbc in results:
                         results[cbc].extend(results_list)
@@ -175,18 +157,6 @@ class UMICounter:
         log.info(
             f"Skipped {', '.join([f'{n_reads:,} reads ({reason})' for reason, n_reads in skipped_reads.items()])}."
         )
-
-        # Resolve multi-mapped UMIs.
-        def _argmax(lst: List[int]) -> int:
-            _, indices, value_counts = np.unique(
-                lst, return_index=True, return_counts=True
-            )
-            if value_counts[-1] > 1:
-                return -1
-            else:
-                return indices[-1]
-
-        _argmax_vec = np.vectorize(_argmax)
 
         # Deduplicate cell barcodes and UMIs.
         counts_dict = {}
@@ -242,7 +212,7 @@ class UMICounter:
                     .with_columns(
                         pl.col("read_type")
                         .map_elements(  # Map ReadType to SpliceType
-                            lambda x: int(ReadType(x).get_splice_type()),
+                            _get_splice_type,
                             return_dtype=pl.UInt8,
                         )
                         .alias("splice_type")
@@ -291,7 +261,7 @@ class UMICounter:
         n_cells = cells.shape[0]
         n_genes = genes.shape[0]
 
-        # Map cells and genes to integer indicex
+        # Map cells and genes to integer indices
         cbc_map = {cbc: i for i, cbc in enumerate(cells)}
         gene_map = {gene: i for i, gene in enumerate(genes)}
 
@@ -315,7 +285,7 @@ class UMICounter:
 
         counts = {splice_type.name.lower(): mat for splice_type, mat in counts.items()}
 
-        if filter_cells and num_umis:
+        if filter_cells and num_umis != -1:
             log.info(f"Filtering cells with at least {num_umis} UMIs.")
             idx = (
                 counts["spliced"].sum(axis=1).A1
@@ -332,40 +302,47 @@ class UMICounter:
         )
 
     def _process_read(
-        self, read: pysam.AlignedSegment
-    ) -> Optional[Tuple[str, List[Tuple[str, str, int, float]]]]:
+        self, read: AlignedSegment
+    ) -> Tuple[str, List[Tuple[str, str, int, float]]]:
         """
         Process a single read.
 
-        :param read: The read to process.
-        :return: cell barcode, list of UMI, gene name, and read type.
+        Parameters
+        ----------
+        read
+            The read to process.
+
+        Returns
+        -------
+        Tuple[str, List[Tuple[str, str, int, float]]]
+            Cell barcode, list of UMIs, gene names, and read types.
         """
         cbc = str(read.get_tag("CB"))
         umi = str(read.get_tag("UB"))
         chromosome = read.reference_name
-        strand = Strand("+") if read.is_forward else Strand("-")
-        start = read.reference_start
-        end = read.reference_end - 1  # pysam reference_end is exclusive
-        length = read.infer_read_length()
+        strand = Strand.PLUS if read.is_forward else Strand.MINUS
+        start: cython.int = read.reference_start
+        end: cython.int = read.reference_end - 1  # pysam reference_end is exclusive
+        length: cython.int = read.infer_read_length()
 
         if self.orientation == "antisense":
-            strand = strand.antisense()
+            strand = antisense(strand)
 
         overlapping_transcripts = self.transcript_index.get_overlapping_transcripts(
             chromosome=chromosome,
-            strand=str(strand),
+            strand=strand,
             start=start,
             end=end,
         )
 
         # Only keep transcripts with minimum overlap of 50% of the read length.
-        min_overlap = length // 2
+        min_overlap: cython.int = length // 2
         overlapping_transcripts = [
             t
             for t in overlapping_transcripts
             if t.overlaps(
                 chromosome=chromosome,
-                strand=str(strand),
+                strand=strand,
                 start=start,
                 end=end,
                 min_overlap=min_overlap,
@@ -373,16 +350,18 @@ class UMICounter:
         ]
 
         if not overlapping_transcripts:
-            return None
+            return tuple()
 
         # Determine length of read without soft-clipped bases and count
         # inserted bases (present in read, but not in reference)
-        clipped_length = length
-        insertion_length = 0
+        clipped_length: cython.int = length
+        insertion_length: cython.int = 0
+        cigar_op: cython.int
+        n_bases: cython.int
         for cigar_op, n_bases in read.cigartuples:
-            if cigar_op == pysam.CSOFT_CLIP:
+            if cigar_op == CSOFT_CLIP:
                 clipped_length -= n_bases
-            elif cigar_op == pysam.CINS:
+            elif cigar_op == CINS:
                 insertion_length += n_bases
 
         # For each gene, determine the type of read alignment
@@ -391,10 +370,12 @@ class UMICounter:
         }
         for trans in overlapping_transcripts:
             # Loop over exons and introns
-            total_exon_overlap = 0
-            total_intron_overlap = 0
-            n_exons = 0
-            left_idx = max(bisect(trans.regions, start, key=lambda x: x.start) - 1, 0)
+            total_exon_overlap: cython.int = 0
+            total_intron_overlap: cython.int = 0
+            n_exons: cython.int = 0
+            left_idx: cython.int = max(
+                bisect(trans.regions, start, key=_genomic_feature_sort_key) - 1, 0
+            )
             for region in trans.regions[left_idx:]:
                 if region.start > end:
                     break
@@ -442,7 +423,7 @@ class UMICounter:
         processed_reads = []
         n_genes = len(read_types_per_gene)
         if n_genes > 1 and not self.multi_mapped_reads:
-            return None
+            return tuple()
         for gene_name, read_types in read_types_per_gene.items():
             if not read_types:
                 continue
@@ -452,9 +433,26 @@ class UMICounter:
             elif len(read_types) == 1:
                 read_type = read_types.pop()
             else:
-                read_type = ReadType.AMBIGUOUS
+                read_type = ReadType.AMBIGUOUS_READ
 
             processed_reads.append((umi, gene_name, int(read_type), 1.0 / n_genes))
         if not processed_reads:
-            return None
+            return tuple()
         return cbc, processed_reads
+
+
+@cython.cfunc
+@cython.inline
+def _genomic_feature_sort_key(gen_feat: GenomicFeature) -> int:
+    return gen_feat.start
+
+
+def _argmax(lst: np.ndarray) -> np.int64:
+    _, indices, value_counts = np.unique(lst, return_index=True, return_counts=True)
+    if value_counts[-1] > 1:
+        return -1
+    else:
+        return indices[-1]
+
+
+_argmax_vec = np.vectorize(_argmax)

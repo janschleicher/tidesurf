@@ -2,9 +2,12 @@
 
 import logging
 from bisect import bisect
-from dataclasses import dataclass
-from enum import Enum
 from typing import Dict, List, Optional, Set, Tuple, Union
+
+import cython
+from cython.cimports.tidesurf.enums import Strand
+from tqdm import tqdm
+from tqdm.contrib.logging import logging_redirect_tqdm
 
 log = logging.getLogger(__name__)
 
@@ -29,75 +32,31 @@ ALLOWED_BIOTYPES = {
 }
 
 
-class Strand(Enum):
-    """
-    Simple enum for strand information.
-    """
-
-    PLUS = "+"
-    """Plus strand."""
-    MINUS = "-"
-    """Minus strand."""
-
-    def antisense(self) -> "Strand":
-        """Return the antisense strand."""
-        if self == Strand.PLUS:
-            return Strand.MINUS
-        else:
-            return Strand.PLUS
-
-    def __lt__(self, other):
-        return self.value < other.value
-
-    def __gt__(self, other):
-        return self.value > other.value
-
-    def __str__(self):
-        return self.value
-
-
+@cython.cclass
 class GenomicFeature:
     """
     A genomic feature on a particular strand on a chromosome. Identified
     by a gene ID, gene name, transcript ID, and transcript name.
 
-    :param gene_id: ID of the corresponding gene.
-    :param gene_name: Name of the corresponding gene.
-    :param transcript_id: ID of the corresponding transcript.
-    :param transcript_name: Name of the corresponding transcript.
-    :param chromosome: Chromosome on which the feature is located.
-    :param strand: Strand on which the feature is located.
-    :param start: Genomic start position of the feature (0-based).
-    :param end: Genomic end position of the feature (0-based
-    """
-
-    __slots__ = [
-        "gene_id",
-        "gene_name",
-        "transcript_id",
-        "transcript_name",
-        "chromosome",
-        "strand",
-        "start",
-        "end",
-    ]
-
+    Parameters
+    ----------
     gene_id: str
-    """ID of the corresponding gene."""
+        ID of the corresponding gene.
     gene_name: str
-    """Name of the corresponding gene."""
+        Name of the corresponding gene.
     transcript_id: str
-    """ID of the corresponding transcript."""
+        ID of the corresponding transcript.
     transcript_name: str
-    """Name of the corresponding transcript."""
+        Name of the corresponding transcript.
     chromosome: str
-    """Chromosome on which the feature is located."""
+        Chromosome on which the feature is located.
     strand: Strand
-    """Strand on which the feature is located."""
+        Strand on which the feature is located.
     start: int
-    """Genomic start position of the feature (0-based)."""
+        Genomic start position of the feature (0-based).
     end: int
-    """Genomic end position of the feature (0-based)."""
+        Genomic end position of the feature (0-based
+    """
 
     def __init__(
         self,
@@ -106,7 +65,7 @@ class GenomicFeature:
         transcript_id: str,
         transcript_name: str,
         chromosome: str,
-        strand: str,
+        strand: Strand,
         start: int,
         end: int,
     ) -> None:
@@ -115,24 +74,44 @@ class GenomicFeature:
         self.transcript_id = transcript_id
         self.transcript_name = transcript_name
         self.chromosome = chromosome
-        self.strand = Strand(strand)
+        self.strand = strand
         self.start = start
         self.end = end
 
+    @cython.embedsignature(False)
     def overlaps(
-        self, chromosome: str, strand: str, start: int, end: int, min_overlap: int = 1
+        self,
+        chromosome: str,
+        strand: Strand,
+        start: int,
+        end: int,
+        min_overlap: int = 1,
     ) -> bool:
         """
+        overlaps(chromosome: str, strand: Strand, start: int, end: int, min_overlap: int = 1) -> bool
+
         Check if the feature overlaps with a given region.
 
-        :param chromosome: Chromosome of interest.
-        :param strand: Strand of interest.
-        :param start: Start position of region.
-        :param end: End position of region.
-        :param min_overlap: Minimum number of overlapping bases.
-        :return: Whether the feature overlaps with the region.
+        Parameters
+        ----------
+        chromosome
+            Chromosome of interest.
+        strand
+            Strand of interest.
+        start
+            Genomic start position of region.
+        end
+            Genomic end position of region.
+        min_overlap
+            Minimum number of overlapping bases (default: `1`).
+
+        Returns
+        -------
+        bool
+            Whether the feature overlaps with the region by at least
+            `min_overlap` bases.
         """
-        if self.chromosome != chromosome or self.strand != Strand(strand):
+        if self.chromosome != chromosome or self.strand != strand:
             return False
         assert start <= end, "Start position must be less than or equal to end position"
         return (
@@ -186,27 +165,34 @@ class GenomicFeature:
         )
 
 
+@cython.cclass
 class Exon(GenomicFeature):
     """
     An exon of a transcript. Identified by an exon ID and exon number.
 
-    :param gene_id: ID of the corresponding gene.
-    :param gene_name: Name of the corresponding gene.
-    :param transcript_id: ID of the corresponding transcript.
-    :param transcript_name: Name of the corresponding transcript.
-    :param chromosome: Chromosome on which the exon is located.
-    :param strand: Strand on which the exon is located.
-    :param start: Genomic start position of the exon (0-based).
-    :param end: Genomic end position of the exon (0-based).
-    :param exon_id: ID of the exon.
-    :param exon_number: Number of the exon in the transcript.
-    """
-
-    __slots__ = ["exon_id", "exon_number"]
+    Parameters
+    ----------
+    gene_id: str
+        ID of the corresponding gene.
+    gene_name: str
+        Name of the corresponding gene.
+    transcript_id: str
+        ID of the corresponding transcript.
+    transcript_name: str
+        Name of the corresponding transcript.
+    chromosome: str
+        Chromosome on which the exon is located.
+    strand: Strand
+        Strand on which the exon is located.
+    start: int
+        Genomic start position of the exon (0-based).
+    end: int
+        Genomic end position of the exon (0-based).
     exon_id: str
-    """ID of the exon."""
+        ID of the exon.
     exon_number: int
-    """Number of the exon in the transcript."""
+        Number of the exon in the transcript.
+    """
 
     def __init__(
         self,
@@ -215,7 +201,7 @@ class Exon(GenomicFeature):
         transcript_id: str,
         transcript_name: str,
         chromosome: str,
-        strand: str,
+        strand: Strand,
         start: int,
         end: int,
         exon_id: str,
@@ -242,18 +228,29 @@ class Exon(GenomicFeature):
         )
 
 
+@cython.cclass
 class Intron(GenomicFeature):
     """
     An intron of a transcript.
 
-    :param gene_id: ID of the corresponding gene.
-    :param gene_name: Name of the corresponding gene.
-    :param transcript_id: ID of the corresponding transcript.
-    :param transcript_name: Name of the corresponding transcript.
-    :param chromosome: Chromosome on which the exon is located.
-    :param strand: Strand on which the exon is located.
-    :param start: Genomic start position of the exon (0-based).
-    :param end: Genomic end position of the exon (0-based).
+    Parameters
+    ----------
+    gene_id: str
+        ID of the corresponding gene.
+    gene_name: str
+        Name of the corresponding gene.
+    transcript_id: str
+        ID of the corresponding transcript.
+    transcript_name: str
+        Name of the corresponding transcript.
+    chromosome: str
+        Chromosome on which the exon is located.
+    strand: Strand
+        Strand on which the exon is located.
+    start: int
+        Genomic start position of the exon (0-based).
+    end: int
+        Genomic end position of the exon (0-based).
     """
 
     def __init__(
@@ -263,7 +260,7 @@ class Intron(GenomicFeature):
         transcript_id: str,
         transcript_name: str,
         chromosome: str,
-        strand: str,
+        strand: Strand,
         start: int,
         end: int,
     ) -> None:
@@ -279,28 +276,36 @@ class Intron(GenomicFeature):
         )
 
 
+@cython.cclass
 class Transcript(GenomicFeature):
     """
     A transcript. Contains a list of exons and introns.
 
-    :param gene_id: ID of the corresponding gene.
-    :param gene_name: Name of the corresponding gene.
-    :param transcript_id: ID of the transcript.
-    :param transcript_name: Name of the transcript.
-    :param chromosome: Chromosome on which the transcript is located.
-    :param strand: Strand on which the transcript is located.
-    :param start: Genomic start position of the transcript (0-based).
-    :param end: Genomic end position of the transcript (0-based).
-    :param regions: List of exons and introns in the transcript. A
-        Transcript object can be initialized without regions (default),
-        in which case they should be added later. If only exons are
-        added, introns can be inserted with
+    Parameters
+    ----------
+    gene_id: str
+        ID of the corresponding gene.
+    gene_name: str
+        Name of the corresponding gene.
+    transcript_id: str
+        ID of the corresponding transcript.
+    transcript_name: str
+        Name of the corresponding transcript.
+    chromosome: str
+        Chromosome on which the exon is located.
+    strand: Strand
+        Strand on which the exon is located.
+    start: int
+        Genomic start position of the exon (0-based).
+    end: int
+        Genomic end position of the exon (0-based).
+    regions: List[Union[Exon, Intron]]
+        List of exons and introns in the transcript. A
+        :class:`Transcript` object can be initialized without regions
+        (default: `None`), in which case they should be added later. If
+        only exons are added, introns can be inserted with
         :meth:`~tidesurf.transcript.Transcript.sort_regions`.
     """
-
-    __slots__ = ["regions"]
-    regions: List[Union[Exon, Intron]]
-    """List of exons and introns in the transcript."""
 
     def __init__(
         self,
@@ -309,7 +314,7 @@ class Transcript(GenomicFeature):
         transcript_id: str,
         transcript_name: str,
         chromosome: str,
-        strand: str,
+        strand: Strand,
         start: int,
         end: int,
         regions: Optional[List[Union[Exon, Intron]]] = None,
@@ -329,17 +334,26 @@ class Transcript(GenomicFeature):
         else:
             self.regions = regions
 
-    def add_exon(self, exon: Exon) -> None:
+    @cython.embedsignature(False)
+    def add_exon(self, exon: Exon):
         """
+        add_exon(exon: Exon)
+
         Add an exon to the transcript.
 
-        :param exon: Exon to add.
+        Parameters
+        ----------
+        exon:
+            Exon to add.
         """
         if exon not in self.regions:
             self.regions.append(exon)
 
-    def sort_regions(self) -> None:
+    @cython.embedsignature(False)
+    def sort_regions(self):
         """
+        sort_regions()
+
         Sort regions by start position and insert introns.
         """
         self.regions = sorted(set(self.regions))
@@ -357,7 +371,7 @@ class Transcript(GenomicFeature):
                     self.transcript_id,
                     self.transcript_name,
                     self.chromosome,
-                    str(self.strand),
+                    self.strand,
                     exon.end + 1,
                     self.regions[i + 1].start - 1,
                 )
@@ -379,40 +393,54 @@ class Transcript(GenomicFeature):
         return hash(self.transcript_id)
 
 
-@dataclass
+@cython.cclass
 class GTFLine:
     """
     A line from a GTF file, corresponding to particular genomic feature.
 
-    :param chromosome: Chromosome of the feature.
-    :param source: Source of the feature.
-    :param feature: Type of feature.
-    :param start: Start position of feature (0-based).
-    :param end: End position of feature (0-based).
-    :param score: Feature score.
-    :param strand: Strand of the feature.
-    :param frame: Frame of the feature.
-    :param attributes: Additional attributes of the feature.
+    Parameters
+    ----------
+    chromosome: str
+        Chromosome of the feature.
+    source: str
+        Source of the feature.
+    feature: str
+        Type of feature.
+    start: int
+        Genomic start position of feature (0-based).
+    end: int
+        Genomic end position of feature (0-based).
+    score: str
+        Feature score.
+    strand: Strand
+        Strand of the feature.
+    frame: str
+        Frame of the feature.
+    attributes: Dict[str, str]
+        Additional attributes of the feature.
     """
 
-    chromosome: str
-    """Chromosome of the feature."""
-    source: str
-    """Source of the feature."""
-    feature: str
-    """Type of feature."""
-    start: int
-    """Start position of feature (0-based)."""
-    end: int
-    """End position of feature (0-based)."""
-    score: str
-    """Feature score."""
-    strand: Strand
-    """Strand of the feature."""
-    frame: str
-    """Frame of the feature."""
-    attributes: Dict[str, str]
-    """Additional attributes of the feature."""
+    def __init__(
+        self,
+        chromosome: str,
+        source: str,
+        feature: str,
+        start: int,
+        end: int,
+        score: str,
+        strand: Strand,
+        frame: str,
+        attributes: Dict[str, str],
+    ) -> None:
+        self.chromosome = chromosome
+        self.source = source
+        self.feature = feature
+        self.start = start
+        self.end = end
+        self.score = score
+        self.strand = strand
+        self.frame = frame
+        self.attributes = attributes
 
     def __lt__(self, other) -> bool:
         if self.chromosome != other.chromosome:
@@ -439,36 +467,65 @@ class GTFLine:
             return feature_order[self.feature] > feature_order[other.feature]
 
 
+@cython.cclass
 class TranscriptIndex:
     """
     An index of transcripts from a GTF file. Allows for quick retrieval
     of transcripts on a particular chromosome and strand.
 
-    :param gtf_file: Path to GTF file.
+    Parameters
+    ----------
+    gtf_file: str
+        Path to GTF file.
     """
-
-    __slots__ = ["transcripts", "transcripts_by_region"]
-    transcripts: Dict[str, Transcript]
-    """Dictionary of transcripts by ID."""
-    transcripts_by_region: Dict[Tuple[str, Strand], List[Tuple[int, Set[Transcript]]]]
-    """Dictionary of transcript intervals by chromosome and strand."""
 
     def __init__(self, gtf_file: str) -> None:
         self.transcripts = {}
         self.transcripts_by_region = {}
         self.read_gtf(gtf_file)
 
-    def read_gtf(self, gtf_file: str) -> None:
+    def _add_transcripts(
+        self,
+        chrom_transcript_dict: Dict[str, Transcript],
+        start_end_positions: List[Tuple[int, int, Transcript]],
+        curr_chrom: str,
+        curr_strand: int,
+    ):
+        self.transcripts.update(chrom_transcript_dict)
+        start_end_positions.sort()
+        regions = [(0, set())]
+        for pos, is_end, trans in start_end_positions:
+            if is_end == 0:
+                # Multiple transcripts starting at the same position
+                if regions[-1][0] == pos:
+                    regions[-1] = (pos, regions[-1][1] | {trans})
+                else:
+                    regions.append((pos, regions[-1][1] | {trans}))
+            else:
+                # Multiple transcripts ending at the same position
+                if regions[-1][0] == pos + 1:
+                    regions[-1] = (pos + 1, regions[-1][1] - {trans})
+                else:
+                    regions.append((pos + 1, regions[-1][1] - {trans}))
+        self.transcripts_by_region[curr_chrom, curr_strand] = regions
+
+    @cython.embedsignature(False)
+    def read_gtf(self, gtf_file: str):
         """
+        read_gtf(gtf_file: str)
+
         Read a GTF file and construct an index of transcripts.
 
-        :param gtf_file: Path to GTF file.
+        Parameters
+        ----------
+        gtf_file
+            Path to GTF file.
         """
         lines = []
 
         # Read the GTF file
-        with open(gtf_file, "r") as gtf:
-            for line in gtf:
+        with logging_redirect_tqdm(), open(gtf_file, "r") as gtf:
+            for line in tqdm(gtf, desc="Reading GTF file", unit=" lines"):
                 # Skip header lines and comments
                 if line.startswith("#"):
                     continue
@@ -478,19 +535,21 @@ class TranscriptIndex:
                     curr_chrom,
                     source,
                     feature,
-                    start,
-                    end,
+                    start_str,
+                    end_str,
                     score,
-                    curr_strand,
+                    curr_strand_str,
                     frame,
                     attributes_str,
                 ) = line.strip().split("\t")
+
+                curr_strand = Strand.PLUS if curr_strand_str == "+" else Strand.MINUS
 
                 # Only keep exons and transcripts
                 if feature not in ["exon", "transcript"]:
                     continue
 
-                start, end = int(start), int(end)
+                start, end = int(start_str), int(end_str)
                 attributes = {
                     key: value.strip('"')
                     for attr in attributes_str.split("; ")
@@ -507,85 +566,89 @@ class TranscriptIndex:
                     start=start - 1,  # Convert to 0-based
                     end=end - 1,  # Convert to 0-based
                     score=score,
-                    strand=Strand(curr_strand),
+                    strand=curr_strand,
                     frame=frame,
                     attributes=attributes,
                 )
                 lines.append(gtf_line)
         lines.sort()
 
-        def _add_transcripts():
-            self.transcripts.update(chrom_transcript_dict)
-            start_end_positions.sort()
-            regions = [(0, set())]
-            for pos, is_end, trans in start_end_positions:
-                if is_end == 0:
-                    # Multiple transcripts starting at the same position
-                    if regions[-1][0] == pos:
-                        regions[-1] = (pos, regions[-1][1] | {trans})
-                    else:
-                        regions.append((pos, regions[-1][1] | {trans}))
-                else:
-                    # Multiple transcripts ending at the same position
-                    if regions[-1][0] == pos + 1:
-                        regions[-1] = (pos + 1, regions[-1][1] - {trans})
-                    else:
-                        regions.append((pos + 1, regions[-1][1] - {trans}))
-            self.transcripts_by_region[curr_chrom, curr_strand] = regions
-
         # Construct index from lines
         chrom_transcript_dict = {}
         start_end_positions = []
         curr_chrom, curr_strand = None, None
-        for line in lines:
-            if line.chromosome != curr_chrom or line.strand != curr_strand:
-                # Going to a new chromosome-strand pair:
-                # add the previous one to transcripts_by_regions
-                if curr_chrom is not None and curr_strand is not None:
-                    if (curr_chrom, curr_strand) in self.transcripts_by_region.keys():
-                        raise ValueError("GTF file was not sorted properly.")
-                    _add_transcripts()
-                curr_chrom = line.chromosome
-                curr_strand = line.strand
-                start_end_positions = []
-                chrom_transcript_dict = {}
-            # Add new transcript to dictionary
-            if line.feature == "transcript":
-                if line.attributes["transcript_id"] not in chrom_transcript_dict.keys():
-                    transcript = Transcript(
+        with logging_redirect_tqdm():
+            for line in tqdm(
+                lines, desc="Adding transcripts to index", unit=" GTF lines"
+            ):
+                if line.chromosome != curr_chrom or line.strand != curr_strand:
+                    # Going to a new chromosome-strand pair:
+                    # add the previous one to transcripts_by_regions
+                    if curr_chrom is not None and curr_strand is not None:
+                        if (
+                            curr_chrom,
+                            curr_strand,
+                        ) in self.transcripts_by_region.keys():
+                            raise ValueError("GTF file was not sorted properly.")
+                        self._add_transcripts(
+                            chrom_transcript_dict=chrom_transcript_dict,
+                            start_end_positions=start_end_positions,
+                            curr_chrom=curr_chrom,
+                            curr_strand=curr_strand,
+                        )
+                    curr_chrom = line.chromosome
+                    curr_strand = line.strand
+                    start_end_positions = []
+                    chrom_transcript_dict = {}
+                # Add new transcript to dictionary
+                if line.feature == "transcript":
+                    if (
+                        line.attributes["transcript_id"]
+                        not in chrom_transcript_dict.keys()
+                    ):
+                        transcript = Transcript(
+                            gene_id=line.attributes["gene_id"],
+                            gene_name=line.attributes["gene_name"],
+                            transcript_id=line.attributes["transcript_id"],
+                            transcript_name=line.attributes["transcript_name"],
+                            chromosome=line.chromosome,
+                            strand=line.strand,
+                            start=line.start,
+                            end=line.end,
+                        )
+                        chrom_transcript_dict[line.attributes["transcript_id"]] = (
+                            transcript
+                        )
+                        start_end_positions.append((transcript.start, 0, transcript))
+                        start_end_positions.append((transcript.end, 1, transcript))
+                # Add new exon to corresponding transcript
+                elif line.feature == "exon":
+                    exon = Exon(
                         gene_id=line.attributes["gene_id"],
                         gene_name=line.attributes["gene_name"],
                         transcript_id=line.attributes["transcript_id"],
                         transcript_name=line.attributes["transcript_name"],
                         chromosome=line.chromosome,
-                        strand=str(line.strand),
+                        strand=line.strand,
                         start=line.start,
                         end=line.end,
+                        exon_id=line.attributes["exon_id"],
+                        exon_number=int(line.attributes["exon_number"]),
                     )
-                    chrom_transcript_dict[line.attributes["transcript_id"]] = transcript
-                    start_end_positions.append((transcript.start, 0, transcript))
-                    start_end_positions.append((transcript.end, 1, transcript))
-            # Add new exon to corresponding transcript
-            elif line.feature == "exon":
-                exon = Exon(
-                    gene_id=line.attributes["gene_id"],
-                    gene_name=line.attributes["gene_name"],
-                    transcript_id=line.attributes["transcript_id"],
-                    transcript_name=line.attributes["transcript_name"],
-                    chromosome=line.chromosome,
-                    strand=str(line.strand),
-                    start=line.start,
-                    end=line.end,
-                    exon_id=line.attributes["exon_id"],
-                    exon_number=int(line.attributes["exon_number"]),
-                )
-                chrom_transcript_dict[line.attributes["transcript_id"]].add_exon(exon)
+                    chrom_transcript_dict[line.attributes["transcript_id"]].add_exon(
+                        exon
+                    )
 
         # Add last chromosome-strand pair
         if curr_chrom is not None and curr_strand is not None:
             if (curr_chrom, curr_strand) in self.transcripts_by_region.keys():
                 raise ValueError("GTF file was not sorted properly.")
-            _add_transcripts()
+            self._add_transcripts(
+                chrom_transcript_dict=chrom_transcript_dict,
+                start_end_positions=start_end_positions,
+                curr_chrom=curr_chrom,
+                curr_strand=curr_strand,
+            )
 
         # Sort exons in all transcripts
         for transcript in self.transcripts.values():
@@ -595,29 +658,53 @@ class TranscriptIndex:
         """
         Get a transcript by its ID.
 
-        :param transcript_id: Transcript ID.
-        :return: Transcript object.
+        Parameters
+        ----------
+        transcript_id
+            Transcript ID.
+
+        Returns
+        -------
+        Optional[Transcript]
+            Transcript object with the given ID if it is in the index.
         """
         if transcript_id in self.transcripts.keys():
             return self.transcripts[transcript_id]
         return None
 
+    @cython.embedsignature(False)
     def get_overlapping_transcripts(
-        self, chromosome: str, strand: str, start: int, end: int
+        self,
+        chromosome: str,
+        strand: Strand,
+        start: int,
+        end: int,
     ) -> List[Transcript]:
         """
+        get_overlapping_transcripts(chromosome: str, strand: Strand, start: int, end: int) -> List[Transcript]
+
         Get transcripts that overlap with a given region.
 
-        :param chromosome: Chromosome of interest.
-        :param strand: Strand of interest.
-        :param start: Start position of region.
-        :param end: End position of region.
-        :return: List of transcripts that overlap with the region.
+        Parameters
+        ----------
+        chromosome
+            Chromosome of interest.
+        strand
+            Strand of interest.
+        start
+            Genomic start position of the region.
+        end
+            Genomic end position of the region.
+
+        Returns
+        -------
+        List[Transcript]
+            List of transcripts that overlap with the region.
         """
         assert (
             start <= end
         ), "Start position must be less than or equal to end position."
-        strand = Strand(strand)
+        # strand = Strand(strand)
         if (chromosome, strand) not in self.transcripts_by_region.keys():
             return []
         overlapping_transcripts = set()
@@ -627,7 +714,7 @@ class TranscriptIndex:
             bisect(
                 self.transcripts_by_region[chromosome, strand],
                 start,
-                key=lambda x: x[0],
+                key=_bisect_sort_key,
             )
             - 1
         )
@@ -636,7 +723,7 @@ class TranscriptIndex:
             bisect(
                 self.transcripts_by_region[chromosome, strand],
                 end,
-                key=lambda x: x[0],
+                key=_bisect_sort_key,
             )
             - 1
         )
@@ -653,3 +740,9 @@ class TranscriptIndex:
                 )
 
         return sorted(overlapping_transcripts)
+
+
+@cython.cfunc
+@cython.inline
+def _bisect_sort_key(x: Tuple[int, Set[Transcript]]) -> int:
+    return x[0]

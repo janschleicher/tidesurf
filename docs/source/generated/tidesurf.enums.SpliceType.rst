@@ -1,7 +1,7 @@
-tidesurf.counter.SpliceType
-===========================
+tidesurf.enums.SpliceType
+=========================
 
-.. currentmodule:: tidesurf.counter
+.. currentmodule:: tidesurf.enums
 
 .. add toctree option to make autodoc generate the pages
 

@@ -1,11 +1,15 @@
 import os
 import shutil
-from typing import Optional
+from typing import Optional, Tuple
 
 import anndata as ad
 import numpy as np
 import pytest
 
+from tidesurf.main import main
+
+OUT_DIR = "test_out"
+TEST_GTF_FILE = "test_data/genes.gtf"
 TEST_OUT_CR_5P = "test_data/adata_cr_out.h5ad"
 TEST_OUT_CR_3P = "test_data/adata_cr_out_3p.h5ad"
 TEST_OUT_TS_NO_FILTER = "test_data/tidesurf_out/tidesurf_no_filter.h5ad"
@@ -13,68 +17,49 @@ TEST_OUT_TS_FILTER_CR = "test_data/tidesurf_out/tidesurf_filter_cr.h5ad"
 TEST_OUT_TS_FILTER_UMI = "test_data/tidesurf_out/tidesurf_filter_umi.h5ad"
 
 
-@pytest.mark.parametrize(
-    "sample_dir, gtf_file, orientation, test_out_cr",
-    [
-        (
-            "test_data/test_dir_count",
-            "test_data/genes.gtf",
-            "antisense",
-            TEST_OUT_CR_5P,
-        ),
-        (
-            "test_data/test_dir_multi",
-            "test_data/genes.gtf",
-            "antisense",
-            TEST_OUT_CR_5P,
-        ),
-        ("test_data/test_dir_count_3p", "test_data/genes.gtf", "sense", TEST_OUT_CR_3P),
-    ],
-)
-@pytest.mark.parametrize("multi_mapped_reads", [False, True])
-@pytest.mark.parametrize(
-    "no_filter_cells, whitelist, num_umis, test_out_ts",
-    [
-        (True, None, None, TEST_OUT_TS_NO_FILTER),
-        (False, None, None, TEST_OUT_TS_FILTER_CR),
-        (False, "cellranger", None, TEST_OUT_TS_FILTER_CR),
-        (False, "test_data/whitelist.tsv", None, TEST_OUT_TS_FILTER_CR),
-        (False, None, 10, TEST_OUT_TS_FILTER_UMI),
-        (False, "cellranger", 10, None),
-    ],
-)
-def test_main(
+def make_cmd(
     sample_dir: str,
-    gtf_file: str,
     orientation: str,
     multi_mapped_reads: bool,
     no_filter_cells: bool,
     whitelist: Optional[str],
-    num_umis: Optional[int],
+    num_umis: int,
+) -> Tuple[str, str]:
+    if orientation == "sense" and whitelist:
+        whitelist = whitelist.replace("whitelist", "whitelist_3p")
+    cmd = (
+        f"tidesurf -o {OUT_DIR} --orientation {orientation} "
+        f"{'--no_filter_cells ' if no_filter_cells else ''}"
+        f"{f'--whitelist {whitelist} ' if whitelist else ''}"
+        f"{f'--num_umis {num_umis} ' if num_umis != -1 else ''}"
+        f"{'--multi_mapped_reads ' if multi_mapped_reads else ''}"
+        f"{sample_dir} {TEST_GTF_FILE}"
+    )
+
+    return whitelist, cmd
+
+
+def check_output(
+    sample_dir: str,
+    orientation: str,
+    multi_mapped_reads: bool,
+    no_filter_cells: bool,
+    whitelist: Optional[str],
+    num_umis: int,
     test_out_cr: str,
     test_out_ts: str,
 ):
-    if orientation == "sense" and whitelist:
-        whitelist = whitelist.replace("whitelist", "whitelist_3p")
-    os.system(
-        f"tidesurf -o test_out --orientation {orientation} "
-        f"{'--no_filter_cells ' if no_filter_cells else ''}"
-        f"{f'--whitelist {whitelist} ' if whitelist else ''}"
-        f"{f'--num_umis {num_umis} ' if num_umis else ''}"
-        f"{'--multi_mapped_reads ' if multi_mapped_reads else ''}"
-        f"{sample_dir} {gtf_file}"
-    )
     adata_cr = ad.read_h5ad(test_out_cr)
-    if whitelist and num_umis:
-        assert not os.path.exists("test_out"), (
+    if whitelist and num_umis != -1:
+        assert not os.path.exists(OUT_DIR), (
             "No output should be generated with both whitelist and "
             "num_umis present (mutually exclusive arguments)."
         )
         return
     adata_ts = ad.read_h5ad(
-        "test_out/tidesurf.h5ad"
+        f"{OUT_DIR}/tidesurf.h5ad"
         if "count" in sample_dir
-        else "test_out/tidesurf_sample_1.h5ad"
+        else f"{OUT_DIR}/tidesurf_sample_1.h5ad"
     )
 
     # Compare with expected output
@@ -130,4 +115,130 @@ def test_main(
         == 0
     ), "Mitochondrial genes do not have ambiguous counts."
 
-    shutil.rmtree("test_out")
+    shutil.rmtree(OUT_DIR)
+
+
+@pytest.mark.parametrize(
+    "sample_dir, orientation, test_out_cr",
+    [
+        (
+            "test_data/test_dir_count",
+            "antisense",
+            TEST_OUT_CR_5P,
+        ),
+        (
+            "test_data/test_dir_multi",
+            "antisense",
+            TEST_OUT_CR_5P,
+        ),
+        ("test_data/test_dir_count_3p", "sense", TEST_OUT_CR_3P),
+    ],
+)
+@pytest.mark.parametrize("multi_mapped_reads", [False, True])
+@pytest.mark.parametrize(
+    "no_filter_cells, whitelist, num_umis, test_out_ts",
+    [
+        (True, None, -1, TEST_OUT_TS_NO_FILTER),
+        (False, None, -1, TEST_OUT_TS_FILTER_CR),
+        (False, "cellranger", -1, TEST_OUT_TS_FILTER_CR),
+        (False, "test_data/whitelist.tsv", -1, TEST_OUT_TS_FILTER_CR),
+        (False, None, 10, TEST_OUT_TS_FILTER_UMI),
+        (False, "cellranger", 10, None),
+    ],
+)
+def test_tidesurf(
+    sample_dir: str,
+    orientation: str,
+    multi_mapped_reads: bool,
+    no_filter_cells: bool,
+    whitelist: Optional[str],
+    num_umis: int,
+    test_out_cr: str,
+    test_out_ts: str,
+):
+    whitelist, cmd = make_cmd(
+        sample_dir,
+        orientation,
+        multi_mapped_reads,
+        no_filter_cells,
+        whitelist,
+        num_umis,
+    )
+    os.system(cmd)
+    check_output(
+        sample_dir,
+        orientation,
+        multi_mapped_reads,
+        no_filter_cells,
+        whitelist,
+        num_umis,
+        test_out_cr,
+        test_out_ts,
+    )
+
+
+@pytest.mark.parametrize(
+    "sample_dir, orientation, test_out_cr",
+    [
+        (
+            "test_data/test_dir_count",
+            "antisense",
+            TEST_OUT_CR_5P,
+        ),
+        (
+            "test_data/test_dir_multi",
+            "antisense",
+            TEST_OUT_CR_5P,
+        ),
+        ("test_data/test_dir_count_3p", "sense", TEST_OUT_CR_3P),
+    ],
+)
+@pytest.mark.parametrize("multi_mapped_reads", [False, True])
+@pytest.mark.parametrize(
+    "no_filter_cells, whitelist, num_umis, test_out_ts",
+    [
+        (True, None, -1, TEST_OUT_TS_NO_FILTER),
+        (False, None, -1, TEST_OUT_TS_FILTER_CR),
+        (False, "cellranger", -1, TEST_OUT_TS_FILTER_CR),
+        (False, "test_data/whitelist.tsv", -1, TEST_OUT_TS_FILTER_CR),
+        (False, None, 10, TEST_OUT_TS_FILTER_UMI),
+        (False, "cellranger", 10, None),
+    ],
+)
+def test_main(
+    sample_dir: str,
+    orientation: str,
+    multi_mapped_reads: bool,
+    no_filter_cells: bool,
+    whitelist: Optional[str],
+    num_umis: int,
+    test_out_cr: str,
+    test_out_ts: str,
+):
+    whitelist, cmd = make_cmd(
+        sample_dir,
+        orientation,
+        multi_mapped_reads,
+        no_filter_cells,
+        whitelist,
+        num_umis,
+    )
+
+    arg_list = cmd.split(" ")[1:]
+
+    if whitelist and num_umis != -1:
+        with pytest.raises(SystemExit):
+            main(arg_list)
+        return
+    main(arg_list)
+
+    check_output(
+        sample_dir,
+        orientation,
+        multi_mapped_reads,
+        no_filter_cells,
+        whitelist,
+        num_umis,
+        test_out_cr,
+        test_out_ts,
+    )

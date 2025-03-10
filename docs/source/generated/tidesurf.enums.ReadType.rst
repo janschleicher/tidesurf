@@ -1,7 +1,7 @@
-tidesurf.counter.ReadType
-=========================
+tidesurf.enums.ReadType
+=======================
 
-.. currentmodule:: tidesurf.counter
+.. currentmodule:: tidesurf.enums
 
 .. add toctree option to make autodoc generate the pages
 
@@ -16,18 +16,11 @@ tidesurf.counter.ReadType
    
       ~ReadType.INTRON
       ~ReadType.EXON_EXON
-      ~ReadType.AMBIGUOUS
+      ~ReadType.AMBIGUOUS_READ
       ~ReadType.EXON
    
    
 
    
-   
-   .. rubric:: Methods
-
-   .. autosummary::
-      :toctree: .
-   
-      ~ReadType.get_splice_type
    
    
