@@ -132,5 +132,17 @@ include = [
 exclude = [] # exclude packages matching these glob patterns (empty by default)
 namespaces = false # to disable scanning PEP 420 namespaces (true by default)
 
+[tool.cibuildwheel]
+build = ["cp310-*", "cp311-*", "cp312-*", "cp313-*"]
+skip = "*-musllinux*"
+build-frontend = "build"
+manylinux-x86_64-image = "manylinux2014"
+
+[tool.cibuildwheel.linux]
+before-all = ["yum install -y bzip2-devel xz-devel"]
+
+[tool.cibuildwheel.macos]
+before-all = "brew install bzip2"
+
 [project.scripts]
 tidesurf = "tidesurf.main:main"
