@@ -7,15 +7,19 @@ The following usage information is displayed when running the program with the `
 .. code-block:: console
 
     usage: tidesurf [-h] [-v] [--orientation {sense,antisense}] [-o OUTPUT]
-                [--filter_cells] [--whitelist WHITELIST | --num_umis NUM_UMIS]
+                [--no_filter_cells]
+                [--whitelist WHITELIST | --num_umis NUM_UMIS]
                 [--min_intron_overlap MIN_INTRON_OVERLAP]
                 [--multi_mapped_reads]
                 SAMPLE_DIR GTF_FILE
+
     Program: tidesurf (Tool for IDentification and Enumeration of Spliced and Unspliced Read Fragments)
-    Version: 0.1.0
+    Version: 0.2.0
+
     positional arguments:
       SAMPLE_DIR            Sample directory containing Cell Ranger output.
       GTF_FILE              GTF file with transcript information.
+    
     options:
       -h, --help            show this help message and exit
       -v, --version         show program's version number and exit
@@ -25,7 +29,7 @@ The following usage information is displayed when running the program with the `
                             'antisense' for five prime.
       -o OUTPUT, --output OUTPUT
                             Output directory.
-      --filter_cells        Filter cells based on a whitelist.
+      --no_filter_cells     Do not filter cells.
       --whitelist WHITELIST
                             Whitelist for cell filtering. Set to 'cellranger' to
                             use barcodes in the sample directory. Alternatively,
@@ -36,3 +40,4 @@ The following usage information is displayed when running the program with the `
                             an intron to be considered intronic.
       --multi_mapped_reads  Take reads mapping to multiple genes into account
                             (default: reads mapping to more than one gene are
+                            discarded).

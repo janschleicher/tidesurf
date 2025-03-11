@@ -4,7 +4,7 @@
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-red)](https://github.com/astral-sh/ruff)
 [![codecov](https://codecov.io/gh/janschleicher/tidesurf/branch/main/graph/badge.svg?token=dMenu3eZkX)](https://codecov.io/gh/janschleicher/tidesurf)
 [![Python package](https://github.com/janschleicher/tidesurf/actions/workflows/python-package.yml/badge.svg?branch=main)](https://github.com/janschleicher/tidesurf/actions/workflows/python-package.yml)
-![PyPI - Version](https://img.shields.io/pypi/v/tidesurf)
+[![PyPI - Version](https://img.shields.io/pypi/v/tidesurf)](https://pypi.org/project/tidesurf/)
 [![Documentation Status](https://readthedocs.org/projects/tidesurf/badge/?version=latest)](https://tidesurf.readthedocs.io/latest/?badge=latest)
 
 # tidesurf
@@ -46,7 +46,7 @@ usage: tidesurf [-h] [-v] [--orientation {sense,antisense}] [-o OUTPUT]
                 SAMPLE_DIR GTF_FILE
 
 Program: tidesurf (Tool for IDentification and Enumeration of Spliced and Unspliced Read Fragments)
-Version: 0.1.1.dev2+g6f0391a
+Version: 0.2.0
 
 positional arguments:
   SAMPLE_DIR            Sample directory containing Cell Ranger output.

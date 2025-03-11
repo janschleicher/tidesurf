@@ -27,6 +27,7 @@ Fragments, implemented in Python. It enables the quantification of spliced and u
     installation
     usage
     api
+    release_notes
 
 Citation
 --------
