@@ -1,0 +1,6 @@
+/* Make the header logo smaller */
+.navbar-brand .logo__image {
+    max-height: 9rem;
+    height: auto;
+    width: auto;
+}
