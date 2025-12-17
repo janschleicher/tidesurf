@@ -1,5 +1,5 @@
 {{ fullname | escape | underline}}
-
+{% set non_init_methods = methods | reject("equalto", "__init__") | list %}
 .. currentmodule:: {{ module }}
 
 .. add toctree option to make autodoc generate the pages
@@ -19,7 +19,7 @@
    {% endblock %}
 
    {% block methods %}
-   {% if methods %}
+   {% if non_init_methods %}
    .. rubric:: Methods
 
    .. autosummary::

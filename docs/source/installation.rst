@@ -5,11 +5,11 @@ Default installation
 --------------------
 
 To use **tidesurf**, we recommend installing it in a fresh virtual environment with Python version :math:`\geq` 3.10.
-You can set up the environment as follows:
+You can set up the environment as follows (for Python 3.12):
 
 .. code-block:: console
 
-    conda create -n <env_name> python=3.10
+    conda create -n <env_name> python=3.12
     conda activate <env_name>
 
 PyPI

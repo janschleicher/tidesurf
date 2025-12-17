@@ -18,7 +18,7 @@ requires-python = ">=3.10"
 
 authors = [
     { email = "jan.schleicher@uni-tuebingen.de" },
-    { name = "Jan Schleicher" },
+    { name = "Jan T. Schleicher" },
 ]
 
 keywords = ["scRNA-seq", "quantification", "splicing", "velocity"]

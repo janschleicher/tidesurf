@@ -11,8 +11,8 @@ import tidesurf
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = "tidesurf"
-copyright = "%Y, Jan Schleicher"
-author = "Jan Schleicher"
+copyright = "%Y, Jan T. Schleicher"
+author = "Jan T. Schleicher"
 release = ".".join(tidesurf.__version__.split(".")[:3])
 
 # -- General configuration ---------------------------------------------------
@@ -36,13 +36,15 @@ exclude_patterns = []
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = "sphinx_book_theme"
-html_theme_options = dict(
-    use_repository_button=True,
-    repository_url="https://github.com/janschleicher/tidesurf",
-    repository_branch="main",
-)
+html_theme_options = {
+    "use_repository_button": True,
+    "repository_url": "https://github.com/janschleicher/tidesurf",
+    "repository_branch": "main",
+    "logo": {"text": "tidesurf"},
+}
 html_static_path = ["_static"]
-html_title = "tidesurf"
+html_logo = "_static/img/logo.svg"
+html_css_files = ["custom.css"]
 
 # Automatic generation of API documentation
 autosummary_generate = True
@@ -78,6 +80,7 @@ def setup(app):
             "to_bytes",
             "from_bytes",
             "as_integer_ratio",
+            "is_integer",
         ]:
             return True
         return None

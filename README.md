@@ -15,9 +15,9 @@ This repository provides a Tool for IDentification and Enumeration of Spliced an
 
 ### From PyPI
 
-Set up a virtual environment using Conda with Python version >=3.10 and activate it:
+Set up a virtual environment using Conda with Python version >=3.10 and activate it (here: using Python 3.12):
 
-    conda create -n <envName> python=3.10
+    conda create -n <envName> python=3.12
     conda activate <envName>
 
 Install the package from PyPI:

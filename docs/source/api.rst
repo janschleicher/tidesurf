@@ -6,7 +6,7 @@ API
 
 
 .. autosummary::
-    :toctree: generated
+    :toctree: api
     :recursive:
 
     enums

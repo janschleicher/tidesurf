@@ -28,10 +28,4 @@ tidesurf.transcript.GTFLine
 
    
    
-   .. rubric:: Methods
-
-   .. autosummary::
-      :toctree: .
-   
-   
    
