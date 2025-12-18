@@ -125,7 +125,7 @@ docstring-code-format = true
 
 #SOURCE: https://stackoverflow.com/a/76739181
 [tool.setuptools.packages.find]
-where = ["."] # list of folders that contain the packages (["."] by default)
+where = ["src"] # list of folders that contain the packages (["."] by default)
 include = [
     "tidesurf",
 ] # package names should match these glob patterns (["*"] by default)
@@ -146,3 +146,11 @@ before-all = "brew install bzip2"
 
 [project.scripts]
 tidesurf = "tidesurf.main:main"
+
+[tool.coverage.run]
+omit = ["*/tests/*"]
+
+[tool.pytest.ini_options]
+addopts = [
+    "--import-mode=importlib",
+]

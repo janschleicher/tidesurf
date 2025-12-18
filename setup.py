@@ -37,12 +37,16 @@ if IS_DEBUG:
     )
 
 extensions = [
-    Extension("tidesurf.enums", ["tidesurf/enums.pyx"]),
-    Extension("tidesurf.transcript", ["tidesurf/transcript.py"]),
+    Extension("tidesurf.enums", ["src/tidesurf/enums.pyx"]),
+    Extension("tidesurf.transcript", ["src/tidesurf/transcript.py"]),
     Extension(
-        "tidesurf.counter", ["tidesurf/counter.py"], include_dirs=pysam.get_include()
+        "tidesurf.counter",
+        ["src/tidesurf/counter.py"],
+        include_dirs=pysam.get_include(),
     ),
-    Extension("tidesurf.main", ["tidesurf/main.py"], include_dirs=pysam.get_include()),
+    Extension(
+        "tidesurf.main", ["src/tidesurf/main.py"], include_dirs=pysam.get_include()
+    ),
 ]
 
 for ext in extensions:
