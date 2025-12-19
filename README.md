@@ -48,7 +48,7 @@ usage: tidesurf [-h] [-v] [--orientation {sense,antisense}] [-o OUTPUT]
                 SAMPLE_DIR GTF_FILE
 
 Program: tidesurf (Tool for IDentification and Enumeration of Spliced and Unspliced Read Fragments)
-Version: 0.2.0
+Version: 0.2.1
 
 positional arguments:
   SAMPLE_DIR            Sample directory containing Cell Ranger output.

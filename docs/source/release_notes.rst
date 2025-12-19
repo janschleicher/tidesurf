@@ -3,6 +3,12 @@
 Release notes
 =============
 
+Version 0.2.1 :small:`(2025-12-19)`
+
+Changes:
+
+- Move test directory outside of package code directory.
+
 Version 0.2.0 :small:`(2025-03-12)`
 -----------------------------------
 
