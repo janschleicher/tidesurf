@@ -1,5 +1,6 @@
 import pytest
 
+from tests.conftest import TEST_DATA_DIR
 from tidesurf.enums import Strand, antisense
 from tidesurf.transcript import (
     Exon,
@@ -9,7 +10,7 @@ from tidesurf.transcript import (
     TranscriptIndex,
 )
 
-TEST_GTF_FILE = "test_data/genes.gtf"
+TEST_GTF_FILE = str(TEST_DATA_DIR / "genes.gtf")
 
 
 def test_strand():
@@ -82,64 +83,64 @@ def test_genomic_feature():
     )
 
     start, end = 8_999_900, 9_000_100
-    assert gen_feat_1.overlaps(
-        "chr1", Strand.PLUS, start, end
-    ), f"Genomic feature {gen_feat_1} should overlap region chr1+ {start:,}-{end:,}."
-    assert not gen_feat_2.overlaps(
-        "chr1", Strand.PLUS, start, end
-    ), f"Genomic feature {gen_feat_2} should not overlap region chr1+ {start:,}-{end:,}."
-    assert not gen_feat_1.overlaps(
-        "chr2", Strand.PLUS, start, end
-    ), f"Genomic feature {gen_feat_1} should not overlap region chr2+ {start:,}-{end:,}."
-    assert not gen_feat_1.overlaps(
-        "chr1", Strand.MINUS, start, end
-    ), f"Genomic feature {gen_feat_1} should not overlap region chr1- {start:,}-{end:,}."
+    assert gen_feat_1.overlaps("chr1", Strand.PLUS, start, end), (
+        f"Genomic feature {gen_feat_1} should overlap region chr1+ {start:,}-{end:,}."
+    )
+    assert not gen_feat_2.overlaps("chr1", Strand.PLUS, start, end), (
+        f"Genomic feature {gen_feat_2} should not overlap region chr1+ {start:,}-{end:,}."
+    )
+    assert not gen_feat_1.overlaps("chr2", Strand.PLUS, start, end), (
+        f"Genomic feature {gen_feat_1} should not overlap region chr2+ {start:,}-{end:,}."
+    )
+    assert not gen_feat_1.overlaps("chr1", Strand.MINUS, start, end), (
+        f"Genomic feature {gen_feat_1} should not overlap region chr1- {start:,}-{end:,}."
+    )
 
     # Vary the min_overlap parameter
     end = 9_000_000
     chrom, strand = "chr1", Strand.PLUS
-    assert gen_feat_1.overlaps(
-        chrom, strand, start, end
-    ), f"Genomic feature {gen_feat_1} should overlap region {chrom}{strand} {start:,}-{end:,} by >= 1 base."
-    assert not gen_feat_1.overlaps(
-        chrom, strand, start, end, min_overlap=2
-    ), f"Genomic feature {gen_feat_1} should not overlap region {chrom}{strand} {start:,}-{end:,} by >= 2 bases."
+    assert gen_feat_1.overlaps(chrom, strand, start, end), (
+        f"Genomic feature {gen_feat_1} should overlap region {chrom}{strand} {start:,}-{end:,} by >= 1 base."
+    )
+    assert not gen_feat_1.overlaps(chrom, strand, start, end, min_overlap=2), (
+        f"Genomic feature {gen_feat_1} should not overlap region {chrom}{strand} {start:,}-{end:,} by >= 2 bases."
+    )
     end = 9_000_001
-    assert gen_feat_1.overlaps(
-        chrom, strand, start, end, min_overlap=2
-    ), f"Genomic feature {gen_feat_1} should overlap region {chrom}{strand} {start:,}-{end:,} by >= 2 bases."
+    assert gen_feat_1.overlaps(chrom, strand, start, end, min_overlap=2), (
+        f"Genomic feature {gen_feat_1} should overlap region {chrom}{strand} {start:,}-{end:,} by >= 2 bases."
+    )
     end = 9_000_008
-    assert gen_feat_1.overlaps(
-        chrom, strand, start, end, min_overlap=2
-    ), f"Genomic feature {gen_feat_1} should overlap region {chrom}{strand} {start:,}-{end:,} by >= 2 bases."
-    assert not gen_feat_1.overlaps(
-        chrom, strand, start, end, min_overlap=10
-    ), f"Genomic feature {gen_feat_1} should not overlap region {chrom}{strand} {start:,}-{end:,} by >= 10 bases."
-    assert gen_feat_1.overlaps(
-        chrom, strand, start, 9_000_009, min_overlap=10
-    ), f"Genomic feature {gen_feat_1} should overlap region {chrom}{strand} {start:,}-9,000,009 by >= 10 bases."
+    assert gen_feat_1.overlaps(chrom, strand, start, end, min_overlap=2), (
+        f"Genomic feature {gen_feat_1} should overlap region {chrom}{strand} {start:,}-{end:,} by >= 2 bases."
+    )
+    assert not gen_feat_1.overlaps(chrom, strand, start, end, min_overlap=10), (
+        f"Genomic feature {gen_feat_1} should not overlap region {chrom}{strand} {start:,}-{end:,} by >= 10 bases."
+    )
+    assert gen_feat_1.overlaps(chrom, strand, start, 9_000_009, min_overlap=10), (
+        f"Genomic feature {gen_feat_1} should overlap region {chrom}{strand} {start:,}-9,000,009 by >= 10 bases."
+    )
 
     start, end = 9_001_000, 9_001_100
-    assert gen_feat_1.overlaps(
-        chrom, strand, start, end
-    ), f"Genomic feature {gen_feat_1} should overlap region {chrom}{strand} {start:,}-{end:,} by >= 1 base."
-    assert not gen_feat_1.overlaps(
-        chrom, strand, start, end, min_overlap=2
-    ), f"Genomic feature {gen_feat_1} should not overlap region {chrom}{strand} {start:,}-{end:,} by >= 2 bases."
+    assert gen_feat_1.overlaps(chrom, strand, start, end), (
+        f"Genomic feature {gen_feat_1} should overlap region {chrom}{strand} {start:,}-{end:,} by >= 1 base."
+    )
+    assert not gen_feat_1.overlaps(chrom, strand, start, end, min_overlap=2), (
+        f"Genomic feature {gen_feat_1} should not overlap region {chrom}{strand} {start:,}-{end:,} by >= 2 bases."
+    )
     start = 9_000_999
-    assert gen_feat_1.overlaps(
-        chrom, strand, start, end, min_overlap=2
-    ), f"Genomic feature {gen_feat_1} should overlap region {chrom}{strand} {start:,}-{end:,} by >= 2 bases."
+    assert gen_feat_1.overlaps(chrom, strand, start, end, min_overlap=2), (
+        f"Genomic feature {gen_feat_1} should overlap region {chrom}{strand} {start:,}-{end:,} by >= 2 bases."
+    )
     start = 9_000_992
-    assert gen_feat_1.overlaps(
-        chrom, strand, start, end, min_overlap=2
-    ), f"Genomic feature {gen_feat_1} should overlap region {chrom}{strand} {start:,}-{end:,} by >= 2 bases."
-    assert not gen_feat_1.overlaps(
-        chrom, strand, start, end, min_overlap=10
-    ), f"Genomic feature {gen_feat_1} should not overlap region {chrom}{strand} {start:,}-{end:,} by >= 10 bases."
-    assert gen_feat_1.overlaps(
-        chrom, strand, 9_000_991, end, min_overlap=10
-    ), f"Genomic feature {gen_feat_1} should overlap region {chrom}{strand} 9,000,991-{end:,} by >= 10 bases."
+    assert gen_feat_1.overlaps(chrom, strand, start, end, min_overlap=2), (
+        f"Genomic feature {gen_feat_1} should overlap region {chrom}{strand} {start:,}-{end:,} by >= 2 bases."
+    )
+    assert not gen_feat_1.overlaps(chrom, strand, start, end, min_overlap=10), (
+        f"Genomic feature {gen_feat_1} should not overlap region {chrom}{strand} {start:,}-{end:,} by >= 10 bases."
+    )
+    assert gen_feat_1.overlaps(chrom, strand, 9_000_991, end, min_overlap=10), (
+        f"Genomic feature {gen_feat_1} should overlap region {chrom}{strand} 9,000,991-{end:,} by >= 10 bases."
+    )
 
 
 def test_transcript():
@@ -233,9 +234,9 @@ def test_transcript():
         9_577_970,
         [exon_1, exon_2],
     )
-    assert (
-        transcript_1 != transcript_2
-    ), "Transcripts should differ in their exons/introns."
+    assert transcript_1 != transcript_2, (
+        "Transcripts should differ in their exons/introns."
+    )
 
     transcript_2.sort_regions()
     assert transcript_1 == transcript_2, "Transcripts should be equal after sorting."
@@ -249,20 +250,20 @@ def test_transcript_index():
         chromosome,
         strand,
     ), regions in transcript_idx.transcripts_by_region.items():
-        assert regions == sorted(
-            regions, key=lambda x: x[0]
-        ), f"Regions for chromosome {chromosome} {strand} are not sorted"
+        assert regions == sorted(regions, key=lambda x: x[0]), (
+            f"Regions for chromosome {chromosome} {strand} are not sorted"
+        )
         for pos, transcripts in regions:
             for transcript in transcripts:
-                assert (
-                    transcript.chromosome == chromosome
-                ), f"Chromosome mismatch: {transcript.chromosome} != {chromosome}"
-                assert (
-                    transcript.strand == strand
-                ), f"Strand mismatch: {transcript.strand} != {strand}"
-                assert (
-                    transcript.start <= pos <= transcript.end
-                ), f"Transcript {transcript.transcript_id} does not overlap region starting at {pos}"
+                assert transcript.chromosome == chromosome, (
+                    f"Chromosome mismatch: {transcript.chromosome} != {chromosome}"
+                )
+                assert transcript.strand == strand, (
+                    f"Strand mismatch: {transcript.strand} != {strand}"
+                )
+                assert transcript.start <= pos <= transcript.end, (
+                    f"Transcript {transcript.transcript_id} does not overlap region starting at {pos}"
+                )
 
     # Test that no transcripts are returned when the chromosome/strand
     # is not in the index
@@ -292,9 +293,9 @@ def test_transcript_index():
             f"region {chromosome} {strand} {start} {end}"
         )
         assert transcript.gene_name == "Sgk3"
-    assert (
-        len(overlapping_transcripts) == 4
-    ), f"Expected 4 transcripts, found {len(overlapping_transcripts)}"
+    assert len(overlapping_transcripts) == 4, (
+        f"Expected 4 transcripts, found {len(overlapping_transcripts)}"
+    )
     transcript_ids = [x.transcript_id for x in overlapping_transcripts]
     assert transcript_ids == [
         "ENSMUST00000166384",
@@ -315,9 +316,9 @@ def test_transcript_index():
             f"Transcript {transcript.transcript_id} does not overlap "
             f"region {chromosome} {strand} {start} {end}"
         )
-    assert (
-        len(overlapping_transcripts) == 5
-    ), f"Expected 5 transcripts, found {len(overlapping_transcripts)}"
+    assert len(overlapping_transcripts) == 5, (
+        f"Expected 5 transcripts, found {len(overlapping_transcripts)}"
+    )
     transcript_ids = [x.transcript_id for x in overlapping_transcripts]
     assert transcript_ids == [
         "ENSMUST00000166384",

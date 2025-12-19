@@ -3,10 +3,11 @@ from typing import List, Tuple
 import pysam
 import pytest
 
+from tests.conftest import TEST_DATA_DIR
 from tidesurf import TranscriptIndex, UMICounter
 from tidesurf.enums import ReadType
 
-TEST_GTF_FILE = "test_data/genes.gtf"
+TEST_GTF_FILE = str(TEST_DATA_DIR / "genes.gtf")
 TRANSCRIPT_INDEX = TranscriptIndex(TEST_GTF_FILE)
 
 
@@ -194,9 +195,9 @@ def test_read_processing(multi_mapped_reads: bool) -> None:
             ), "Read was filtered out when it should not be."
         else:
             cbc_pred, res_list = res
-            assert len(res_list) == len(
-                expected_result
-            ), f"Expected {len(expected_result)} gene(s), got {len(res_list)}."
+            assert len(res_list) == len(expected_result), (
+                f"Expected {len(expected_result)} gene(s), got {len(res_list)}."
+            )
             assert cbc_pred == cbc, "Cell barcode mismatch."
             for (
                 umi_pred,

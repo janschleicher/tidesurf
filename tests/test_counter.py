@@ -1,8 +1,11 @@
+from typing import Optional
+
 import anndata as ad
 import numpy as np
 import pandas as pd
 import pytest
 
+from tests.conftest import TEST_DATA_DIR
 from tidesurf import TranscriptIndex, UMICounter
 
 
@@ -12,53 +15,61 @@ from tidesurf import TranscriptIndex, UMICounter
         (False, None, -1, True),
         (
             True,
-            "test_data/test_dir_count/outs/filtered_feature_bc_matrix/barcodes.tsv.gz",
+            "test_dir_count/outs/filtered_feature_bc_matrix/barcodes.tsv.gz",
             -1,
             True,
         ),
-        (True, "test_data/whitelist.tsv", -1, True),
+        (True, "whitelist.tsv", -1, True),
         (True, None, 10, True),
         (False, None, -1, False),
         (
             True,
-            "test_data/test_dir_count_3p/outs/filtered_feature_bc_matrix/barcodes.tsv.gz",
+            "test_dir_count_3p/outs/filtered_feature_bc_matrix/barcodes.tsv.gz",
             -1,
             False,
         ),
-        (True, "test_data/whitelist_3p.tsv", -1, False),
+        (True, "whitelist_3p.tsv", -1, False),
         (True, None, 10, False),
     ],
 )
 def test_counter(
-    filter_cells: bool, whitelist: str, num_umis: int, five_prime: bool
+    filter_cells: bool,
+    whitelist: Optional[str],
+    num_umis: int,
+    five_prime: bool,
 ) -> None:
-    t_idx = TranscriptIndex("test_data/genes.gtf")
+    t_idx = TranscriptIndex(str(TEST_DATA_DIR / "genes.gtf"))
     if five_prime:
         orientation = "antisense"
+        counts_dir = "test_dir_count"
     else:
         orientation = "sense"
+        counts_dir = "test_dir_count_3p"
     counter = UMICounter(transcript_index=t_idx, orientation=orientation)
+    if whitelist:
+        whitelist = str(TEST_DATA_DIR / whitelist)
+
     cells, genes, counts = counter.count(
-        bam_file=f"test_data/{'test_dir_count' if five_prime else 'test_dir_count_3p'}/outs/possorted_genome_bam.bam",
+        bam_file=str(TEST_DATA_DIR / f"{counts_dir}/outs/possorted_genome_bam.bam"),
         filter_cells=filter_cells,
         whitelist=whitelist,
         num_umis=num_umis,
     )
     x_ts = (counts["spliced"] + counts["unspliced"] + counts["ambiguous"]).toarray()
     if five_prime:
-        adata_cr = ad.read_h5ad("test_data/adata_cr_out.h5ad")
+        adata_cr = ad.read_h5ad(TEST_DATA_DIR / "adata_cr_out.h5ad")
     else:
-        adata_cr = ad.read_h5ad("test_data/adata_cr_out_3p.h5ad")
+        adata_cr = ad.read_h5ad(TEST_DATA_DIR / "adata_cr_out_3p.h5ad")
     x_cr = adata_cr[cells, genes].X.toarray()
 
-    assert np.allclose(
-        x_cr, x_ts, atol=5, rtol=0.05
-    ), "Discrepancy between tidesurf and cellranger outputs is too big."
+    assert np.allclose(x_cr, x_ts, atol=5, rtol=0.05), (
+        "Discrepancy between tidesurf and cellranger outputs is too big."
+    )
 
     for gene in adata_cr.var_names:
-        assert (
-            gene in genes or adata_cr[:, gene].X.sum() <= 1
-        ), f"Gene {gene} with total count > 1 is missing in tidesurf output."
+        assert gene in genes or adata_cr[:, gene].X.sum() <= 1, (
+            f"Gene {gene} with total count > 1 is missing in tidesurf output."
+        )
 
     # Mitochondrial genes should not have any unspliced or ambiguous counts
     assert (
@@ -76,15 +87,17 @@ def test_counter(
 
 
 def test_counter_exceptions():
-    t_idx = TranscriptIndex("test_data/genes.gtf")
+    t_idx = TranscriptIndex(str(TEST_DATA_DIR / "genes.gtf"))
     counter = UMICounter(transcript_index=t_idx, orientation="antisense")
     with pytest.raises(
         ValueError, match="Whitelist and num_umis are mutually exclusive arguments."
     ):
         counter.count(
-            bam_file="test_data/test_dir_count/outs/possorted_genome_bam.bam",
+            bam_file=str(
+                TEST_DATA_DIR / "test_dir_count/outs/possorted_genome_bam.bam"
+            ),
             filter_cells=True,
-            whitelist="test_data/whitelist.tsv",
+            whitelist=str(TEST_DATA_DIR / "whitelist.tsv"),
             num_umis=10,
         )
 
@@ -93,7 +106,9 @@ def test_counter_exceptions():
         match="Either whitelist or num_umis must be provided when filter_cells==True.",
     ):
         counter.count(
-            bam_file="test_data/test_dir_count/outs/possorted_genome_bam.bam",
+            bam_file=str(
+                TEST_DATA_DIR / "test_dir_count/outs/possorted_genome_bam.bam"
+            ),
             filter_cells=True,
             whitelist=None,
             num_umis=-1,

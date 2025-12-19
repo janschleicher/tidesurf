@@ -50,7 +50,7 @@ dependencies = [
 Repository = "https://github.com/janschleicher/tidesurf"
 
 [project.optional-dependencies]
-dev = ["ruff", "pytest"]
+dev = ["ruff", "pytest", "pytest-cov", "pytest-datafiles>=3.0.0"]
 doc = [
     "sphinx",
     "sphinx-book-theme",
@@ -147,10 +147,18 @@ before-all = "brew install bzip2"
 [project.scripts]
 tidesurf = "tidesurf.main:main"
 
-[tool.coverage.run]
-omit = ["*/tests/*"]
-
-[tool.pytest.ini_options]
+[tool.pytest]
+filterwarnings = [
+    "ignore:NotImplemented should not be used in a boolean context:DeprecationWarning",
+]
 addopts = [
     "--import-mode=importlib",
 ]
+
+[tool.coverage.run]
+source_pkgs = ["tidesurf"]
+omit = ["tests/*"]
+plugins = ["Cython.Coverage"]
+
+[tool.coverage.paths]
+source = ["src", "**/site-packages"]
