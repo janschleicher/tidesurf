@@ -1,0 +1,10 @@
+coverage:
+  status:
+    project:
+      default:
+        # Require 80% coverage
+        target: 80
+    patch:
+      default:
+        # Require 80% coverage
+        target: 80
