@@ -50,7 +50,7 @@ dependencies = [
 Repository = "https://github.com/janschleicher/tidesurf"
 
 [project.optional-dependencies]
-dev = ["ruff", "pytest", "pytest-cov", "pytest-datafiles>=3.0.0"]
+dev = ["ruff", "pytest", "pytest-cov"]
 doc = [
     "sphinx",
     "sphinx-book-theme",

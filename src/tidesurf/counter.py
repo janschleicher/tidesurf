@@ -119,9 +119,7 @@ class UMICounter:
                 )
 
         aln_file = AlignmentFile(bam_file, mode="r")
-        total_reads = 0
-        for idx_stats in aln_file.get_index_statistics():
-            total_reads += idx_stats.total
+        total_reads = aln_file.mapped + aln_file.unmapped
 
         with logging_redirect_tqdm():
             results = {}
@@ -130,7 +128,10 @@ class UMICounter:
             if filter_cells and whitelist:
                 skipped_reads["whitelist"] = 0
             for bam_read in tqdm(
-                aln_file, total=total_reads, desc="Processing BAM file", unit=" reads"
+                aln_file.fetch(until_eof=True),
+                total=total_reads,
+                desc="Processing BAM file",
+                unit=" reads",
             ):
                 if (
                     bam_read.is_unmapped

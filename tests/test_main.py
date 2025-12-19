@@ -175,16 +175,8 @@ def test_tidesurf(
 @pytest.mark.parametrize(
     "sample_dir, orientation, test_out_cr",
     [
-        (
-            "test_dir_count",
-            "antisense",
-            TEST_OUT_CR_5P,
-        ),
-        (
-            "test_dir_multi",
-            "antisense",
-            TEST_OUT_CR_5P,
-        ),
+        ("test_dir_count", "antisense", TEST_OUT_CR_5P),
+        ("test_dir_multi", "antisense", TEST_OUT_CR_5P),
         ("test_dir_count_3p", "sense", TEST_OUT_CR_3P),
     ],
 )
