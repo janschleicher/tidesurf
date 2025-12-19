@@ -1,9 +1,8 @@
 """Module for counting UMIs with reads mapping to transcripts."""
 
 import logging
-import os
 from bisect import bisect
-from typing import Dict, Iterable, List, Literal, Optional, Set, Tuple
+from typing import Dict, List, Literal, Optional, Set, Tuple
 
 import cython
 import numpy as np
@@ -22,21 +21,6 @@ from tqdm import tqdm
 from tqdm.contrib.logging import logging_redirect_tqdm
 
 log = logging.getLogger(__name__)
-
-
-@cython.ccall
-def _maybe_tqdm(
-    iterable: Iterable,
-    total: Optional[int] = None,
-    desc: Optional[str] = None,
-    unit: str = "it",
-):
-    """
-    Workaround for Python 3.13 pysam iterator bug in GitHub Actions.
-    """
-    if os.getenv("CI_PY_313", False):
-        return iterable
-    return tqdm(iterable, total=total, desc=desc, unit=unit)
 
 
 @cython.ccall
@@ -143,7 +127,7 @@ class UMICounter:
             skipped_reads = {"unmapped": 0, "no or multimapped transcripts": 0}
             if filter_cells and whitelist:
                 skipped_reads["whitelist"] = 0
-            for bam_read in _maybe_tqdm(
+            for bam_read in tqdm(
                 aln_file.fetch(until_eof=True),
                 total=total_reads,
                 desc="Processing BAM file",
