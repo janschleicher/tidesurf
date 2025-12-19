@@ -41,6 +41,7 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with pytest
       run: |
+        if [ "${{ matrix.python-version }}" = "3.13" ]; then export CI_PY_313=1; fi
         pytest --cov --cov-report=xml
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v5
