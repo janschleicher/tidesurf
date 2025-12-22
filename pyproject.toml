@@ -148,9 +148,6 @@ before-all = "brew install bzip2"
 tidesurf = "tidesurf.main:main"
 
 [tool.pytest]
-filterwarnings = [
-    "ignore:NotImplemented should not be used in a boolean context:DeprecationWarning",
-]
 addopts = [
     "--import-mode=importlib",
 ]

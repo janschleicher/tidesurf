@@ -380,12 +380,14 @@ class Transcript(GenomicFeature):
         self.regions = all_regions
 
     def __eq__(self, other) -> bool:
-        return super.__eq__(self, other) and self.regions == other.regions
+        if type(other) is not type(self):
+            return NotImplemented
+        return super(Transcript, self).__eq__(other) and self.regions == other.regions
 
     def __repr__(self) -> str:
         return (
             f"<Transcript {self.transcript_id} {self.chromosome}:{self.start:,}-"
-            f"{self.end:,} on '{self.strand}' strand at {hex(id(self)) } "
+            f"{self.end:,} on '{self.strand}' strand at {hex(id(self))} "
             f"containing {len(self.regions)} exons/introns>"
         )
 
@@ -701,9 +703,9 @@ class TranscriptIndex:
         List[Transcript]
             List of transcripts that overlap with the region.
         """
-        assert (
-            start <= end
-        ), "Start position must be less than or equal to end position."
+        assert start <= end, (
+            "Start position must be less than or equal to end position."
+        )
         # strand = Strand(strand)
         if (chromosome, strand) not in self.transcripts_by_region.keys():
             return []
