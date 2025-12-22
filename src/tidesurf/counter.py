@@ -12,6 +12,7 @@ from cython.cimports.tidesurf.transcript import (
     Exon,
     GenomicFeature,
     Intron,
+    Transcript,
     TranscriptIndex,
 )
 from pysam.libcalignedsegment import CINS, CSOFT_CLIP, AlignedSegment
@@ -310,6 +311,7 @@ class UMICounter:
             {key: csr_array(val) for key, val in counts.items()},
         )
 
+    @cython.locals(transcript=Transcript)
     def _process_read(
         self, read: AlignedSegment
     ) -> Optional[Tuple[str, List[Tuple[str, str, int, float]]]]:
@@ -348,9 +350,9 @@ class UMICounter:
         # Only keep transcripts with minimum overlap of 50% of the read length.
         min_overlap = cython.declare(int, length // 2)
         overlapping_transcripts = [
-            t
-            for t in overlapping_transcripts
-            if t.overlaps(
+            transcript
+            for transcript in overlapping_transcripts
+            if transcript.overlaps(
                 chromosome=chromosome,
                 strand=strand,
                 start=start,
@@ -377,18 +379,19 @@ class UMICounter:
 
         # For each gene, determine the type of read alignment
         read_types_per_gene = {
-            trans.gene_name: set() for trans in overlapping_transcripts
+            transcript.gene_name: set() for transcript in overlapping_transcripts
         }
-        for trans in overlapping_transcripts:
+        for transcript in overlapping_transcripts:
             # Loop over exons and introns
             total_exon_overlap = cython.declare(int, 0)
             total_intron_overlap = cython.declare(int, 0)
             n_exons = cython.declare(int, 0)
             left_idx = cython.declare(
                 int,
-                max(_bisect_genomic_feature_list(trans.regions, start) - 1, 0),
+                max(_bisect_genomic_feature_list(transcript.regions, start) - 1, 0),
             )
-            for region in trans.regions[left_idx:]:
+            cython.declare(region=GenomicFeature)
+            for region in transcript.regions[left_idx:]:
                 if region.start > end:
                     break
                 if isinstance(region, Exon):
@@ -414,25 +417,25 @@ class UMICounter:
             ):
                 # More than one exon: exon-exon junction
                 if n_exons > 1:
-                    read_types_per_gene[trans.gene_name].add(ReadType.EXON_EXON)
+                    read_types_per_gene[transcript.gene_name].add(ReadType.EXON_EXON)
                 elif n_exons == 1:
-                    read_types_per_gene[trans.gene_name].add(ReadType.EXON)
+                    read_types_per_gene[transcript.gene_name].add(ReadType.EXON)
                 else:
                     raise ValueError("Exon overlap without exons.")
             # Special case: if read overlaps with only first exon and the
             # region before or with only last exon and the region after
             elif (
                 left_idx == 0
-                and start < trans.regions[left_idx].start
-                and end <= trans.regions[left_idx].end
+                and start < transcript.regions[left_idx].start
+                and end <= transcript.regions[left_idx].end
             ) or (
-                left_idx == len(trans.regions) - 1
-                and end > trans.regions[left_idx].end
-                and start >= trans.regions[left_idx].start
+                left_idx == len(transcript.regions) - 1
+                and end > transcript.regions[left_idx].end
+                and start >= transcript.regions[left_idx].start
             ):
-                read_types_per_gene[trans.gene_name].add(ReadType.EXON)
+                read_types_per_gene[transcript.gene_name].add(ReadType.EXON)
             elif total_intron_overlap >= self.MIN_INTRON_OVERLAP:
-                read_types_per_gene[trans.gene_name].add(ReadType.INTRON)
+                read_types_per_gene[transcript.gene_name].add(ReadType.INTRON)
 
         # Determine ReadType for each mapped gene
         processed_reads = []

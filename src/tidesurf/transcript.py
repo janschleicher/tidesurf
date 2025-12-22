@@ -511,6 +511,7 @@ class TranscriptIndex:
         self.transcripts_by_region[curr_chrom, curr_strand] = regions
 
     @cython.embedsignature(False)
+    @cython.locals(transcript=Transcript)
     def read_gtf(self, gtf_file: str):
         """
         read_gtf(gtf_file: str)
@@ -636,9 +637,8 @@ class TranscriptIndex:
                         exon_id=line.attributes["exon_id"],
                         exon_number=int(line.attributes["exon_number"]),
                     )
-                    chrom_transcript_dict[line.attributes["transcript_id"]].add_exon(
-                        exon
-                    )
+                    transcript = chrom_transcript_dict[line.attributes["transcript_id"]]
+                    transcript.add_exon(exon)
 
         # Add last chromosome-strand pair
         if curr_chrom is not None and curr_strand is not None:
