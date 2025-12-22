@@ -25,7 +25,7 @@ def make_cmd(
     no_filter_cells: bool,
     whitelist: Optional[str],
     num_umis: int,
-) -> Tuple[str, str]:
+) -> Tuple[Optional[str], str]:
     if whitelist and whitelist != "cellranger":
         whitelist = str(TEST_DATA_DIR / whitelist)
         if orientation == "sense":

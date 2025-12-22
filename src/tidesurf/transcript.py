@@ -1,7 +1,6 @@
 """Module for working with genomic features and GTF files."""
 
 import logging
-from bisect import bisect
 from typing import Dict, List, Optional, Set, Tuple, Union
 
 import cython
@@ -679,8 +678,8 @@ class TranscriptIndex:
         self,
         chromosome: str,
         strand: Strand,
-        start: int,
-        end: int,
+        start: cython.ulong,
+        end: cython.ulong,
     ) -> List[Transcript]:
         """
         get_overlapping_transcripts(chromosome: str, strand: Strand, start: int, end: int) -> List[Transcript]
@@ -713,20 +712,14 @@ class TranscriptIndex:
 
         # Find region of query start position
         left_idx = (
-            bisect(
-                self.transcripts_by_region[chromosome, strand],
-                start,
-                key=_bisect_sort_key,
+            _bisect_transcript_list(
+                self.transcripts_by_region[chromosome, strand], start
             )
             - 1
         )
         # Find region of query end position
         right_idx = (
-            bisect(
-                self.transcripts_by_region[chromosome, strand],
-                end,
-                key=_bisect_sort_key,
-            )
+            _bisect_transcript_list(self.transcripts_by_region[chromosome, strand], end)
             - 1
         )
 
@@ -746,5 +739,16 @@ class TranscriptIndex:
 
 @cython.cfunc
 @cython.inline
-def _bisect_sort_key(x: Tuple[int, Set[Transcript]]) -> int:
-    return x[0]
+def _bisect_transcript_list(
+    lst: List[Tuple[int, Set[Transcript]]], pos: cython.ulong
+) -> int:
+    low = cython.declare(int, 0)
+    high = cython.declare(int, len(lst))
+
+    while low < high:
+        mid = cython.declare(cython.ulong, (low + high) // 2)
+        if pos < lst[mid][0]:
+            high = mid
+        else:
+            low = mid + 1
+    return low

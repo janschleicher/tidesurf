@@ -1,12 +1,12 @@
 """Module for counting UMIs with reads mapping to transcripts."""
 
 import logging
-from bisect import bisect
 from typing import Dict, List, Literal, Optional, Set, Tuple
 
 import cython
 import numpy as np
 import polars as pl
+from cython.cimports.pysam.libcalignmentfile import AlignmentFile
 from cython.cimports.tidesurf.enums import ReadType, SpliceType, Strand, antisense
 from cython.cimports.tidesurf.transcript import (
     Exon,
@@ -15,15 +15,15 @@ from cython.cimports.tidesurf.transcript import (
     TranscriptIndex,
 )
 from pysam.libcalignedsegment import CINS, CSOFT_CLIP, AlignedSegment
-from pysam.libcalignmentfile import AlignmentFile
-from scipy.sparse import csr_matrix, lil_matrix
+from scipy.sparse import csr_array, lil_array
 from tqdm import tqdm
 from tqdm.contrib.logging import logging_redirect_tqdm
 
 log = logging.getLogger(__name__)
 
 
-@cython.ccall
+@cython.cfunc
+@cython.inline
 def _get_splice_type(read_type: int) -> int:
     """Return the corresponding SpliceType for a ReadType."""
     if read_type == ReadType.INTRON:
@@ -72,7 +72,7 @@ class UMICounter:
         filter_cells: bool = False,
         whitelist: Optional[str] = None,
         num_umis: int = -1,
-    ) -> Tuple[np.ndarray, np.ndarray, Dict[str, csr_matrix]]:
+    ) -> Tuple[np.ndarray, np.ndarray, Dict[str, csr_array]]:
         """
         count(bam_file: str, filter_cells: bool = False, whitelist: Optional[str] = None, num_umis: int = -1) -> Tuple[np.ndarray, np.ndarray, Dict[str, csr_matrix]]
 
@@ -118,15 +118,17 @@ class UMICounter:
                     pl.read_csv(whitelist, has_header=False)[:, 0].str.strip_chars()
                 )
 
-        aln_file = AlignmentFile(bam_file, mode="r")
+        aln_file = cython.declare(AlignmentFile, AlignmentFile(bam_file, mode="r"))
         total_reads = aln_file.mapped + aln_file.unmapped
 
         with logging_redirect_tqdm():
             results = {}
             log.info("Processing reads from BAM file.")
-            skipped_reads = {"unmapped": 0, "no or multimapped transcripts": 0}
+            skipped_reads_unmapped = cython.declare(int, 0)
+            skipped_reads_no_or_multimapped = cython.declare(int, 0)
             if filter_cells and whitelist:
-                skipped_reads["whitelist"] = 0
+                skipped_reads_whitelist = cython.declare(int, 0)
+            bam_read = cython.declare(AlignedSegment)
             for bam_read in tqdm(
                 aln_file.fetch(until_eof=True),
                 total=total_reads,
@@ -140,11 +142,11 @@ class UMICounter:
                     or not bam_read.has_tag("CB")
                     or not bam_read.has_tag("UB")
                 ):
-                    skipped_reads["unmapped"] += 1
+                    skipped_reads_unmapped += 1
                     continue
                 if filter_cells and whitelist:
                     if bam_read.get_tag("CB") not in wl:
-                        skipped_reads["whitelist"] += 1
+                        skipped_reads_whitelist += 1
                         continue
                 res = self._process_read(bam_read)
                 if res:
@@ -154,10 +156,16 @@ class UMICounter:
                     else:
                         results[cbc] = results_list
                 else:
-                    skipped_reads["no or multimapped transcripts"] += 1
-        log.info(
-            f"Skipped {', '.join([f'{n_reads:,} reads ({reason})' for reason, n_reads in skipped_reads.items()])}."
+                    skipped_reads_no_or_multimapped += 1
+        skip_log_string = (
+            f"Skipped {skipped_reads_unmapped} unmapped reads, {skipped_reads_no_or_multimapped} "
+            f"reads with no or multimapped transcripts)."
         )
+        if filter_cells and whitelist:
+            skip_log_string.replace(
+                ".", f"{skipped_reads_whitelist} reads not in whitelist."
+            )
+        log.info(skip_log_string)
 
         # Deduplicate cell barcodes and UMIs.
         counts_dict = {}
@@ -252,7 +260,7 @@ class UMICounter:
         # Concatenate the cell-wise count DataFrames
         results_df = pl.concat(
             [
-                df.with_columns(cbc=pl.lit(key, dtype=str))
+                df.with_columns(cbc=pl.lit(key, dtype=pl.String))
                 for key, df in counts_dict.items()
             ]
         )
@@ -276,7 +284,7 @@ class UMICounter:
 
         # Construct sparse matrices
         counts = {
-            key: lil_matrix((n_cells, n_genes), dtype=np.int32)
+            key: lil_array((n_cells, n_genes), dtype=np.int32)
             for key in [SpliceType.SPLICED, SpliceType.UNSPLICED, SpliceType.AMBIGUOUS]
         }
         for splice_type, mat in counts.items():
@@ -289,9 +297,9 @@ class UMICounter:
         if filter_cells and num_umis != -1:
             log.info(f"Filtering cells with at least {num_umis} UMIs.")
             idx = (
-                counts["spliced"].sum(axis=1).A1
-                + counts["unspliced"].sum(axis=1).A1
-                + counts["unspliced"].sum(axis=1).A1
+                counts["spliced"].sum(axis=1)
+                + counts["unspliced"].sum(axis=1)
+                + counts["unspliced"].sum(axis=1)
             ) >= num_umis
             cells = cells[idx]
             counts = {key: value[idx] for key, value in counts.items()}
@@ -299,12 +307,12 @@ class UMICounter:
         return (
             cells,
             genes,
-            {key: csr_matrix(val) for key, val in counts.items()},
+            {key: csr_array(val) for key, val in counts.items()},
         )
 
     def _process_read(
         self, read: AlignedSegment
-    ) -> Tuple[str, List[Tuple[str, str, int, float]]]:
+    ) -> Optional[Tuple[str, List[Tuple[str, str, int, float]]]]:
         """
         Process a single read.
 
@@ -322,9 +330,10 @@ class UMICounter:
         umi = str(read.get_tag("UB"))
         chromosome = read.reference_name
         strand = Strand.PLUS if read.is_forward else Strand.MINUS
-        start: cython.int = read.reference_start
-        end: cython.int = read.reference_end - 1  # pysam reference_end is exclusive
-        length: cython.int = read.infer_read_length()
+        start = cython.declare(cython.ulong, read.reference_start)
+        end = cython.declare(cython.ulong, read.reference_end)
+        end -= 1  # pysam reference_end is exclusive
+        length = cython.declare(int, read.infer_read_length())
 
         if self.orientation == "antisense":
             strand = antisense(strand)
@@ -337,7 +346,7 @@ class UMICounter:
         )
 
         # Only keep transcripts with minimum overlap of 50% of the read length.
-        min_overlap: cython.int = length // 2
+        min_overlap = cython.declare(int, length // 2)
         overlapping_transcripts = [
             t
             for t in overlapping_transcripts
@@ -351,19 +360,20 @@ class UMICounter:
         ]
 
         if not overlapping_transcripts:
-            return tuple()
+            return None
 
         # Determine length of read without soft-clipped bases and count
         # inserted bases (present in read, but not in reference)
-        clipped_length: cython.int = length
-        insertion_length: cython.int = 0
-        cigar_op: cython.int
-        n_bases: cython.int
-        for cigar_op, n_bases in read.cigartuples:
-            if cigar_op == CSOFT_CLIP:
-                clipped_length -= n_bases
-            elif cigar_op == CINS:
-                insertion_length += n_bases
+        clipped_length = cython.declare(int, length)
+        insertion_length = cython.declare(int, 0)
+        cigar_op = cython.declare(int)
+        n_bases = cython.declare(int)
+        if read.cigartuples is not None:
+            for cigar_op, n_bases in read.cigartuples:
+                if cigar_op == CSOFT_CLIP:
+                    clipped_length -= n_bases
+                elif cigar_op == CINS:
+                    insertion_length += n_bases
 
         # For each gene, determine the type of read alignment
         read_types_per_gene = {
@@ -371,24 +381,28 @@ class UMICounter:
         }
         for trans in overlapping_transcripts:
             # Loop over exons and introns
-            total_exon_overlap: cython.int = 0
-            total_intron_overlap: cython.int = 0
-            n_exons: cython.int = 0
-            left_idx: cython.int = max(
-                bisect(trans.regions, start, key=_genomic_feature_sort_key) - 1, 0
+            total_exon_overlap = cython.declare(int, 0)
+            total_intron_overlap = cython.declare(int, 0)
+            n_exons = cython.declare(int, 0)
+            left_idx = cython.declare(
+                int,
+                max(_bisect_genomic_feature_list(trans.regions, start) - 1, 0),
             )
             for region in trans.regions[left_idx:]:
                 if region.start > end:
                     break
                 if isinstance(region, Exon):
-                    exon_overlap = read.get_overlap(region.start, region.end + 1)
+                    exon_overlap = cython.declare(
+                        int, read.get_overlap(region.start, region.end + 1)
+                    )
                     total_exon_overlap += exon_overlap
                     if exon_overlap > 0:
                         n_exons += 1
                 elif isinstance(region, Intron):
-                    total_intron_overlap += read.get_overlap(
-                        region.start, region.end + 1
+                    intron_overlap = cython.declare(
+                        int, read.get_overlap(region.start, region.end + 1)
                     )
+                    total_intron_overlap += intron_overlap
                 else:
                     raise ValueError("Unknown region type.")
 
@@ -422,9 +436,9 @@ class UMICounter:
 
         # Determine ReadType for each mapped gene
         processed_reads = []
-        n_genes = len(read_types_per_gene)
+        n_genes = cython.declare(int, len(read_types_per_gene))
         if n_genes > 1 and not self.multi_mapped_reads:
-            return tuple()
+            return None
         for gene_name, read_types in read_types_per_gene.items():
             if not read_types:
                 continue
@@ -438,20 +452,29 @@ class UMICounter:
 
             processed_reads.append((umi, gene_name, int(read_type), 1.0 / n_genes))
         if not processed_reads:
-            return tuple()
+            return None
         return cbc, processed_reads
 
 
 @cython.cfunc
 @cython.inline
-def _genomic_feature_sort_key(gen_feat: GenomicFeature) -> int:
-    return gen_feat.start
+def _bisect_genomic_feature_list(lst: List[GenomicFeature], pos: cython.ulong) -> int:
+    low = cython.declare(int, 0)
+    high = cython.declare(int, len(lst))
+
+    while low < high:
+        mid = cython.declare(cython.ulong, (low + high) // 2)
+        if pos < lst[mid].start:
+            high = mid
+        else:
+            low = mid + 1
+    return low
 
 
 def _argmax(lst: np.ndarray) -> np.int64:
     _, indices, value_counts = np.unique(lst, return_index=True, return_counts=True)
     if value_counts[-1] > 1:
-        return -1
+        return np.int64(-1)
     else:
         return indices[-1]
 

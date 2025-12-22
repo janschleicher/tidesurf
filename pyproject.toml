@@ -40,8 +40,8 @@ dependencies = [
     "cython",
     "numpy",
     "polars",
-    "scipy",
-    "anndata",
+    "scipy>=1.11.0",
+    "anndata>=0.11.0",
     "pysam",
     "tqdm",
 ]

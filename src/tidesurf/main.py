@@ -132,8 +132,9 @@ def run(
                 f"No Cell Ranger BAM files found in directory {sample_dir}."
             )
         sample_ids = [
-            re.search(r"outs/per_sample_outs/(.*)/count", f).group(1) for f in bam_files
+            re.search(r"outs/per_sample_outs/(.*)/count", f) for f in bam_files
         ]
+        sample_ids = [s_id.group(1) for s_id in sample_ids if s_id is not None]
 
     counter = UMICounter(
         transcript_index=t_idx,
