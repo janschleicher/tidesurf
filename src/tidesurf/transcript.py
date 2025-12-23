@@ -739,14 +739,16 @@ class TranscriptIndex:
 
 @cython.cfunc
 @cython.inline
+@cython.locals(pos=cython.ulong, low=int, high=int, mid=int)
+@cython.returns(int)
 def _bisect_transcript_list(
     lst: List[Tuple[int, Set[Transcript]]], pos: cython.ulong
 ) -> int:
-    low = cython.declare(int, 0)
-    high = cython.declare(int, len(lst))
+    low = 0
+    high = len(lst)
 
     while low < high:
-        mid = cython.declare(cython.ulong, (low + high) // 2)
+        mid = (low + high) // 2
         if pos < lst[mid][0]:
             high = mid
         else:

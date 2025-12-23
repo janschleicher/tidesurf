@@ -25,14 +25,17 @@ log = logging.getLogger(__name__)
 
 @cython.cfunc
 @cython.inline
+@cython.locals(read_type=ReadType, splice_type=SpliceType)
+@cython.returns(int)
 def _get_splice_type(read_type: int) -> int:
     """Return the corresponding SpliceType for a ReadType."""
     if read_type == ReadType.INTRON:
-        return int(SpliceType.UNSPLICED)
+        splice_type = SpliceType.UNSPLICED
     elif read_type == ReadType.EXON_EXON or read_type == ReadType.EXON:
-        return int(SpliceType.SPLICED)
+        splice_type = SpliceType.SPLICED
     else:
-        return int(SpliceType.AMBIGUOUS)
+        splice_type = SpliceType.AMBIGUOUS
+    return int(splice_type)
 
 
 @cython.cclass
@@ -461,12 +464,14 @@ class UMICounter:
 
 @cython.cfunc
 @cython.inline
+@cython.locals(pos=cython.ulong, low=int, high=int, mid=int)
+@cython.returns(int)
 def _bisect_genomic_feature_list(lst: List[GenomicFeature], pos: cython.ulong) -> int:
-    low = cython.declare(int, 0)
-    high = cython.declare(int, len(lst))
+    low = 0
+    high = len(lst)
 
     while low < high:
-        mid = cython.declare(cython.ulong, (low + high) // 2)
+        mid = (low + high) // 2
         if pos < lst[mid].start:
             high = mid
         else:
