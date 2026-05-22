@@ -1,7 +1,9 @@
 """Module for working with genomic features and GTF files."""
 
+import gzip
 import logging
 from bisect import bisect
+from functools import partial
 from operator import itemgetter
 from typing import Dict, List, Optional, Tuple, Union
 
@@ -543,7 +545,11 @@ class TranscriptIndex:
         lines = []
 
         # Read the GTF file
-        with logging_redirect_tqdm(), open(gtf_file, "r") as gtf:
+        if gtf_file.endswith(".gz"):
+            file_open = partial(gzip.open, mode="rt")
+        else:
+            file_open = partial(open, mode="r")
+        with logging_redirect_tqdm(), file_open(gtf_file) as gtf:
             for line in tqdm(gtf, desc="Reading GTF file", unit=" lines"):
                 # Skip header lines and comments
                 if line.startswith("#"):
