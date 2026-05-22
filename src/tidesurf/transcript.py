@@ -3,7 +3,12 @@
 import logging
 from bisect import bisect
 from operator import itemgetter
-from typing import Dict, List, Optional, Self, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
+
+try:
+    from typing import Self
+except ImportError:
+    from typing_extensions import Self
 
 import cython
 from cython.cimports.tidesurf.enums import Strand
