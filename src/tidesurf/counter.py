@@ -1,6 +1,8 @@
 """Module for counting UMIs with reads mapping to transcripts."""
 
 import logging
+from bisect import bisect
+from operator import attrgetter
 from typing import Dict, List, Literal, Optional, Set, Tuple
 
 import cython
@@ -57,6 +59,11 @@ class UMICounter:
         Whether to count multi-mapped reads (default: `False`).
     """
 
+    @cython.locals(
+        transcript_index=TranscriptIndex,
+        min_intron_overlap=int,
+        multi_mapped_reads=cython.bint,
+    )
     def __init__(
         self,
         transcript_index: TranscriptIndex,
@@ -335,8 +342,8 @@ class UMICounter:
         umi = str(read.get_tag("UB"))
         chromosome = read.reference_name
         strand = Strand.PLUS if read.is_forward else Strand.MINUS
-        start = cython.declare(cython.ulong, read.reference_start)
-        end = cython.declare(cython.ulong, read.reference_end)
+        start = cython.declare(int, read.reference_start)
+        end = cython.declare(int, read.reference_end)
         end -= 1  # pysam reference_end is exclusive
         length = cython.declare(int, read.infer_read_length())
 
@@ -391,7 +398,10 @@ class UMICounter:
             n_exons = cython.declare(int, 0)
             left_idx = cython.declare(
                 int,
-                max(_bisect_genomic_feature_list(transcript.regions, start) - 1, 0),
+                max(
+                    bisect(transcript.regions, start, key=attrgetter("start")) - 1,
+                    0,
+                ),
             )
             cython.declare(region=GenomicFeature)
             for region in transcript.regions[left_idx:]:
@@ -460,23 +470,6 @@ class UMICounter:
         if not processed_reads:
             return None
         return cbc, processed_reads
-
-
-@cython.cfunc
-@cython.inline
-@cython.locals(pos=cython.ulong, low=int, high=int, mid=int)
-@cython.returns(int)
-def _bisect_genomic_feature_list(lst: List[GenomicFeature], pos: cython.ulong) -> int:
-    low = 0
-    high = len(lst)
-
-    while low < high:
-        mid = (low + high) // 2
-        if pos < lst[mid].start:
-            high = mid
-        else:
-            low = mid + 1
-    return low
 
 
 def _argmax(lst: np.ndarray) -> np.int64:

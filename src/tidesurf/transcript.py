@@ -1,7 +1,9 @@
 """Module for working with genomic features and GTF files."""
 
 import logging
-from typing import Dict, List, Optional, Set, Tuple, Union
+from bisect import bisect
+from operator import itemgetter
+from typing import Dict, List, Optional, Self, Tuple, Union
 
 import cython
 from cython.cimports.tidesurf.enums import Strand
@@ -119,30 +121,39 @@ class GenomicFeature:
             and min(self.end - start + 1, end - self.start + 1) >= min_overlap
         )
 
-    def __lt__(self, other) -> bool:
-        if self.chromosome != other.chromosome or self.strand != other.strand:
+    def __lt__(self, other: Self) -> bool:
+        if not isinstance(other, GenomicFeature):
+            return NotImplemented
+        o: GenomicFeature = cython.cast(GenomicFeature, other)
+        if self.chromosome != o.chromosome or self.strand != o.strand:
             raise ValueError("Cannot compare features on different chromosomes/strands")
-        if self.start != other.start:
-            return self.start < other.start
+        if self.start != o.start:
+            return self.start < o.start
         else:
-            return self.end < other.end
+            return self.end < o.end
 
-    def __gt__(self, other) -> bool:
-        if self.chromosome != other.chromosome or self.strand != other.strand:
+    def __gt__(self, other: Self) -> bool:
+        if not isinstance(other, GenomicFeature):
+            return NotImplemented
+        o: GenomicFeature = cython.cast(GenomicFeature, other)
+        if self.chromosome != o.chromosome or self.strand != o.strand:
             raise ValueError("Cannot compare features on different chromosomes/strands")
-        if self.start != other.start:
-            return self.start > other.start
+        if self.start != o.start:
+            return self.start > o.start
         else:
-            return self.end > other.end
+            return self.end > o.end
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: Self) -> bool:
+        if not isinstance(other, GenomicFeature):
+            return NotImplemented
+        o: GenomicFeature = cython.cast(GenomicFeature, other)
         return (
-            self.gene_id == other.gene_id
-            and self.transcript_id == other.transcript_id
-            and self.chromosome == other.chromosome
-            and self.strand == other.strand
-            and self.start == other.start
-            and self.end == other.end
+            self.gene_id == o.gene_id
+            and self.transcript_id == o.transcript_id
+            and self.chromosome == o.chromosome
+            and self.strand == o.strand
+            and self.start == o.start
+            and self.end == o.end
         )
 
     def __hash__(self) -> int:
@@ -378,10 +389,11 @@ class Transcript(GenomicFeature):
         all_regions.append(self.regions[-1])
         self.regions = all_regions
 
-    def __eq__(self, other) -> bool:
-        if type(other) is not type(self):
+    def __eq__(self, other: Self) -> bool:
+        if not isinstance(other, Transcript):
             return NotImplemented
-        return super(Transcript, self).__eq__(other) and self.regions == other.regions
+        o: Transcript = cython.cast(Transcript, other)
+        return super(Transcript, self).__eq__(other) and self.regions == o.regions
 
     def __repr__(self) -> str:
         return (
@@ -678,8 +690,8 @@ class TranscriptIndex:
         self,
         chromosome: str,
         strand: Strand,
-        start: cython.ulong,
-        end: cython.ulong,
+        start: int,
+        end: int,
     ) -> List[Transcript]:
         """
         get_overlapping_transcripts(chromosome: str, strand: Strand, start: int, end: int) -> List[Transcript]
@@ -712,14 +724,20 @@ class TranscriptIndex:
 
         # Find region of query start position
         left_idx = (
-            _bisect_transcript_list(
-                self.transcripts_by_region[chromosome, strand], start
+            bisect(
+                self.transcripts_by_region[chromosome, strand],
+                start,
+                key=itemgetter(0),
             )
             - 1
         )
         # Find region of query end position
         right_idx = (
-            _bisect_transcript_list(self.transcripts_by_region[chromosome, strand], end)
+            bisect(
+                self.transcripts_by_region[chromosome, strand],
+                end,
+                key=itemgetter(0),
+            )
             - 1
         )
 
@@ -735,22 +753,3 @@ class TranscriptIndex:
                 )
 
         return sorted(overlapping_transcripts)
-
-
-@cython.cfunc
-@cython.inline
-@cython.locals(pos=cython.ulong, low=int, high=int, mid=int)
-@cython.returns(int)
-def _bisect_transcript_list(
-    lst: List[Tuple[int, Set[Transcript]]], pos: cython.ulong
-) -> int:
-    low = 0
-    high = len(lst)
-
-    while low < high:
-        mid = (low + high) // 2
-        if pos < lst[mid][0]:
-            high = mid
-        else:
-            low = mid + 1
-    return low

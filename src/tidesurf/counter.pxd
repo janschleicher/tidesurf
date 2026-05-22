@@ -1,4 +1,4 @@
-import cython
+cimport cython
 from tidesurf.transcript cimport GenomicFeature, TranscriptIndex
 from pysam.libcalignedsegment cimport AlignedSegment
 
