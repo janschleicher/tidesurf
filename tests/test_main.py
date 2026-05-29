@@ -1,5 +1,6 @@
 import os
 import shutil
+from glob import glob
 from typing import Optional, Tuple
 
 import anndata as ad
@@ -25,6 +26,7 @@ def make_cmd(
     no_filter_cells: bool,
     whitelist: Optional[str],
     num_umis: int,
+    export_umi_tables: bool,
 ) -> Tuple[Optional[str], str]:
     if whitelist and whitelist != "cellranger":
         whitelist = str(TEST_DATA_DIR / whitelist)
@@ -36,6 +38,7 @@ def make_cmd(
         f"{f'--whitelist {whitelist} ' if whitelist else ''}"
         f"{f'--num_umis {num_umis} ' if num_umis != -1 else ''}"
         f"{'--multi_mapped_reads ' if multi_mapped_reads else ''}"
+        f"{'--export_umi_tables ' if export_umi_tables else ''}"
         f"{str(TEST_DATA_DIR / sample_dir)} {TEST_GTF_FILE}"
     )
 
@@ -49,6 +52,7 @@ def check_output(
     no_filter_cells: bool,
     whitelist: Optional[str],
     num_umis: int,
+    export_umi_tables: bool,
     test_out_cr: str,
     test_out_ts: str,
 ):
@@ -118,6 +122,14 @@ def check_output(
         == 0
     ), "Mitochondrial genes do not have ambiguous counts."
 
+    # Check whether intermediate results where saved
+    if export_umi_tables:
+        table_files = glob(
+            os.path.join(OUT_DIR, "umi_tables_per_cell/umi_table_*.parquet")
+        )
+        assert len(table_files) > 0, "UMI tables were not saved."
+        assert len(table_files) % 2 == 0, "There should be two UMI tables per cell."
+
     shutil.rmtree(OUT_DIR)
 
 
@@ -131,14 +143,14 @@ def check_output(
 )
 @pytest.mark.parametrize("multi_mapped_reads", [False, True])
 @pytest.mark.parametrize(
-    "no_filter_cells, whitelist, num_umis, test_out_ts",
+    "no_filter_cells, whitelist, num_umis, test_out_ts, export_umi_tables",
     [
-        (True, None, -1, TEST_OUT_TS_NO_FILTER),
-        (False, None, -1, TEST_OUT_TS_FILTER_CR),
-        (False, "cellranger", -1, TEST_OUT_TS_FILTER_CR),
-        (False, "whitelist.tsv", -1, TEST_OUT_TS_FILTER_CR),
-        (False, None, 10, TEST_OUT_TS_FILTER_UMI),
-        (False, "cellranger", 10, None),
+        (True, None, -1, TEST_OUT_TS_NO_FILTER, False),
+        (False, None, -1, TEST_OUT_TS_FILTER_CR, False),
+        (False, "cellranger", -1, TEST_OUT_TS_FILTER_CR, True),
+        (False, "whitelist.tsv", -1, TEST_OUT_TS_FILTER_CR, False),
+        (False, None, 10, TEST_OUT_TS_FILTER_UMI, False),
+        (False, "cellranger", 10, None, False),
     ],
 )
 def test_tidesurf(
@@ -148,6 +160,7 @@ def test_tidesurf(
     no_filter_cells: bool,
     whitelist: Optional[str],
     num_umis: int,
+    export_umi_tables: bool,
     test_out_cr: str,
     test_out_ts: str,
 ):
@@ -158,6 +171,7 @@ def test_tidesurf(
         no_filter_cells,
         whitelist,
         num_umis,
+        export_umi_tables,
     )
     os.system(cmd)
     check_output(
@@ -167,6 +181,7 @@ def test_tidesurf(
         no_filter_cells,
         whitelist,
         num_umis,
+        export_umi_tables,
         test_out_cr,
         test_out_ts,
     )
@@ -209,6 +224,7 @@ def test_main(
         no_filter_cells,
         whitelist,
         num_umis,
+        False,
     )
 
     arg_list = cmd.split(" ")[1:]
@@ -226,6 +242,7 @@ def test_main(
         no_filter_cells,
         whitelist,
         num_umis,
+        False,
         test_out_cr,
         test_out_ts,
     )

@@ -73,6 +73,11 @@ def parse_args(arg_list: Optional[List[str]] = None) -> argparse.Namespace:
         "(default: reads mapping to more than one gene are discarded).",
     )
     parser.add_argument(
+        "--export_umi_tables",
+        action="store_true",
+        help="Export tables with splice type for UMIs.",
+    )
+    parser.add_argument(
         "sample_dir",
         metavar="SAMPLE_DIR",
         help="Sample directory containing Cell Ranger output.",
@@ -93,24 +98,41 @@ def run(
     num_umis: Optional[int] = None,
     min_intron_overlap: int = 5,
     multi_mapped_reads: bool = False,
+    export_umi_tables: bool = False,
 ) -> None:
     """
     Run tidesurf on a 10x sample directory.
-    :param sample_dir: 10x Cell Ranger count/multi output directory.
-    :param gtf_file: Path to GTF file with transcript annotations.
-    :param output: Path to output directory.
-    :param orientation: Orientation in which reads map to transcripts.
-    :param filter_cells: Whether to filter cells.
-    :param whitelist: If `filter_cells` is True: path to cell
-        barcode whitelist file. Set to 'cellranger' to use barcodes in
-        the sample directory. Mutually exclusive with `num_umis`.
-    :param num_umis: If `filter_cells` is True: set to an integer to
-        only keep cells with at least that many UMIs. Mutually exclusive
-        with `whitelist`.
-    :param min_intron_overlap: Minimum overlap of reads with introns
-        required to consider them intronic.
-    :param multi_mapped_reads: Whether to count multi-mapped reads
-    :return:
+
+    Parameters
+    ----------
+    sample_dir
+        10x Cell Ranger count/multi output directory.
+    gtf_file
+        Path to GTF file with transcript annotations.
+    output
+        Path to output directory.
+    orientation
+        Orientation in which reads map to transcripts.
+    filter_cells
+        Whether to filter cells.
+    whitelist
+        If `filter_cells` is True: path to cell barcode whitelist file.
+        Set to 'cellranger' to use barcodes in the sample directory.
+        Mutually exclusive with `num_umis`.
+    num_umis
+        If `filter_cells` is True: set to an integer to only keep cells
+        with at least that many UMIs. Mutually exclusive with `whitelist`.
+    min_intron_overlap
+        Minimum overlap of reads with introns required to consider them
+        intronic.
+    multi_mapped_reads
+        Whether to count multi-mapped reads
+    export_umi_tables
+        Whether to export intermediate UMI tables. If True, for each
+        cell, a table containing information about each UMI is saved
+        to the output directory before (multi) and after (single)
+        resolving UMIs mapping to multiple genes, as
+        umi_table_[multi|single]_gene_<CELL_BARCODE>.parquet, respectively.
     """
     log.info("Building transcript index.")
     t_idx = TranscriptIndex(gtf_file)
@@ -173,6 +195,7 @@ def run(
             filter_cells=filter_cells,
             whitelist=wl,
             num_umis=num_umis,
+            umi_table_dir=output if export_umi_tables else None,
         )
         log.info("Writing output.")
         counts_matrix = counts["spliced"] + counts["unspliced"] + counts["ambiguous"]
@@ -218,6 +241,7 @@ def main(arg_list: Optional[List[str]] = None) -> None:
         num_umis=args.num_umis,
         min_intron_overlap=args.min_intron_overlap,
         multi_mapped_reads=args.multi_mapped_reads,
+        export_umi_tables=args.export_umi_tables,
     )
     end_time = datetime.now()
     log.info(f"Finished in {end_time - start_time}.")

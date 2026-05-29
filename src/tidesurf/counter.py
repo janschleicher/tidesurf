@@ -3,6 +3,7 @@
 import logging
 from bisect import bisect
 from operator import attrgetter
+from pathlib import Path
 from typing import Dict, List, Literal, Optional, Set, Tuple
 
 import cython
@@ -83,9 +84,10 @@ class UMICounter:
         filter_cells: bool = False,
         whitelist: Optional[str] = None,
         num_umis: int = -1,
+        umi_table_dir: Optional[str] = None,
     ) -> Tuple[np.ndarray, np.ndarray, Dict[str, csr_array]]:
         """
-        count(bam_file: str, filter_cells: bool = False, whitelist: Optional[str] = None, num_umis: int = -1) -> Tuple[np.ndarray, np.ndarray, Dict[str, csr_matrix]]
+        count(bam_file: str, filter_cells: bool = False, whitelist: Optional[str] = None, num_umis: int = -1, umi_table_dir: Optional[str] = None) -> Tuple[np.ndarray, np.ndarray, Dict[str, csr_matrix]]
 
         Count UMIs with reads mapping to transcripts.
 
@@ -103,6 +105,9 @@ class UMICounter:
             cells with at least that many UMIs. Mutually exclusive with
             `whitelist` (default: `-1`; corresponds to not filtering based
             on number of UMIs).
+        umi_table_dir
+            Directory for saving intermediate UMI tables (default:
+            `None`; corresponds to not saving intermediate tables).
 
         Returns
         -------
@@ -240,6 +245,15 @@ class UMICounter:
                     .drop("read_type")
                 )
 
+                umi_table_save_path = Path("")
+                if umi_table_dir is not None:
+                    umi_table_save_path = Path(umi_table_dir) / "umi_tables_per_cell"
+                    umi_table_save_path.mkdir(parents=True, exist_ok=True)
+                    df.write_parquet(
+                        umi_table_save_path / f"umi_table_multi_gene_{cbc}.parquet",
+                        compression_level=10,
+                    )
+
                 # Keep the gene with the highest read support
                 df = (
                     df.group_by("umi")
@@ -262,9 +276,15 @@ class UMICounter:
                         pl.col("gene").list.get(pl.col("idx")),
                         pl.col("splice_type").list.get(pl.col("idx")),
                     )
-                    .group_by("gene", "splice_type")
-                    .len()
                 )
+
+                if umi_table_dir is not None:
+                    df.write_parquet(
+                        umi_table_save_path / f"umi_table_single_gene_{cbc}.parquet",
+                        compression_level=10,
+                    )
+
+                df = df.group_by("gene", "splice_type").len()
                 counts_dict[cbc] = df
 
         log.info("Aggregating counts from individual cells.")
