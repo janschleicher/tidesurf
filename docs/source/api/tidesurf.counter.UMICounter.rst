@@ -1,4 +1,4 @@
-tidesurf.counter.UMICounter
+﻿tidesurf.counter.UMICounter
 ===========================
 
 .. currentmodule:: tidesurf.counter

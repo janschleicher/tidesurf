@@ -1,4 +1,4 @@
-tidesurf.transcript.Exon
+﻿tidesurf.transcript.Exon
 ========================
 
 .. currentmodule:: tidesurf.transcript

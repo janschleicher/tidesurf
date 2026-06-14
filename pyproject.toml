@@ -13,7 +13,7 @@ name = "tidesurf"
 dynamic = ["version"]
 description = "Tool for IDentification and Enumeration of Spliced and Unspliced Read Fragments."
 readme = "README.md"
-license = { text = "GPL-3.0 license" }
+license = "GPL-3.0-only"
 requires-python = ">=3.10"
 
 authors = [
@@ -26,7 +26,6 @@ keywords = ["scRNA-seq", "quantification", "splicing", "velocity"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -40,8 +39,8 @@ dependencies = [
     "cython",
     "numpy",
     "polars",
-    "scipy",
-    "anndata",
+    "scipy>=1.11.0",
+    "anndata>=0.11.0",
     "pysam",
     "tqdm",
 ]

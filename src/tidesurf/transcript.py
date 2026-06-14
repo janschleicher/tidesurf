@@ -1,8 +1,16 @@
 """Module for working with genomic features and GTF files."""
 
+import gzip
 import logging
 from bisect import bisect
-from typing import Dict, List, Optional, Set, Tuple, Union
+from functools import partial
+from operator import itemgetter
+from typing import Dict, List, Optional, Tuple, Union
+
+try:
+    from typing import Self
+except ImportError:
+    from typing_extensions import Self
 
 import cython
 from cython.cimports.tidesurf.enums import Strand
@@ -120,30 +128,39 @@ class GenomicFeature:
             and min(self.end - start + 1, end - self.start + 1) >= min_overlap
         )
 
-    def __lt__(self, other) -> bool:
-        if self.chromosome != other.chromosome or self.strand != other.strand:
+    def __lt__(self, other: Self) -> bool:
+        if not isinstance(other, GenomicFeature):
+            return NotImplemented
+        o: GenomicFeature = cython.cast(GenomicFeature, other)
+        if self.chromosome != o.chromosome or self.strand != o.strand:
             raise ValueError("Cannot compare features on different chromosomes/strands")
-        if self.start != other.start:
-            return self.start < other.start
+        if self.start != o.start:
+            return self.start < o.start
         else:
-            return self.end < other.end
+            return self.end < o.end
 
-    def __gt__(self, other) -> bool:
-        if self.chromosome != other.chromosome or self.strand != other.strand:
+    def __gt__(self, other: Self) -> bool:
+        if not isinstance(other, GenomicFeature):
+            return NotImplemented
+        o: GenomicFeature = cython.cast(GenomicFeature, other)
+        if self.chromosome != o.chromosome or self.strand != o.strand:
             raise ValueError("Cannot compare features on different chromosomes/strands")
-        if self.start != other.start:
-            return self.start > other.start
+        if self.start != o.start:
+            return self.start > o.start
         else:
-            return self.end > other.end
+            return self.end > o.end
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: Self) -> bool:
+        if not isinstance(other, GenomicFeature):
+            return NotImplemented
+        o: GenomicFeature = cython.cast(GenomicFeature, other)
         return (
-            self.gene_id == other.gene_id
-            and self.transcript_id == other.transcript_id
-            and self.chromosome == other.chromosome
-            and self.strand == other.strand
-            and self.start == other.start
-            and self.end == other.end
+            self.gene_id == o.gene_id
+            and self.transcript_id == o.transcript_id
+            and self.chromosome == o.chromosome
+            and self.strand == o.strand
+            and self.start == o.start
+            and self.end == o.end
         )
 
     def __hash__(self) -> int:
@@ -379,10 +396,11 @@ class Transcript(GenomicFeature):
         all_regions.append(self.regions[-1])
         self.regions = all_regions
 
-    def __eq__(self, other) -> bool:
-        if type(other) is not type(self):
+    def __eq__(self, other: Self) -> bool:
+        if not isinstance(other, Transcript):
             return NotImplemented
-        return super(Transcript, self).__eq__(other) and self.regions == other.regions
+        o: Transcript = cython.cast(Transcript, other)
+        return super(Transcript, self).__eq__(other) and self.regions == o.regions
 
     def __repr__(self) -> str:
         return (
@@ -512,6 +530,7 @@ class TranscriptIndex:
         self.transcripts_by_region[curr_chrom, curr_strand] = regions
 
     @cython.embedsignature(False)
+    @cython.locals(transcript=Transcript)
     def read_gtf(self, gtf_file: str):
         """
         read_gtf(gtf_file: str)
@@ -526,7 +545,11 @@ class TranscriptIndex:
         lines = []
 
         # Read the GTF file
-        with logging_redirect_tqdm(), open(gtf_file, "r") as gtf:
+        if gtf_file.endswith(".gz"):
+            file_open = partial(gzip.open, mode="rt")
+        else:
+            file_open = partial(open, mode="r")
+        with logging_redirect_tqdm(), file_open(gtf_file) as gtf:
             for line in tqdm(gtf, desc="Reading GTF file", unit=" lines"):
                 # Skip header lines and comments
                 if line.startswith("#"):
@@ -637,9 +660,8 @@ class TranscriptIndex:
                         exon_id=line.attributes["exon_id"],
                         exon_number=int(line.attributes["exon_number"]),
                     )
-                    chrom_transcript_dict[line.attributes["transcript_id"]].add_exon(
-                        exon
-                    )
+                    transcript = chrom_transcript_dict[line.attributes["transcript_id"]]
+                    transcript.add_exon(exon)
 
         # Add last chromosome-strand pair
         if curr_chrom is not None and curr_strand is not None:
@@ -716,7 +738,7 @@ class TranscriptIndex:
             bisect(
                 self.transcripts_by_region[chromosome, strand],
                 start,
-                key=_bisect_sort_key,
+                key=itemgetter(0),
             )
             - 1
         )
@@ -725,7 +747,7 @@ class TranscriptIndex:
             bisect(
                 self.transcripts_by_region[chromosome, strand],
                 end,
-                key=_bisect_sort_key,
+                key=itemgetter(0),
             )
             - 1
         )
@@ -742,9 +764,3 @@ class TranscriptIndex:
                 )
 
         return sorted(overlapping_transcripts)
-
-
-@cython.cfunc
-@cython.inline
-def _bisect_sort_key(x: Tuple[int, Set[Transcript]]) -> int:
-    return x[0]

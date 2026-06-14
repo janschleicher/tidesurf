@@ -1,4 +1,4 @@
-import cython
+cimport cython
 from tidesurf.transcript cimport GenomicFeature, TranscriptIndex
 from pysam.libcalignedsegment cimport AlignedSegment
 
@@ -19,5 +19,6 @@ cdef class UMICounter:
         bint filter_cells=*,
         str whitelist=*,
         int num_umis=*,
+        str umi_table_dir=*,
     )
     cpdef inline tuple _process_read(self, AlignedSegment read)

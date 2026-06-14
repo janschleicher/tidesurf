@@ -46,7 +46,7 @@ def mock_read(
     read.reference_name = reference_name
     read.reference_start = reference_start
     read.query_sequence = "A" * read_length
-    read.cigar = cigar_tuples
+    read.cigartuples = cigar_tuples
     read.mapping_quality = mapping_quality
     read.is_unmapped = is_unmapped
     read.is_reverse = is_reverse

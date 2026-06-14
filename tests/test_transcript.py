@@ -11,6 +11,7 @@ from tidesurf.transcript import (
 )
 
 TEST_GTF_FILE = str(TEST_DATA_DIR / "genes.gtf")
+TEST_GTF_FILE_GZ = str(TEST_DATA_DIR / "genes.gtf.gz")
 
 
 def test_strand():
@@ -242,8 +243,9 @@ def test_transcript():
     assert transcript_1 == transcript_2, "Transcripts should be equal after sorting."
 
 
-def test_transcript_index():
-    transcript_idx = TranscriptIndex(gtf_file=TEST_GTF_FILE)
+@pytest.mark.parametrize("gtf_file", [TEST_GTF_FILE, TEST_GTF_FILE_GZ])
+def test_transcript_index(gtf_file: str):
+    transcript_idx = TranscriptIndex(gtf_file=gtf_file)
 
     # Check that the index is constructed as expected
     for (
