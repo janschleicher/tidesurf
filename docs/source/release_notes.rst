@@ -3,6 +3,15 @@
 Release notes
 =============
 
+Version 0.3.0 :small:`(2026-06-14)`
+-----------------------------------
+
+Changes:
+
+- Enable use of gzipped GTF file.
+- Add option for saving intermediate results.
+- Minor performance improvements.
+
 Version 0.2.1 :small:`(2025-12-19)`
 -----------------------------------
 

@@ -1,4 +1,4 @@
-tidesurf.transcript.GenomicFeature
+﻿tidesurf.transcript.GenomicFeature
 ==================================
 
 .. currentmodule:: tidesurf.transcript

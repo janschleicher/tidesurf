@@ -10,16 +10,16 @@ The following usage information is displayed when running the program with the `
                 [--no_filter_cells]
                 [--whitelist WHITELIST | --num_umis NUM_UMIS]
                 [--min_intron_overlap MIN_INTRON_OVERLAP]
-                [--multi_mapped_reads]
+                [--multi_mapped_reads] [--export_umi_tables]
                 SAMPLE_DIR GTF_FILE
 
     Program: tidesurf (Tool for IDentification and Enumeration of Spliced and Unspliced Read Fragments)
-    Version: 0.2.1
+    Version: 0.3.0
 
     positional arguments:
       SAMPLE_DIR            Sample directory containing Cell Ranger output.
       GTF_FILE              GTF file with transcript information.
-    
+
     options:
       -h, --help            show this help message and exit
       -v, --version         show program's version number and exit
@@ -41,3 +41,4 @@ The following usage information is displayed when running the program with the `
       --multi_mapped_reads  Take reads mapping to multiple genes into account
                             (default: reads mapping to more than one gene are
                             discarded).
+      --export_umi_tables   Export tables with splice type for UMIs.

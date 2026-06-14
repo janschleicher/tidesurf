@@ -1,4 +1,4 @@
-|Python 3.10| |Python 3.11| |License GPL v3| |ruff| |codecov| |Python package| |PyPI| |Docs|
+|Python 3.10| |Python 3.11| |Python 3.12| |Python 3.13| |License GPL v3| |ruff| |codecov| |Python package| |PyPI|
 
 tidesurf documentation
 ======================
@@ -48,6 +48,14 @@ Accurate quantification of spliced and unspliced transcripts for single-cell RNA
    :target: https://www.python.org/downloads/release/python-31110/
    :alt: Python 3.11
 
+.. |Python 3.12| image:: https://img.shields.io/badge/python-3.12-blue.svg
+   :target: https://www.python.org/downloads/release/python-31213/
+   :alt: Python 3.12
+
+.. |Python 3.13| image:: https://img.shields.io/badge/python-3.13-blue.svg
+   :target: https://www.python.org/downloads/release/python-31314/
+   :alt: Python 3.13
+
 .. |License GPL v3| image:: https://img.shields.io/badge/License-GPLv3-blue.svg
    :target: https://www.gnu.org/licenses/gpl-3.0
    :alt: License: GPL v3
@@ -66,9 +74,5 @@ Accurate quantification of spliced and unspliced transcripts for single-cell RNA
 .. |PyPI| image:: https://img.shields.io/pypi/v/tidesurf
    :target: https://pypi.org/project/tidesurf/
    :alt: PyPI - Version
-
-.. |Docs| image:: https://readthedocs.org/projects/tidesurf/badge/?version=latest
-    :target: https://tidesurf.readthedocs.io/latest/?badge=latest
-    :alt: Documentation Status
 
 .. end-badges

@@ -1,4 +1,4 @@
-tidesurf.transcript.Intron
+﻿tidesurf.transcript.Intron
 ==========================
 
 .. currentmodule:: tidesurf.transcript

@@ -1,4 +1,4 @@
-tidesurf.transcript.Transcript
+﻿tidesurf.transcript.Transcript
 ==============================
 
 .. currentmodule:: tidesurf.transcript

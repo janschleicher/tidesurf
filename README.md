@@ -7,7 +7,7 @@
 [![codecov](https://codecov.io/gh/janschleicher/tidesurf/branch/main/graph/badge.svg?token=dMenu3eZkX)](https://codecov.io/gh/janschleicher/tidesurf)
 [![Python package](https://github.com/janschleicher/tidesurf/actions/workflows/python-package.yml/badge.svg?branch=main)](https://github.com/janschleicher/tidesurf/actions/workflows/python-package.yml)
 [![PyPI - Version](https://img.shields.io/pypi/v/tidesurf)](https://pypi.org/project/tidesurf/)
-[![Documentation Status](https://readthedocs.org/projects/tidesurf/badge/?version=latest)](https://tidesurf.readthedocs.io/latest/?badge=latest)
+[![Documentation Status](https://app.readthedocs.org/projects/tidesurf/badge/?version=latest)](https://tidesurf.readthedocs.io/latest/?badge=latest)
 
 # tidesurf
 
@@ -44,11 +44,11 @@ usage: tidesurf [-h] [-v] [--orientation {sense,antisense}] [-o OUTPUT]
                 [--no_filter_cells]
                 [--whitelist WHITELIST | --num_umis NUM_UMIS]
                 [--min_intron_overlap MIN_INTRON_OVERLAP]
-                [--multi_mapped_reads]
+                [--multi_mapped_reads] [--export_umi_tables]
                 SAMPLE_DIR GTF_FILE
 
 Program: tidesurf (Tool for IDentification and Enumeration of Spliced and Unspliced Read Fragments)
-Version: 0.2.1
+Version: 0.3.0
 
 positional arguments:
   SAMPLE_DIR            Sample directory containing Cell Ranger output.
@@ -75,6 +75,7 @@ options:
   --multi_mapped_reads  Take reads mapping to multiple genes into account
                         (default: reads mapping to more than one gene are
                         discarded).
+  --export_umi_tables   Export tables with splice type for UMIs.
 ```
 
 ## Contributing
