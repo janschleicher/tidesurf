@@ -3,6 +3,13 @@
 Release notes
 =============
 
+Version 0.3.1 :small:`(2026-06-23)`
+-----------------------------------
+
+Changes:
+
+- Replace deprecated polars StringCache and update dependency.
+
 Version 0.3.0 :small:`(2026-06-14)`
 -----------------------------------
 
