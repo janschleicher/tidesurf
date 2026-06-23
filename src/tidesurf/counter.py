@@ -186,7 +186,9 @@ class UMICounter:
         # Deduplicate cell barcodes and UMIs.
         counts_dict = {}
         log.info("Determining splice types and deduplicating UMIs.")
-        with logging_redirect_tqdm(), pl.StringCache():
+        umi_categories = pl.Categories(name="umis", physical=pl.UInt32)
+        gene_categories = pl.Categories(name="genes", physical=pl.UInt32)
+        with logging_redirect_tqdm():
             for cbc, results_list in tqdm(
                 results.items(),
                 total=len(results),
@@ -197,8 +199,8 @@ class UMICounter:
                     pl.DataFrame(
                         results_list,
                         schema={
-                            "umi": pl.Categorical,
-                            "gene": str,
+                            "umi": pl.Categorical(umi_categories),
+                            "gene": pl.Categorical(gene_categories),
                             "read_type": pl.UInt8,
                             "weight": pl.Float32,
                         },
@@ -289,25 +291,25 @@ class UMICounter:
 
         log.info("Aggregating counts from individual cells.")
         # Concatenate the cell-wise count DataFrames
+        cbc_categories = pl.Enum(sorted(counts_dict.keys()))
         results_df = pl.concat(
             [
-                df.with_columns(cbc=pl.lit(key, dtype=pl.String))
+                df.with_columns(cbc=pl.lit(key, dtype=cbc_categories))
                 for key, df in counts_dict.items()
             ]
         )
+        gene_categories = pl.Enum(results_df["gene"].unique().cast(str).sort())
+        results_df = results_df.with_columns(pl.col("gene").cast(gene_categories))
 
-        cells = np.asarray(sorted(results_df["cbc"].unique()))
-        genes = np.asarray(sorted(results_df["gene"].unique()))
+        cells = np.asarray(results_df["cbc"].cat.get_categories())
+        genes = np.asarray(results_df["gene"].cat.get_categories())
         n_cells = cells.shape[0]
         n_genes = genes.shape[0]
 
         # Map cells and genes to integer indices
-        cbc_map = {cbc: i for i, cbc in enumerate(cells)}
-        gene_map = {gene: i for i, gene in enumerate(genes)}
-
         results_df = results_df.with_columns(
-            pl.col("cbc").replace_strict(cbc_map).name.suffix("_idx"),
-            pl.col("gene").replace_strict(gene_map).name.suffix("_idx"),
+            pl.col("cbc").to_physical().name.suffix("_idx"),
+            pl.col("gene").to_physical().name.suffix("_idx"),
         )
 
         assert n_cells == results_df["cbc_idx"].max() + 1
@@ -321,7 +323,7 @@ class UMICounter:
         for splice_type, mat in counts.items():
             df_ = results_df.filter(pl.col("splice_type") == int(splice_type))
             idx = df_.select("cbc_idx", "gene_idx").to_numpy()
-            mat[idx[:, 0], idx[:, 1]] = np.asarray(df_["len"])
+            mat[idx[:, 0], idx[:, 1]] = df_["len"].to_numpy()
 
         counts = {splice_type.name.lower(): mat for splice_type, mat in counts.items()}
 
