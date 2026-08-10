@@ -301,8 +301,8 @@ class UMICounter:
         gene_categories = pl.Enum(results_df["gene"].unique().cast(str).sort())
         results_df = results_df.with_columns(pl.col("gene").cast(gene_categories))
 
-        cells = np.asarray(results_df["cbc"].cat.get_categories())
-        genes = np.asarray(results_df["gene"].cat.get_categories())
+        cells = np.asarray(results_df["cbc"].unique())
+        genes = np.asarray(results_df["gene"].unique())
         n_cells = cells.shape[0]
         n_genes = genes.shape[0]
 
