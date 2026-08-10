@@ -192,6 +192,68 @@ def test_tidesurf(
 
 
 @pytest.mark.parametrize(
+    "sample_dir, orientation, test_out_cr",
+    [
+        ("test_dir_count", "antisense", TEST_OUT_CR_5P),
+        ("test_dir_any", "antisense", TEST_OUT_CR_5P),
+        ("test_dir_multi", "antisense", TEST_OUT_CR_5P),
+        ("test_dir_count_3p", "sense", TEST_OUT_CR_3P),
+    ],
+)
+@pytest.mark.parametrize("multi_mapped_reads", [False, True])
+@pytest.mark.parametrize(
+    "no_filter_cells, whitelist, num_umis, test_out_ts",
+    [
+        (True, None, -1, TEST_OUT_TS_NO_FILTER),
+        (False, None, -1, TEST_OUT_TS_FILTER_CR),
+        (False, "cellranger", -1, TEST_OUT_TS_FILTER_CR),
+        (False, "whitelist.tsv", -1, TEST_OUT_TS_FILTER_CR),
+        (False, None, 10, TEST_OUT_TS_FILTER_UMI),
+        (False, "cellranger", 10, None),
+    ],
+)
+def test_main(
+    sample_dir: str,
+    orientation: str,
+    multi_mapped_reads: bool,
+    no_filter_cells: bool,
+    whitelist: Optional[str],
+    num_umis: int,
+    test_out_cr: str,
+    test_out_ts: str,
+):
+    whitelist, cmd = make_cmd(
+        sample_dir,
+        orientation,
+        multi_mapped_reads,
+        no_filter_cells,
+        whitelist,
+        num_umis,
+        False,
+    )
+
+    arg_list = cmd.strip().split(" ")[1:]
+
+    if whitelist and num_umis != -1:
+        with pytest.raises(SystemExit):
+            main(arg_list)
+        return
+    main(arg_list)
+
+    check_output(
+        sample_dir,
+        orientation,
+        multi_mapped_reads,
+        no_filter_cells,
+        whitelist,
+        num_umis,
+        False,
+        test_out_cr,
+        test_out_ts,
+    )
+
+
+@pytest.mark.parametrize(
     "bam_path, whitelist",
     [
         (
@@ -280,61 +342,89 @@ def test_tidesurf_bam_paths(
 
 
 @pytest.mark.parametrize(
-    "sample_dir, orientation, test_out_cr",
+    "bam_path, whitelist",
     [
-        ("test_dir_count", "antisense", TEST_OUT_CR_5P),
-        ("test_dir_multi", "antisense", TEST_OUT_CR_5P),
-        ("test_dir_count_3p", "sense", TEST_OUT_CR_3P),
+        (
+            str(TEST_DATA_DIR / "test_dir_any" / "test_bam_file.bam"),
+            str(TEST_DATA_DIR / "test_dir_any" / "barcodes.tsv.gz"),
+        ),
+        (
+            [
+                str(TEST_DATA_DIR / "test_dir_any" / "test_bam_file.bam"),
+                str(
+                    TEST_DATA_DIR
+                    / "test_dir_count"
+                    / "outs"
+                    / "possorted_genome_bam.bam"
+                ),
+            ],
+            str(TEST_DATA_DIR / "test_dir_any" / "barcodes.tsv.gz"),
+        ),
+        (
+            [
+                str(TEST_DATA_DIR / "test_dir_any" / "test_bam_file.bam"),
+                str(
+                    TEST_DATA_DIR
+                    / "test_dir_count"
+                    / "outs"
+                    / "possorted_genome_bam.bam"
+                ),
+            ],
+            [
+                str(TEST_DATA_DIR / "test_dir_any" / "barcodes.tsv.gz"),
+                str(
+                    TEST_DATA_DIR
+                    / "test_dir_count"
+                    / "outs"
+                    / "filtered_feature_bc_matrix"
+                    / "barcodes.tsv.gz"
+                ),
+            ],
+        ),
     ],
 )
-@pytest.mark.parametrize("multi_mapped_reads", [False, True])
-@pytest.mark.parametrize(
-    "no_filter_cells, whitelist, num_umis, test_out_ts",
-    [
-        (True, None, -1, TEST_OUT_TS_NO_FILTER),
-        (False, None, -1, TEST_OUT_TS_FILTER_CR),
-        (False, "cellranger", -1, TEST_OUT_TS_FILTER_CR),
-        (False, "whitelist.tsv", -1, TEST_OUT_TS_FILTER_CR),
-        (False, None, 10, TEST_OUT_TS_FILTER_UMI),
-        (False, "cellranger", 10, None),
-    ],
-)
-def test_main(
-    sample_dir: str,
-    orientation: str,
-    multi_mapped_reads: bool,
-    no_filter_cells: bool,
-    whitelist: Optional[str],
-    num_umis: int,
-    test_out_cr: str,
-    test_out_ts: str,
+def test_main_bam_paths(
+    bam_path: Union[str, List[str]], whitelist: Optional[Union[str, List[str]]]
 ):
-    whitelist, cmd = make_cmd(
-        sample_dir,
-        orientation,
-        multi_mapped_reads,
-        no_filter_cells,
-        whitelist,
-        num_umis,
-        False,
+    whitelist_str = ""
+    if whitelist is not None:
+        whitelist_str = "--whitelist"
+        if isinstance(whitelist, list):
+            whitelist_str = f"{whitelist_str} {' '.join(whitelist)}"
+        else:
+            whitelist_str = f"{whitelist_str} {whitelist}"
+
+    bam_path_str = "--bam_path"
+    if isinstance(bam_path, list):
+        bam_path_str = f"{bam_path_str} {' '.join(bam_path)}"
+    else:
+        bam_path_str = f"{bam_path_str} {bam_path}"
+
+    cmd = (
+        f"tidesurf '' {TEST_GTF_FILE} "
+        f"-o {OUT_DIR} --orientation antisense "
+        f"{whitelist_str} {bam_path_str}"
     )
-
     arg_list = cmd.strip().split(" ")[1:]
-
-    if whitelist and num_umis != -1:
-        with pytest.raises(SystemExit):
-            main(arg_list)
-        return
     main(arg_list)
 
-    check_output(
-        sample_dir,
-        orientation,
-        multi_mapped_reads,
-        no_filter_cells,
-        whitelist,
-        num_umis,
-        False,
-        test_out_cr,
-        test_out_ts,
-    )
+    if isinstance(bam_path, str):
+        bam_path = [bam_path]
+
+    adata_true = ad.read_h5ad(TEST_OUT_TS_FILTER_CR)
+    for file_path in bam_path:
+        adata_ts = ad.read_h5ad(
+            f"{OUT_DIR}/tidesurf_{file_path.strip().split('.bam')[0].split('/')[-1]}.h5ad"
+        )
+        assert adata_true.shape == adata_ts.shape, "Output shape mismatch."
+        assert np.all(adata_true.obs == adata_ts.obs), "Output obs mismatch."
+        assert np.all(adata_true.var == adata_ts.var), "Output var mismatch."
+        assert np.all(adata_true.X.toarray() == adata_ts.X.toarray()), (  # type: ignore
+            "Output X mismatch."
+        )
+        for layer in adata_ts.layers.keys():
+            assert np.all(
+                adata_true.layers[layer].toarray() == adata_ts.layers[layer].toarray()  # type: ignore
+            ), f"Output layer {layer} mismatch."
+
+    shutil.rmtree(OUT_DIR)
