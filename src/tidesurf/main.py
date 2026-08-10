@@ -4,8 +4,9 @@ import logging
 import os
 import re
 from datetime import datetime
+from itertools import combinations
 from pathlib import Path
-from typing import List, Literal, Optional
+from typing import List, Literal, Optional, Union
 
 import anndata as ad
 from cython.cimports.tidesurf.counter import UMICounter
@@ -46,13 +47,27 @@ def parse_args(arg_list: Optional[List[str]] = None) -> argparse.Namespace:
         action="store_true",
         help="Do not filter cells.",
     )
+    parser.add_argument(
+        "--bam_path",
+        type=str,
+        nargs="+",
+        default=None,
+        help="Explicit path to one or more BAM files. The sample "
+        "directory will be ignored if this is given. If this argument "
+        "is used, the positional arguments must be separated from it "
+        "by another argument, by ' -- ', or they must precede it.",
+    )
     arg_group = parser.add_mutually_exclusive_group()
     arg_group.add_argument(
         "--whitelist",
         type=str,
+        nargs="+",
         help="Whitelist for cell filtering. Set to 'cellranger' to use "
         "barcodes in the sample directory. Alternatively, provide a "
-        "path to a whitelist.",
+        "path to a whitelist. If multiple BAM files are passed to "
+        "'bam_path', one whitelist can be passed per BAM file. If this "
+        "argument is used, the positional arguments must be separated "
+        "from it by another argument, by ' -- ', or they must precede it.",
     )
     arg_group.add_argument(
         "--num_umis",
@@ -94,7 +109,8 @@ def run(
     output: str,
     orientation: Literal["sense", "antisense"] = "sense",
     filter_cells: bool = False,
-    whitelist: Optional[str] = None,
+    bam_path: Optional[Union[str, List[str]]] = None,
+    whitelist: Optional[Union[str, List[str]]] = None,
     num_umis: Optional[int] = None,
     min_intron_overlap: int = 5,
     multi_mapped_reads: bool = False,
@@ -115,8 +131,13 @@ def run(
         Orientation in which reads map to transcripts.
     filter_cells
         Whether to filter cells.
+    bam_path
+        Explicit path to BAM file. The sample directory will be ignored
+        if an explicit path is given. Can also be a list with the paths
+        to multiple BAM files. If this is used, 'sample_dir' still has
+        to be passed, but can be any string, including ' '.
     whitelist
-        If `filter_cells` is True: path to cell barcode whitelist file.
+        If `filter_cells` is True: path to cell barcode whitelist file(s).
         Set to 'cellranger' to use barcodes in the sample directory.
         Mutually exclusive with `num_umis`.
     num_umis
@@ -136,27 +157,74 @@ def run(
     """
     log.info("Building transcript index.")
     t_idx = TranscriptIndex(gtf_file)
-    cr_pipeline = "count"
-    # Try cellranger count output
-    bam_files = [os.path.join(sample_dir, "outs/possorted_genome_bam.bam")]
-    sample_ids = [""]
-    if not os.path.isfile(bam_files[0]):
-        cr_pipeline = "multi"
-        # Try cellranger multi output
-        bam_files = glob.glob(
-            os.path.join(
-                sample_dir, "outs/per_sample_outs/*/count/sample_alignments.bam"
+
+    # Use explicitly provided BAM files if available
+    if bam_path is not None:
+        if whitelist == "cellranger":
+            raise ValueError(
+                "Cannot use 'cellranger' for whitelist with explicit BAM file paths."
             )
+        log.info(
+            f"Using explicitly specified BAM files and ignoring sample directory ({sample_dir})"
         )
-        if not bam_files:
-            log.error(f"No Cell Ranger BAM files found in directory {sample_dir}.")
-            raise FileNotFoundError(
-                f"No Cell Ranger BAM files found in directory {sample_dir}."
+        cr_pipeline = "unknown"
+        if isinstance(bam_path, str):
+            bam_files = [bam_path]
+        else:
+            bam_files = bam_path
+        sample_ids = [f_path.split(".bam")[0].split("/")[-1] for f_path in bam_files]
+    else:
+        cr_pipeline = "count"
+        # Try cellranger count output
+        bam_files = [os.path.join(sample_dir, "outs/possorted_genome_bam.bam")]
+        sample_ids = [""]
+        if not os.path.isfile(bam_files[0]):
+            cr_pipeline = "multi"
+            # Try cellranger multi output
+            bam_files = glob.glob(
+                os.path.join(
+                    sample_dir, "outs/per_sample_outs/*/count/sample_alignments.bam"
+                )
             )
-        sample_ids = [
-            re.search(r"outs/per_sample_outs/(.*)/count", f) for f in bam_files
-        ]
-        sample_ids = [s_id.group(1) for s_id in sample_ids if s_id is not None]
+            if bam_files:
+                sample_ids = [
+                    re.search(r"outs/per_sample_outs/(.*)/count", f) for f in bam_files
+                ]
+                sample_ids = [s_id.group(1) for s_id in sample_ids if s_id is not None]
+            else:
+                cr_pipeline = "unknown"
+                log.info(
+                    f"Sample directory {sample_dir} does not have Cell Ranger output "
+                    f"structure; looking for any BAM files in the directory."
+                )
+                bam_files = glob.glob(
+                    os.path.join(sample_dir, "**/*.bam"), recursive=True
+                )
+                if not bam_files:
+                    raise FileNotFoundError(
+                        f"No BAM files found in directory {sample_dir}."
+                    )
+                sample_ids = [
+                    f_path.split(".bam")[0].split("/")[-1] for f_path in bam_files
+                ]
+
+    if len(sample_ids) > 1:
+        # Append integer to sample IDs if not unique
+        for sample_1, sample_2 in combinations(sample_ids, 2):
+            if sample_1 == sample_2:
+                sample_ids = [f"{s_id}_{i}" for i, s_id in enumerate(sample_ids)]
+                break
+
+    if isinstance(whitelist, list):
+        if len(whitelist) == 1:
+            whitelist = whitelist[0]
+        elif len(whitelist) != len(bam_files):
+            log.error(
+                f"Mismatch between number of BAM files ({len(bam_files)}) and whitelists ({len(whitelist)})."
+            )
+            raise ValueError(
+                f"Mismatch between number of BAM files ({len(bam_files)}) and whitelists ({len(whitelist)})."
+            )
 
     counter = UMICounter(
         transcript_index=t_idx,
@@ -170,22 +238,28 @@ def run(
 
     os.makedirs(output, exist_ok=True)
 
-    for bam_file, sample_id in zip(bam_files, sample_ids):
+    for i, (bam_file, sample_id) in enumerate(zip(bam_files, sample_ids)):
         log.info(f"Processing {bam_file}.")
         if whitelist == "cellranger":
             if cr_pipeline == "count":
                 wl = glob.glob(
                     f"{sample_dir}/outs/filtered_feature_bc_matrix/barcodes.*"
                 )
-            else:
+            elif cr_pipeline == "multi":
                 wl = glob.glob(
                     f"{sample_dir}/outs/per_sample_outs/{sample_id}/count/sample_filtered_feature_bc_matrix/barcodes.*"
                 )
+            else:
+                wl = glob.glob(f"{sample_dir}/**/barcodes.*", recursive=True)
+                log.info(wl)
             if not wl:
                 log.error("No whitelist found in Cell Ranger output.")
                 return
             else:
                 wl = wl[0]
+        elif isinstance(whitelist, list):
+            # The case where it's just one whitelist is handled above
+            wl = whitelist[i]
         else:
             wl = whitelist
         if num_umis is None:
@@ -226,7 +300,9 @@ def main(arg_list: Optional[List[str]] = None) -> None:
     )
 
     # Default behavior for filtering: use cellranger whitelist
-    if not args.no_filter_cells and not args.whitelist and not args.num_umis:
+    if (isinstance(args.whitelist, list) and args.whitelist[0] == "cellranger") or (
+        not args.no_filter_cells and not args.whitelist and not args.num_umis
+    ):
         args.whitelist = "cellranger"
 
     log.info(f"Running tidesurf {tidesurf.__version__}.")
@@ -237,6 +313,7 @@ def main(arg_list: Optional[List[str]] = None) -> None:
         output=args.output,
         orientation=args.orientation,
         filter_cells=not args.no_filter_cells,
+        bam_path=args.bam_path,
         whitelist=args.whitelist,
         num_umis=args.num_umis,
         min_intron_overlap=args.min_intron_overlap,
