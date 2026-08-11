@@ -7,14 +7,14 @@ The following usage information is displayed when running the program with the `
 .. code-block:: console
 
     usage: tidesurf [-h] [-v] [--orientation {sense,antisense}] [-o OUTPUT]
-                [--no_filter_cells]
-                [--whitelist WHITELIST | --num_umis NUM_UMIS]
+                [--no_filter_cells] [--bam_path BAM_PATH [BAM_PATH ...]]
+                [--whitelist WHITELIST [WHITELIST ...] | --num_umis NUM_UMIS]
                 [--min_intron_overlap MIN_INTRON_OVERLAP]
                 [--multi_mapped_reads] [--export_umi_tables]
                 SAMPLE_DIR GTF_FILE
 
     Program: tidesurf (Tool for IDentification and Enumeration of Spliced and Unspliced Read Fragments)
-    Version: 0.3.1
+    Version: 0.3.2.dev2
 
     positional arguments:
       SAMPLE_DIR            Sample directory containing Cell Ranger output.
@@ -30,10 +30,20 @@ The following usage information is displayed when running the program with the `
       -o OUTPUT, --output OUTPUT
                             Output directory.
       --no_filter_cells     Do not filter cells.
-      --whitelist WHITELIST
+      --bam_path BAM_PATH [BAM_PATH ...]
+                            Explicit path to one or more BAM files. The sample
+                            directory will be ignored if this is given. If this
+                            argument is used, the positional arguments must be
+                            separated from it by another argument, by ' -- ', or
+                            they must precede it.
+      --whitelist WHITELIST [WHITELIST ...]
                             Whitelist for cell filtering. Set to 'cellranger' to
                             use barcodes in the sample directory. Alternatively,
-                            provide a path to a whitelist.
+                            provide a path to a whitelist. If multiple BAM files
+                            are passed to 'bam_path', one whitelist can be passed
+                            per BAM file. If this argument is used, the positional
+                            arguments must be separated from it by another
+                            argument, by ' -- ', or they must precede it.
       --num_umis NUM_UMIS   Minimum number of UMIs for filtering a cell.
       --min_intron_overlap MIN_INTRON_OVERLAP
                             Minimum number of bases that a read must overlap with
