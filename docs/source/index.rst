@@ -36,7 +36,7 @@ If you use ``tidesurf`` in your research, please cite the following publication:
 
 Schleicher, J.T., Klingler, D., and Claassen, M. (2026).
 Accurate quantification of spliced and unspliced transcripts for single-cell RNA sequencing with tidesurf.
-*PLoS One* 21(8): e0355867; DOI: `10.1371/journal.pone.0355867 <https://doi.org/10.1371/journal.pone.0355867>`.
+*PLoS One* 21(8): e0355867; DOI: `10.1371/journal.pone.0355867 <https://doi.org/10.1371/journal.pone.0355867>`_.
 
 .. code-block:: bibtex
 
