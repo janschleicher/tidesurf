@@ -3,6 +3,14 @@
 Release notes
 =============
 
+Version 0.4.0 :small:`(2026-08-24)`
+-----------------------------------
+
+Changes:
+
+- Add option to explicitly specify the path to one or more BAM files.
+- Allow passing a separate whitelist for each BAM file if this option is used.
+
 Version 0.3.1 :small:`(2026-06-23)`
 -----------------------------------
 

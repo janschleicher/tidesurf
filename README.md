@@ -39,7 +39,7 @@ Change into the directory and install with pip:
 
 ## Usage
 
-```
+```shell
 usage: tidesurf [-h] [-v] [--orientation {sense,antisense}] [-o OUTPUT]
                 [--no_filter_cells] [--bam_path BAM_PATH [BAM_PATH ...]]
                 [--whitelist WHITELIST [WHITELIST ...] | --num_umis NUM_UMIS]
@@ -48,7 +48,7 @@ usage: tidesurf [-h] [-v] [--orientation {sense,antisense}] [-o OUTPUT]
                 SAMPLE_DIR GTF_FILE
 
 Program: tidesurf (Tool for IDentification and Enumeration of Spliced and Unspliced Read Fragments)
-Version: 0.3.2.dev2
+Version: 0.4.0
 
 positional arguments:
   SAMPLE_DIR            Sample directory containing Cell Ranger output.
@@ -101,6 +101,22 @@ Please run these before commiting new code.
 
 If you use `tidesurf` in your research, please cite the following publication:
 
-Schleicher, J.T., and Claassen, M. (2025).
+Schleicher, J.T., Klingler, D., and Claassen, M. (2026).
 Accurate quantification of spliced and unspliced transcripts for single-cell RNA sequencing with tidesurf.
-_bioRxiv_ 2025.01.28.635274; DOI: [10.1101/2025.01.28.635274](https://doi.org/10.1101/2025.01.28.635274).
+_PLoS One_ 21(8): e0355867; DOI: [10.1371/journal.pone.0355867](https://doi.org/10.1371/journal.pone.0355867).
+
+```bibtex
+@article{10.1371/journal.pone.0355867,
+    doi = {10.1371/journal.pone.0355867},
+    author = {Schleicher, Jan T. AND Klingler, Doreen AND Claassen, Manfred},
+    journal = {PLOS ONE},
+    publisher = {Public Library of Science},
+    title = {Accurate quantification of spliced and unspliced transcripts for single-cell RNA sequencing with tidesurf},
+    year = {2026},
+    month = {08},
+    volume = {21},
+    url = {https://doi.org/10.1371/journal.pone.0355867},
+    pages = {1-23},
+    number = {8},
+}
+```

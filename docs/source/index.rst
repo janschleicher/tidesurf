@@ -34,9 +34,25 @@ Citation
 
 If you use ``tidesurf`` in your research, please cite the following publication:
 
-Schleicher, J.T., and Claassen, M. (2025).
+Schleicher, J.T., Klingler, D., and Claassen, M. (2026).
 Accurate quantification of spliced and unspliced transcripts for single-cell RNA sequencing with tidesurf.
-*bioRxiv* 2025.01.28.635274; DOI: `10.1101/2025.01.28.635274 <https://doi.org/10.1101/2025.01.28.635274>`_.
+*PLoS One* 21(8): e0355867; DOI: `10.1371/journal.pone.0355867 <https://doi.org/10.1371/journal.pone.0355867>`.
+
+.. code-block:: bibtex
+
+   @article{10.1371/journal.pone.0355867,
+      doi = {10.1371/journal.pone.0355867},
+      author = {Schleicher, Jan T. AND Klingler, Doreen AND Claassen, Manfred},
+      journal = {PLOS ONE},
+      publisher = {Public Library of Science},
+      title = {Accurate quantification of spliced and unspliced transcripts for single-cell RNA sequencing with tidesurf},
+      year = {2026},
+      month = {08},
+      volume = {21},
+      url = {https://doi.org/10.1371/journal.pone.0355867},
+      pages = {1-23},
+      number = {8},
+   }
 
 .. start-badges
 
